@@ -196,8 +196,8 @@ function getVariantImageFile(id, geometry, format) {
       // cache doesn't have the variant... create it now! and...
       var dataPath = dataStorage.getPath(id);
       var convertOpts = parseVariantGeometry(geometry);
-      console.log('variant opts:', convertOpts);
-      return imgutils.convertImage(dataPath, cachePath, convertOpts);
+      console.log('convert opts:', convertOpts);
+      return imgutils.convert(dataPath, cachePath, convertOpts);
     })
     .then(function () {
       // exists... download it!
@@ -255,6 +255,58 @@ function getHolderImageFile(geometry, format) {
     });
 }
 
+/**
+ * get a json file contains image meta data.
+ *
+ * `result` contains:
+ *    - {number} width
+ *    - {number} height
+ *    - {number} colors
+ *    - {number} depth
+ *    - {string} size
+ *    - {string} format
+ *
+ * @param {string} id
+ * @returns {promise}
+ */
+function getImageMetaFile(id) {
+  var cachePath = cacheStorage.getPath(id, 'meta');
+  return cacheStorage.exists(cachePath)
+    .fail(function () {
+      var dataPath = dataStorage.getPath(id);
+      return imgutils.meta(dataPath)
+        .then(function (result) {
+          return fileutils.writeFile(cachePath, JSON.stringify(result));
+        });
+    })
+    .then(function () {
+      return {file: cachePath, type: 'json'};
+    });
+}
+
+/**
+ * get a json file contains image *EXIF* data.
+ *
+ * `rresult` contains:
+ *    - ...
+ *
+ * @param {string} id
+ * @returns {promise}
+ */
+function getImageExifFile(id) {
+  var cachePath = cacheStorage.getPath(id, 'exif');
+  return cacheStorage.exists(cachePath)
+    .fail(function () {
+      var dataPath = dataStorage.getPath(id);
+      return imgutils.exif(dataPath).then(function (result) {
+        return fileutils.writeFile(cachePath, JSON.stringify(result));
+      });
+    })
+    .then(function () {
+      return {file: cachePath, type: 'json'};
+    });
+}
+
 //
 //
 //
@@ -288,5 +340,7 @@ module.exports = {
   getFile: getFile,
   getVariantImageFile: getVariantImageFile,
   getHolderImageFile: getHolderImageFile,
+  getImageMetaFile: getImageMetaFile,
+  getImageExifFile: getImageExifFile,
   configure: configure
 };

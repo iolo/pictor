@@ -24,7 +24,7 @@ app.configure('all', function () {
 
   app.use(express.favicon());
 
-  // embedding pictor in your app
+  // embedding pictor in your app.
   app.use(config.pictor.routes.route || '/pictor', routes.createApp(config.pictor.routes));
 
   //routes.configureMiddlewares(app, config.pictor.routes);
@@ -35,14 +35,16 @@ app.configure('all', function () {
 //routes.configureRoutes(app, config.pictor.routes);
 
 app.get('/', function (req, res) {
-  var id = req.param('id') || 123;
+  var id = req.param('id') || '123.jpg';
   return res.render('index', {id: id});
 });
 
+// expose public & static resources
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
+// expose generated docs
 app.use('/dox', express.static(path.join(__dirname, 'build', 'dox')));
-app.use('/apidoc', express.static(path.join(__dirname, 'build', 'apidoc')));
+app.use('/apidocs', express.static(path.join(__dirname, 'build', 'apidoc')));
 
 //
 //

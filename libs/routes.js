@@ -13,6 +13,9 @@ var
 function _sendFileResponse(res, result) {
   console.log('send file response:', result);
   if (result) {
+    if (result.type) {
+      res.type(result.type);
+    }
     if (result.file) {
       return res.sendfile(result.file);
     }
@@ -173,7 +176,32 @@ function downloadVariantImage(req, res) {
       return _sendFileResponse(res, result);
     })
     .fail(function (err) {
-      console.log('*************', err);
+      return res.send(404, err);
+    })
+    .done();
+}
+
+function downloadImageMeta(req, res) {
+  var id = req.param('id');
+
+  return pictor.getImageMetaFile(id)
+    .then(function (result) {
+      return _sendFileResponse(res, result);
+    })
+    .fail(function (err) {
+      return res.send(404, err);
+    })
+    .done();
+}
+
+function downloadImageExif(req, res) {
+  var id = req.param('id');
+
+  return pictor.getImageExifFile(id)
+    .then(function (result) {
+      return _sendFileResponse(res, result);
+    })
+    .fail(function (err) {
       return res.send(404, err);
     })
     .done();
@@ -251,13 +279,17 @@ function configureMiddlewares(app, config) {
 function configureRoutes(app, config) {
   DEBUG && debug('create pictor routes...');
 
-  app.get('/holder/:geometry.:format', downloadHolderImage);
-
+  // TODO: require auth!
   app.post('/:id.:format', uploadFile);
   app.put('/:id.:format', uploadFile);
   app.del('/:id.:format', deleteFile);
   app.get('/:id.:format', downloadFile);
+
+  app.get('/:id/meta', downloadImageMeta);
+  app.get('/:id/exif', downloadImageExif);
   app.get('/:id/.:format', downloadVariantImage);
+
+  app.get('/holder/:geometry.:format', downloadHolderImage);
   app.get('/:id/:geometry.:format', downloadVariantImage);
 
   return app;

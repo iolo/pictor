@@ -21,8 +21,8 @@ var
  * @param {object} opts
  * @returns {promise} success or not
  */
-function convertImage(src, dst, opts) {
-  console.log('convert ', src, '------->', dst);
+function convert(src, dst, opts) {
+  DEBUG && debug('convert', src, '-->', dst, opts);
   var cmd = gm(src).noProfile();
   switch (opts.op) {
     case 'crop':
@@ -40,8 +40,70 @@ function convertImage(src, dst, opts) {
     case 'convert':
       DEBUG && debug('convert ', opts);
       break;
+    default:
+      DEBUG && debug('default -> convert', opts);
+      break;
   }
   return Q.ninvoke(cmd, 'write', dst);
+}
+
+function convertOpts() {
+  return {op: 'convert'};
+}
+
+function cropOpts(w, h, x, y, flags) {
+  return {op: 'crop', w: w || h, h: h || w, x: x || 0, y: y || 0, flags: flags};
+}
+
+function resizeOpts(w, h, flags) {
+  return {op: 'resize', w: w || '', h: h || '', flags: flags};
+}
+
+function thumbnailOpts(w, h, flags) {
+  return {op: 'thumbnail', w: w || '', h: h || '', flags: flags};
+}
+
+function resize(src, dst, w, h, flags) {
+  DEBUG && debug('resize', src, '-->', dst, w, h);
+  var cmd = gm(src).noProfile().resize(w || '', h || '', flags);
+  return Q.ninvoke(cmd, 'write', dst);
+}
+
+function crop(src, dst, w, h, x, y) {
+  DEBUG && debug('crop', src, '-->', dst, w, h, x, y);
+  var cmd = gm(src).noProfile().crop(w || '', h || '', x || 0, y || 0);
+  return Q.ninvoke(cmd, 'write', dst);
+}
+
+function thumbnail(src, dst, w, h) {
+  DEBUG && debug('thumbnail', src, '-->', dst, w, h);
+  var cmd = gm(src).noProfile().thumbnail(w || '', h || '');
+  return Q.ninvoke(cmd, 'write', dst);
+}
+
+function identify(src) {
+  var cmd = gm(src);
+  return Q.ninvoke(cmd, 'identify');
+}
+
+function meta(src) {
+  var cmd = gm(src).size();
+  return Q.ninvoke(cmd, 'identify', '{"width":%w, "height":%h, "size":"%b", "colors":%k, "depth":%q, "format":"%m"}')
+    .then(function (result) {
+      return JSON.parse(result);
+    });
+}
+
+function exif(src) {
+  return identify(src).then(function (result) {
+    return result['Profile-EXIF'] || {};
+//    return Object.keys(result).reduce(function (prev, curr) {
+//      if (curr.indexOf('EXIF:') > 0) {
+//        prev[curr] = result[curr];
+//      }
+//      return prev;
+//    }, {});
+  });
 }
 
 /**
@@ -73,31 +135,17 @@ function createImage(dst, opts) {
   return Q.ninvoke(cmd, 'write', dst);
 }
 
-//
-//
-//
-
-function convertOpts() {
-  return {op: 'convert'};
-}
-
-function cropOpts(w, h, x, y, flags) {
-  return {op: 'crop', w: w || h, h: h || w, x: x || 0, y: y || 0, flags: flags};
-}
-
-function resizeOpts(w, h, flags) {
-  return {op: 'resize', w: w || '', h: h || '', flags: flags};
-}
-
-function thumbnailOpts(w, h, flags) {
-  return {op: 'thumbnail', w: w || '', h: h || '', flags: flags};
-}
-
 module.exports = {
-  convertImage: convertImage,
-  createImage: createImage,
+  convert: convert,
   convertOpts: convertOpts,
   cropOpts: cropOpts,
   resizeOpts: resizeOpts,
-  thumbnailOpts: thumbnailOpts
+  thumbnailOpts: thumbnailOpts,
+  resize: resize,
+  crop: crop,
+  thumbnail: thumbnail,
+  identify: identify,
+  meta: meta,
+  exif: exif,
+  createImage: createImage
 };

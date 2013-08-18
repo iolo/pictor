@@ -14,9 +14,11 @@ html
     ul
       li: a(href="/pictor/#{id}") #{id}
       li: a(href="/pictor/#{id}/.png") #{id}/.png: format png
+      li: a(href="/pictor/#{id}/meta") #{id}/meta: meta data
+      li: a(href="/pictor/#{id}/exif") #{id}/exif: exif data
       li: a(href="/pictor/#{id}/400x400.jpg") #{id}/400x300.jpg: resize width=400, height=300, ignore aspect ratio
       li: a(href="/pictor/#{id}/400.jpg") #{id}/400.jpg: resize width=400, height=auto, keep aspect ratio
       li: a(href="/pictor/#{id}/x300.jpg") #{id}/x300.jpg: resize width=auto, height=300, keep aspect ratio
-      li: a(href="/pictor/#{id}/400x300+200+100.jpg") #{id}/100x100+100+100.jpg: crop width=400, height=300, left=200, top=100
+      li: a(href="/pictor/#{id}/400x300+200+100.jpg") #{id}/400x300+200+100.jpg: crop width=400, height=300, left=200, top=100
       li: a(href="/pictor/#{id}/400x300@2x.jpg") #{id}/400x300@2x.jpg, width=400, height=300, scale=2
-      li: a(href="/pictor/#{id}/m.jpg") #{id}/m.jpg, preset=m(thumbnail width=48, height=auto)
+      li: a(href="/pictor/#{id}/m.jpg") #{id}/m.jpg: preset=m(thumbnail width=48, height=auto)

@@ -47,15 +47,27 @@ function copyFile(src, dst) {
  * delete a file.
  *
  * @param {string} filepath
- * @returns {*}
+ * @returns {promise} success or not
  */
 function deleteFile(filepath) {
   DEBUG && debug('delete file:', filepath);
   return Q.ninvoke(fs, 'unlink', filepath);
 }
 
+/**
+ * write string data into a file.
+ * @param {string} filepath
+ * @param {string} data
+ * @returns {promise} success or not
+ */
+function writeFile(filepath, data) {
+  DEBUG && debug('write file:', filepath);
+  return Q.ninvoke(fs, 'writeFile', filepath, data);
+}
+
 module.exports = {
   exists: exists,
   copyFile: copyFile,
-  deleteFile: deleteFile
+  deleteFile: deleteFile,
+  writeFile: writeFile
 };
