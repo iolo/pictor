@@ -37,6 +37,7 @@ module.exports = {
     },
     */
     "routes": {
+      "route": "/pictor",
       "skipCommonMiddlewares": false,
       "statics": {
         "/data": "/tmp/pictor/data",

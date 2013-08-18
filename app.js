@@ -24,15 +24,25 @@ app.configure('all', function () {
 
   app.use(express.favicon());
 
-  app.use('/pictor', routes.createApp(config.pictor.routes));
+  // embedding pictor in your app
+  app.use(config.pictor.routes.route || '/pictor', routes.createApp(config.pictor.routes));
+
+  //routes.configureMiddlewares(app, config.pictor.routes);
 
   app.use(app.router);
 });
+
+//routes.configureRoutes(app, config.pictor.routes);
 
 app.get('/', function (req, res) {
   var id = req.param('id') || 123;
   return res.render('index', {id: id});
 });
+
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
+app.use('/dox', express.static(path.join(__dirname, 'build', 'dox')));
+app.use('/apidoc', express.static(path.join(__dirname, 'build', 'apidoc')));
 
 //
 //

@@ -259,14 +259,6 @@ function getHolderImageFile(geometry, format) {
 //
 //
 
-function getLocalDataPath() {
-  return dataStorage.config.basePath;
-}
-
-function getLocalCachePath() {
-  return cacheStorage.config.basePath;
-}
-
 /**
  * configure pictor main module.
  *
@@ -277,7 +269,6 @@ function getLocalCachePath() {
  *    - {object} remote
  *
  * @param {object} config
- * @return {object} this
  */
 function configure(config) {
   DEBUG && debug('configure pictor...');
@@ -289,8 +280,6 @@ function configure(config) {
 
   // TOOD: multiple remote storages
   //remoteStorage = require('./storage').createProvider('ftp', config.remote);
-
-  return this;
 }
 
 module.exports = {
@@ -299,7 +288,5 @@ module.exports = {
   getFile: getFile,
   getVariantImageFile: getVariantImageFile,
   getHolderImageFile: getHolderImageFile,
-  getLocalDataPath: getLocalDataPath,
-  getLocalCachePath: getLocalCachePath,
   configure: configure
 };

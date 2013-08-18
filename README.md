@@ -66,14 +66,14 @@ documents
 
 ```
 grunt apidoc
-open build/apidocs/index.html
+open build/apidoc/index.html
 ```
 
 * for source code documents:
 
 ```
 grunt dox
-open build/docs/index.html
+open build/dox/index.html
 ```
 
 advanced topics

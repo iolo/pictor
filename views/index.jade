@@ -7,15 +7,16 @@ html
 
     h5 image id: #{id}
 
-    form(action="/pictor/#{id}.jpg",method="post",enctype="multipart/form-data")
+    form(action="/pictor/#{id}",method="post",enctype="multipart/form-data")
       input(type="file",name="file")
       button(type="submit") upload
 
     ul
-      li: a(href="/pictor/#{id}.jpg") 123.jpg
-      li: a(href="/pictor/#{id}.png") 123.png: format png
-      li: a(href="/pictor/#{id}/400x400.jpg") 123/400x300.jpg: resize width=400, height=300, ignore aspect ratio
-      li: a(href="/pictor/#{id}/400.jpg") 123/400.jpg: resize width=400, height=auto, keep aspect ratio
-      li: a(href="/pictor/#{id}/x300.jpg") 123/x300.jpg: resize width=auto, height=300, keep aspect ratio
-      li: a(href="/pictor/#{id}/400x300+200+100.jpg") 123/100x100+100+100.jpg: crop width=400, height=300, left=200, top=100
-      li: a(href="/pictor/#{id}/@2x.jpg") 123/@2x.jpg, scale=2
+      li: a(href="/pictor/#{id}") #{id}
+      li: a(href="/pictor/#{id}/.png") #{id}/.png: format png
+      li: a(href="/pictor/#{id}/400x400.jpg") #{id}/400x300.jpg: resize width=400, height=300, ignore aspect ratio
+      li: a(href="/pictor/#{id}/400.jpg") #{id}/400.jpg: resize width=400, height=auto, keep aspect ratio
+      li: a(href="/pictor/#{id}/x300.jpg") #{id}/x300.jpg: resize width=auto, height=300, keep aspect ratio
+      li: a(href="/pictor/#{id}/400x300+200+100.jpg") #{id}/100x100+100+100.jpg: crop width=400, height=300, left=200, top=100
+      li: a(href="/pictor/#{id}/400x300@2x.jpg") #{id}/400x300@2x.jpg, width=400, height=300, scale=2
+      li: a(href="/pictor/#{id}/m.jpg") #{id}/m.jpg, preset=m(thumbnail width=48, height=auto)

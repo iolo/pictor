@@ -38,7 +38,6 @@ function convertImage(src, dst, opts) {
       cmd = cmd.thumbnail(opts.w || '', opts.h || '');
       break;
     case 'convert':
-    default:
       DEBUG && debug('convert ', opts);
       break;
   }
