@@ -5,20 +5,64 @@ html
   body
     h1 pictor
 
-    h5 image id: #{id}
+    p pictor is simple image upload/convert/download server.
 
+    hr
+
+    h5 upload #{id}
+
+    p multipart POST /#{id}
     form(action="/pictor/#{id}",method="post",enctype="multipart/form-data")
       input(type="file",name="file")
       button(type="submit") upload
 
+    p raw PUT /#{id}
+    form(action="/pictor/#{id}",method="put")
+      input(type="file",name="file")
+      button(type="submit",disabled) upload
+
+    p multipart POST /upload
+    form(action="/pictor/upload",method="post",enctype="multipart/form-data")
+      input(type="file",name="foo")
+      input(type="file",name="bar")
+      input(type="file",name="baz")
+      input(type="file",name="qux")
+      button(type="submit",disabled) upload
+
+    h5 download
+
+    p a(href="/pictor/#{id}") GET /#{id} download the file
+
+    h5 delete
+
+    p DELETE /#{id}
+    form(action="/pictor/#{id}",method="delete")
+      button(type="submit") delete
+
+    h5 convert
+      li: a(href="/pictor/#{id}/.png") GET /#{id}/.png: convert format=png
+      li: a(href="/pictor/#{id}/400x300.jpg") GET /#{id}/400x300.jpg: resize width=400, height=300, ignore aspect ratio
+      li: a(href="/pictor/#{id}/400.jpg") GET /#{id}/400.jpg: resize width=400, height=auto, keep aspect ratio
+      li: a(href="/pictor/#{id}/x300.jpg") GET /#{id}/x300.jpg: resize width=auto, height=300, keep aspect ratio
+      li: a(href="/pictor/#{id}/400x300+200+100.jpg") GET /#{id}/400x300+200+100.jpg: crop width=400, height=300, left=200, top=100
+      li: a(href="/pictor/#{id}/400x300@2x.jpg") GET /#{id}/400x300@2x.jpg, width=400, height=300, scale=2
+      li: a(href="/pictor/#{id}/m.jpg") GET /#{id}/m.jpg: preset=m(thumbnail width=48, height=auto)
+      li: a(href="/pictor/#{id}/meta") GET /#{id}/meta: get the image meta data
+      li: a(href="/pictor/#{id}/exif") GET /#{id}/exif: get the image exif data
+
+    h5 misc
+      li: a(href="/pictor/holder/400x300.jpg") GET /holder/400x300.jpg: holder width=400, height=300
+      li: a(href="/pictor/holder/m.jpg") GET /holder/m.jpg: holder preset=m(width=48, height=auto)
+
+    hr
+
+    h5 documents
+
     ul
-      li: a(href="/pictor/#{id}") #{id}
-      li: a(href="/pictor/#{id}/.png") #{id}/.png: format png
-      li: a(href="/pictor/#{id}/meta") #{id}/meta: meta data
-      li: a(href="/pictor/#{id}/exif") #{id}/exif: exif data
-      li: a(href="/pictor/#{id}/400x400.jpg") #{id}/400x300.jpg: resize width=400, height=300, ignore aspect ratio
-      li: a(href="/pictor/#{id}/400.jpg") #{id}/400.jpg: resize width=400, height=auto, keep aspect ratio
-      li: a(href="/pictor/#{id}/x300.jpg") #{id}/x300.jpg: resize width=auto, height=300, keep aspect ratio
-      li: a(href="/pictor/#{id}/400x300+200+100.jpg") #{id}/400x300+200+100.jpg: crop width=400, height=300, left=200, top=100
-      li: a(href="/pictor/#{id}/400x300@2x.jpg") #{id}/400x300@2x.jpg, width=400, height=300, scale=2
-      li: a(href="/pictor/#{id}/m.jpg") #{id}/m.jpg: preset=m(thumbnail width=48, height=auto)
+      li: a(href="/docs/dox") source code documents
+      li: a(href="/docs/api") api documents
+      li: a(href="http://github.com/iolo/pictor") fork me on github
+
+    hr
+
+    p Copyright &copy; 2013 IoloTheBard. All rights reserved.

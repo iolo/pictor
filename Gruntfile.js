@@ -20,13 +20,7 @@ module.exports = function (grunt) {
     apidoc: {
       files: {
         src: 'libs/',
-        dest: 'build/apidoc'
-      }
-    },
-    dox: {
-      files: {
-        src: ['libs/'],
-        dest: 'build/dox'
+        dest: 'public/docs/api'
       }
     },
     clean: {
@@ -56,8 +50,23 @@ module.exports = function (grunt) {
       done();
     });
   });
+  grunt.registerTask('doxx', function() {
+    var done = this.async();
+    // XXX: doxx 0.6.0 contains broken template.
+    var doxx_cmdline = './node_modules/.bin/doxx --template ./scripts/doxx.jade --source libs --target public/docs/dox';
+    require('child_process').exec(doxx_cmdline, function(err, stdout, stderr) {
+      if(err) {
+        grunt.verbose.writeln(stderr);
+        grunt.fail.fatal('doxx failed:' + err);
+      } else {
+        grunt.verbose.writeln(stdout);
+        grunt.log.ok('doxx complete.');
+      }
+      done();
+    });
+  });
   grunt.registerTask('default', ['jshint']);
   grunt.registerTask('test', ['nodeunit']);
-  grunt.registerTask('build', ['jshint']);
+  grunt.registerTask('build', ['clean', 'jshint', 'test', 'apidoc', 'doxx']);
   grunt.registerTask('deploy', ['build', 'rsync']);
 };

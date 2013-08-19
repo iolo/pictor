@@ -42,10 +42,6 @@ app.get('/', function (req, res) {
 // expose public & static resources
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
-// expose generated docs
-app.use('/dox', express.static(path.join(__dirname, 'build', 'dox')));
-app.use('/apidocs', express.static(path.join(__dirname, 'build', 'apidoc')));
-
 //
 //
 //
