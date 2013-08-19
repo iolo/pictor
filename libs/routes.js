@@ -109,7 +109,7 @@ function deleteFile(req, res) {
 }
 
 /**
- * @api {delete} /pictor/:id.:format download the file.
+ * @api {get} /pictor/:id.:format download the file.
  * @apiName downloadFile
  * @apiGroup pictor
  *
@@ -145,7 +145,7 @@ function downloadFile(req, res) {
 }
 
 /**
- * @api {delete} /pictor/:id/:geometry.:format download the variant image.
+ * @api {get} /pictor/:id/:geometry.:format download the variant image.
  * @apiName downloadVariantImage
  * @apiGroup pictor
  *
@@ -181,6 +181,26 @@ function downloadVariantImage(req, res) {
     .done();
 }
 
+/**
+ * @api {get} /pictor/:id/meta get image meta data from the file.
+ * @apiName downloadImageMeta
+ * @apiGroup pictor
+ *
+ * @apiParam {string} id
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "width": 400,
+ *      "height": 300,
+ *      "depth": 8,
+ *      "colors": 32767,
+ *      "format": "JPEG"
+ *    }
+ *
+ * @apiSuccessExample error response:
+ *    HTTP/1.1 404 Not Found
+ */
 function downloadImageMeta(req, res) {
   var id = req.param('id');
 
@@ -194,6 +214,23 @@ function downloadImageMeta(req, res) {
     .done();
 }
 
+/**
+ * @api {get} /pictor/:id/exif get image EXIF data from the file.
+ * @apiName downloadImageExif
+ * @apiGroup pictor
+ *
+ * @apiParam {string} id
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 200 OK
+ *    {
+ *      "Model": "Good Camera",
+ *      ...
+ *    }
+ *
+ * @apiSuccessExample error response:
+ *    HTTP/1.1 404 Not Found
+ */
 function downloadImageExif(req, res) {
   var id = req.param('id');
 
@@ -208,7 +245,7 @@ function downloadImageExif(req, res) {
 }
 
 /**
- * @api {delete} /pictor/holder/:geometry.:format download the holder image.
+ * @api {get} /pictor/holder/:geometry.:format download the holder image.
  * @apiName downloadHolderImage
  * @apiGroup pictor
  *
@@ -218,7 +255,6 @@ function downloadImageExif(req, res) {
  * @apiSuccessExample success response:
  *    HTTP/1.1 200 OK
  *    image binary...
- *
  */
 function downloadHolderImage(req, res) {
   var format = req.param('format');
