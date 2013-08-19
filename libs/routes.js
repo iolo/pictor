@@ -257,10 +257,10 @@ function downloadImageExif(req, res) {
  *    image binary...
  */
 function downloadHolderImage(req, res) {
-  var format = req.param('format');
   var geometry = req.param('geometry');
+  var format = req.param('format');
 
-  return pictor.getHolderImageFile(format, geometry)
+  return pictor.getHolderImageFile(geometry, format)
     .then(function (result) {
       return _sendFileResponse(res, result);
     })

@@ -31,7 +31,7 @@ html
 
     h5 download
 
-    p a(href="/pictor/#{id}") GET /#{id} download the file
+    p: a(href="/pictor/#{id}") GET /#{id}: download the file
 
     h5 delete
 
@@ -40,6 +40,8 @@ html
       button(type="submit") delete
 
     h5 convert
+
+    ul
       li: a(href="/pictor/#{id}/.png") GET /#{id}/.png: convert format=png
       li: a(href="/pictor/#{id}/400x300.jpg") GET /#{id}/400x300.jpg: resize width=400, height=300, ignore aspect ratio
       li: a(href="/pictor/#{id}/400.jpg") GET /#{id}/400.jpg: resize width=400, height=auto, keep aspect ratio
@@ -51,6 +53,8 @@ html
       li: a(href="/pictor/#{id}/exif") GET /#{id}/exif: get the image exif data
 
     h5 misc
+
+    ul
       li: a(href="/pictor/holder/400x300.jpg") GET /holder/400x300.jpg: holder width=400, height=300
       li: a(href="/pictor/holder/m.jpg") GET /holder/m.jpg: holder preset=m(width=48, height=auto)
 
