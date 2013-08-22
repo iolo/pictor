@@ -5,7 +5,7 @@
   "author": "Dongsu Jang <iolothebard@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git@github.com:iolo/node-pictor.git"
+    "url": "git@github.com:iolo/pictor.git"
   },
   "license": "MIT",
   "engines": {
@@ -15,13 +15,19 @@
     "lodash": "~1.3.1",
     "q": "~0.9.6",
     "debug": "~0.7.2",
-    "mongodb": "~1.3.18",
     "express": "~3.3.5",
     "jade": "~0.34.1",
     "gm": "~1.11.1",
-    "ssh2": "~0.2.12",
+    "mime": "~1.2.11"
+  },
+  "optionalDependencies": {
+    "optipng-bin": "0.2.6",
+    "jpegtran-bin": "0.1.7",
+    "gifsicle": "~0.1.2",
     "ftp": "~0.3.4",
-    "knox": "~0.8.6"
+    "ssh2": "~0.2.12",
+    "knox": "~0.8.6",
+    "mongodb": "~1.3.18"
   },
   "devDependencies": {
     "nodeunit": "~0.8.1",
