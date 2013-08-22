@@ -1,6 +1,8 @@
 'use strict';
 
 var
+  Q = require('q'),
+  _ = require('lodash'),
   express = require('express'),
   pictor = require('./pictor'),
   debug = require('debug')('pictor:routes'),
@@ -10,64 +12,80 @@ var
 //
 //
 
+function _validateId(id) {
+  //throw new errors.BadRequest('invalid_param_id');
+  return id;
+}
+
 function _sendFileResponse(res, result) {
-  console.log('send file response:', result);
   if (result) {
     if (result.type) {
+      console.log('*** send type:', result.type);
       res.type(result.type);
     }
+    if (result.stream) {
+      console.log('*** send stream');
+      return result.stream.pipe(res);
+    }
     if (result.file) {
+      console.log('send file:', result.file);
       return res.sendfile(result.file);
     }
     if (result.url) {
+      console.log('redirect file:', result.url);
       return res.redirect(result.url);
       //return res.redirect(errors.StatusCode.TEMPORARY_REDIRECT, result.url);
       //return res.redirect(errors.StatusCode.MOVED_PERMANENTLY, result.url);
     }
-    //return res.send(result.status, result);
+    return res.send(result.status, result);
   }
   return res.send(500);
 }
 
 /**
- * @api {post} /pictor/:id.:format upload a file.
- * @apiName uploadFile
+ * @api {post} /pictor/upload upload multiple files with http multipart post
+ * @apiName uploadFiles
  * @apiGroup pictor
  *
- * @apiParam {string} id
- * @apiParam {string} format
- * @apiParam {*} file encoded with multipart/upload-data
+ * @apiParam {*} file... encoded with multipart/upload-data
  *
  * @apiSuccessExample success response:
- *    HTTP/1.1 201 Created
+ *    HTTP/1.1 200 OK
+ *    {
+ *      result: [
+ *        {id: "foo", url: "http://...",
+ *        {id: "bar", url: "http://...",
+ *        {id: "baz", url: "http://...",
+ *        ...
+ *      ]
+ *    }
  *
- * @apiError {object} error
  * @apiErrorExample error response:
- *    HTTP/1.1 400 OK
+ *    HTTP/1.1 400 Bad Request
  *    {
  *      error: {
  *        status: 400,
- *        code: 80400,
- *        message: "required_param_file"
+ *        message: "required_param_files"
  *      }
  *    }
  */
-function uploadFile(req, res) {
-  // TODO: support both multi-part and raw data
-
-  var file = req.files.file;
-  if (!file) {
-    return res.send(400, 'required_param_file');
+function uploadFiles(req, res) {
+  if (!req.files) {
+    return res.send(400, 'required_param_files');
     //throw new errors.BadRequest('required_param_file');
   }
 
-  var id = req.param('id');
-  var format = req.param('format');
+  var putFilePromises = Object.keys(req.files).map(function (fileParamName) {
+    console.log('***file:', fileParamName, req.files[fileParamName]);
+    var id = _validateId(fileParamName);
+    //var id = _.uniqueId();
+    var file = req.files[id];
+    return pictor.putFile(id, file.path);
+  });
 
-  // TODO: 마스터/슬레이브에서 원본/변형본 다 삭제!
-  return pictor.putFile(id, format, file.path)
-    .then(function () {
-      return res.send(200, {url: pictor.getUrl(id, format)});
+  return Q.all(putFilePromises)
+    .then(function (result) {
+      return res.send(200, {result: result});
       //return res.send(201);
       //return res.send(errors.StatusCode.CREATED);
     })
@@ -79,12 +97,80 @@ function uploadFile(req, res) {
 }
 
 /**
- * @api {delete} /pictor/:id.:format delete the file and its variants.
+ * @api {post} /pictor/:id upload a file.
+ * @apiName uploadFile
+ * @apiGroup pictor
+ *
+ * @apiParam {string} id
+ * @apiParam {*} file encoded with multipart/upload-data
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 200
+ *    {
+ *      result: {id: "foo", url: "http://..."}
+ *    }
+ *
+ * @apiErrorExample error response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      error: {
+ *        status: 400,
+ *        message: "required_param_file"
+ *      }
+ *    }
+ */
+function uploadFile(req, res) {
+  var file = req.files.file;
+  if (!file) {
+    return res.send(400, 'required_param_file');
+    //throw new errors.BadRequest('required_param_file');
+  }
+
+  var id = _validateId(req.param('id'));
+
+  return pictor.putFile(id, file.path)
+    .then(function (result) {
+      return res.send(200, {result: result});
+      //return res.send(201);
+      //return res.send(errors.StatusCode.CREATED);
+    })
+    .fail(function (err) {
+      return res.send(500, err);
+      //throw new errors.InternalServerError(undefined, err);
+    })
+    .done();
+}
+
+function uploadFileRaw(req, res) {
+  var id = _validateId(req.param('id'));
+
+  var tempFilePath = '/tmp/' + id;
+
+  require('fs').createWriteStream(tempFilePath).pipe(req)
+    .on('error', function (err) {
+      return res.send(500, err)
+    })
+    .on('end', function () {
+      return pictor.putFile(id, tempFilePath)
+        .then(function (result) {
+          return res.send(200, {result: result});
+          //return res.send(201);
+          //return res.send(errors.StatusCode.CREATED);
+        })
+        .fail(function (err) {
+          return res.send(500, err);
+          //throw new errors.InternalServerError(undefined, err);
+        })
+        .done();
+    });
+}
+
+/**
+ * @api {delete} /pictor/:id delete the file and its variants.
  * @apiName deleteFile
  * @apiGroup pictor
  *
  * @apiParam {string} id
- * @apiParam {string} format
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 204 No Content
@@ -94,9 +180,8 @@ function uploadFile(req, res) {
  */
 function deleteFile(req, res) {
   var id = req.param('id');
-  var format = req.param('format');
 
-  return pictor.deleteFile(id, format)
+  return pictor.deleteFile(id)
     .then(function () {
       return res.send(204);
       //return res.send(errors.StatusCode.NO_CONTENT);
@@ -131,9 +216,8 @@ function deleteFile(req, res) {
  */
 function downloadFile(req, res) {
   var id = req.param('id');
-  var format = req.param('format');
 
-  return pictor.getFile(id, format)
+  return pictor.getFile(id)
     .then(function (result) {
       return _sendFileResponse(res, result);
     })
@@ -245,6 +329,64 @@ function downloadImageExif(req, res) {
 }
 
 /**
+ * @api {get} /pictor/:id/converted.:format get converted image for the file.
+ * @apiName downloadConvertedImage
+ * @apiGroup pictor
+ *
+ * @apiParam {string} id
+ * @apiParam {string} format
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 200 OK
+ *    binary data...
+ *
+ * @apiSuccessExample error response:
+ *    HTTP/1.1 404 Not Found
+ */
+function downloadConvertedImage(req, res) {
+  var id = req.param('id');
+  var format = req.param('format');
+
+  return pictor.getConvertedImageFile(id, format)
+    .then(function (result) {
+      return _sendFileResponse(res, result);
+    })
+    .fail(function (err) {
+      return res.send(404, err);
+    })
+    .done();
+}
+
+/**
+ * @api {get} /pictor/:id/optimized.:format get optimized image for the file.
+ * @apiName downloadOptimziedImage
+ * @apiGroup pictor
+ *
+ * @apiParam {string} id
+ * @apiParam {string} format
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 200 OK
+ *    binary data...
+ *
+ * @apiSuccessExample error response:
+ *    HTTP/1.1 404 Not Found
+ */
+function downloadOptimizedImage(req, res) {
+  var id = req.param('id');
+  var format = req.param('format');
+
+  return pictor.getOptimizedImageFile(id, format)
+    .then(function (result) {
+      return _sendFileResponse(res, result);
+    })
+    .fail(function (err) {
+      return res.send(404, err);
+    })
+    .done();
+}
+
+/**
  * @api {get} /pictor/holder/:geometry.:format download the holder image.
  * @apiName downloadHolderImage
  * @apiGroup pictor
@@ -260,7 +402,9 @@ function downloadHolderImage(req, res) {
   var geometry = req.param('geometry');
   var format = req.param('format');
 
-  return pictor.getHolderImageFile(geometry, format)
+  var g = pictor.parseGeometry(geometry);
+
+  return pictor.getHolderImageFile(g.w, g.h, format)
     .then(function (result) {
       return _sendFileResponse(res, result);
     })
@@ -308,25 +452,33 @@ function configureMiddlewares(app, config) {
 /**
  * configure routes for the express app.
  *
- * @param {express.application} app
+ * @param {*} app
  * @param {object} config
  * @returns {express.application}
  */
 function configureRoutes(app, config) {
   DEBUG && debug('create pictor routes...');
 
+  var prefix = config.prefix || '';
+
   // TODO: require auth!
-  app.post('/:id.:format', uploadFile);
-  app.put('/:id.:format', uploadFile);
-  app.del('/:id.:format', deleteFile);
-  app.get('/:id.:format', downloadFile);
+  app.post(prefix + '/upload', uploadFiles);
+  app.post(prefix + '/:id', uploadFile);
+  app.put(prefix + '/:id', uploadFileRaw);
+  app.del(prefix + '/:id', deleteFile);
+  app.get(prefix + '/:id', downloadFile);
 
-  app.get('/:id/meta', downloadImageMeta);
-  app.get('/:id/exif', downloadImageExif);
-  app.get('/:id/.:format', downloadVariantImage);
-
-  app.get('/holder/:geometry.:format', downloadHolderImage);
-  app.get('/:id/:geometry.:format', downloadVariantImage);
+  // routes for image files...
+  // TODO: more pretty and graceful urls...
+  app.get(prefix + '/holder/:geometry.:format', downloadHolderImage);
+  app.get(prefix + '/:id/meta.json', downloadImageMeta);
+  app.get(prefix + '/:id/exif.json', downloadImageExif);
+  app.get(prefix + '/:id/:geometry.:format', downloadVariantImage);
+  app.get(prefix + '/:id/converted.:format', downloadConvertedImage);
+  app.get(prefix + '/:id/optimized.:format', downloadOptimizedImage);
+  //app.get(prefix + '/:id/resize_[\d+]x[\d+].:format', downloadResizedImage);
+  //app.get(prefix + '/:id/resize_[\d+]x[\d+]\+[\d+]\+[\d+].:format', downloadCroppedImage);
+  //app.get(prefix + '/:id/thumbnail_[\d+]x[\d+].:format', downloadThumbnailImage);
 
   return app;
 }
