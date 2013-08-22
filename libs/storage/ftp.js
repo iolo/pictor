@@ -1,8 +1,8 @@
 'use strict';
 
 var
-  fs = require('fs'),
   util = require('util'),
+  path = require('path'),
   Q = require('q'),
   ftp = require('ftp'),
   StorageProvider = require('./storage').StorageProvider,
@@ -12,21 +12,25 @@ var
 /**
  * ftp based implementation of {@link StorageProvider}.
  *
+ * TODO: connection keep alive and/or pooling...
+ *
  * `config` contains:
  *
  *    - {string} host: ftp server host
  *    - {number} port: ftp server port
  *    - {string} username: ftp server username
  *    - {string} password: ftp server password
+ *    - {string} baseDir: base directory to store files
+ *    - {string} [baseUrl]: http url to access `baseDir`
  *
- * @param config
+ * NOTE: `config.baseUrl` should be `null` when this storage doesn't support http access.
+ *
+ * @param {object} config
  * @constructor
  */
 function FtpStorageProvider(config) {
   FtpStorageProvider.super_.apply(this, arguments);
   this.ftpClientOpts = {host: config.host, port: config.port, user: config.username, password: config.password};
-  // TODO: 연결 유지...
-  //process.on('exit',this.ftpClient.end.bind(this.ftpClient));
   DEBUG && debug('create ftp storage provider: ', config);
 }
 util.inherits(FtpStorageProvider, StorageProvider);
@@ -35,65 +39,104 @@ FtpStorageProvider.prototype._withFtpClient = function (callback) {
   var d = Q.defer();
   var ftpClient = new ftp();
   ftpClient.on('ready', function () {
-    DEBUG && debug('----------ftp ready!');
-    return d.resolve(callback(ftpClient).fin(function () {
-      ftpClient.close();
-    }));
+    console.log('*** ftp ready!');
+    callback(ftpClient)
+      .then(function (result) {
+        console.log('*** ftp worker then:', result);
+        return d.resolve(result);
+      })
+      .fail(function (err) {
+        console.log('*** ftp worker fail:', err);
+        return d.reject(err);
+      })
+      .fin(function () {
+        console.log('*** ftp worker fin: close');
+        ftpClient.close();
+      });
   });
   ftpClient.on('error', function (err) {
-    DEBUG && debug('----------ftp error!', err);
+    console.log('*** ftp error!', err);
     return d.reject(err);
   });
   ftpClient.on('close', function (hadErr) {
-    DEBUG && debug('----------ftp close!', hadErr);
+    console.log('*** ftp close!', hadErr);
     //return (hadErr) ? d.reject(hadErr) : d.resolve();
   });
   ftpClient.on('end', function () {
-    DEBUG && debug('----------ftp end!');
+    console.log('*** ftp end!');
     //return d.reject(true);
   });
   ftpClient.connect(this.ftpClientOpts);
   return d.promise;
 };
 
-FtpStorageProvider.prototype.exists = function (storagePath) {
-  // TODO: 매번 네트웍을 통해 확인하지 않도록... 캐싱...
-  DEBUG && debug('ftp.exists', storagePath);
+FtpStorageProvider.prototype.putFile = function (id, src) {
+  DEBUG && debug('ftp.putFile', src, '---->', id);
+  var dst = this._getPath(id);
+  var url = this._getUrl(id);
   return this._withFtpClient(function (ftpClient) {
-    return Q.ninvoke(ftpClient, 'lastMod', storagePath);
-    //return Q.ninvoke(this.ftpClient, 'size', path);
-  });
-};
-
-FtpStorageProvider.prototype.putFile = function (filePath, storagePath) {
-  DEBUG && debug('ftp.putFile', filePath, '---->', storagePath);
-  // TODO: ensure directory exists!
-  return this._withFtpClient(function (ftpClient) {
-    return Q.ninvoke(ftpClient, 'put', filePath, storagePath);
-  });
-};
-
-FtpStorageProvider.prototype.getFile = function (filePath, storagePath) {
-  DEBUG && debug('ftp.getFile', filePath, '<----', storagePath);
-  return this._withFtpClient(function (ftpClient) {
-    var d = Q.defer();
-    ftpClient.put(filePath, storagePath, function (err, stream) {
-      if (err) {
-        return d.reject(err);
-      }
-      stream.once('close', function () {
-        return d.resolve(true);
+    return Q.ninvoke(ftpClient, 'mkdir', path.dirname(dst), true)
+      .fail(function () {
+        //ignore err
+        //directory already exists!
+        return true;
+      })
+      .then(function () {
+        return Q.ninvoke(ftpClient, 'put', src, dst);
+      })
+      .then(function () {
+        return {
+          url: url,
+          file: src
+        };
       });
-      stream.pipe(fs.createWriteStream(filePath));
-    });
-    return d.promise;
   });
 };
 
-FtpStorageProvider.prototype.deleteFile = function (storagePath) {
-  DEBUG && debug('ftp.deleteFile', storagePath);
+FtpStorageProvider.prototype.getFile = function (id) {
+  DEBUG && debug('ftp.getFile', id);
+  var src = this._getPath(id);
+  var url = this._getUrl(id);
   return this._withFtpClient(function (ftpClient) {
-    return Q.ninvoke(ftpClient, 'delete', storagePath);
+    return Q.ninvoke(ftpClient, 'get', src)
+      .then(function (stream) {
+        stream.once('close', function () {
+          ftpClient.end();
+        });
+        return {
+          url: url,
+          stream: stream
+        };
+      });
+  });
+};
+
+FtpStorageProvider.prototype.deleteFile = function (id) {
+  DEBUG && debug('ftp.deleteFile', id);
+
+  function _removeTree(ftpClient, src) {
+    // assume 'src' is file
+    return Q.ninvoke(ftpClient, 'delete', src)
+      .fail(function (err) {
+        // err... assume 'src' is directory
+        return Q.ninvoke(ftpClient, 'list', src)
+          .then(function (files) {
+            return Q.all(files.map(function (file) {
+                // async recursion :S
+                return _removeTree(ftpClient, path.join(src, file.name));
+              })).then(function () {
+                return Q.ninvoke(ftpClient, 'rmdir', src);
+              });
+          });
+      })
+      .then(function () {
+        return true;
+      });
+  }
+
+  var src = this._getPath(id);
+  return this._withFtpClient(function (ftpClient) {
+    return _removeTree(ftpClient, src);
   });
 };
 
