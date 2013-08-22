@@ -16,12 +16,12 @@ html
       input(type="file",name="file")
       button(type="submit") upload
 
-    p raw PUT /#{id}
+    p XXX: raw PUT /#{id}
     form(action="/pictor/#{id}",method="put")
       input(type="file",name="file")
       button(type="submit",disabled) upload
 
-    p multipart POST /upload
+    p XXX: multipart POST /upload
     form(action="/pictor/upload",method="post",enctype="multipart/form-data")
       input(type="file",name="foo")
       input(type="file",name="bar")
@@ -49,8 +49,10 @@ html
       li: a(href="/pictor/#{id}/400x300+200+100.jpg") GET /#{id}/400x300+200+100.jpg: crop width=400, height=300, left=200, top=100
       li: a(href="/pictor/#{id}/400x300@2x.jpg") GET /#{id}/400x300@2x.jpg, width=400, height=300, scale=2
       li: a(href="/pictor/#{id}/m.jpg") GET /#{id}/m.jpg: preset=m(thumbnail width=48, height=auto)
-      li: a(href="/pictor/#{id}/meta") GET /#{id}/meta: get the image meta data
-      li: a(href="/pictor/#{id}/exif") GET /#{id}/exif: get the image exif data
+      li: a(href="/pictor/#{id}/meta.json") GET /#{id}/meta.json: get the image meta data
+      li: a(href="/pictor/#{id}/exif.json") GET /#{id}/exif.json: get the image exif data
+      li: XXX: a(href="/pictor/#{id}/converted.png") GET /#{id}/converted.png: convert format=png
+      li: XXX: a(href="/pictor/#{id}/optimized.jpg") GET /#{id}/optimized.jpg: optimize
 
     h5 misc
 
