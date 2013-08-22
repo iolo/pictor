@@ -40,7 +40,7 @@ app.get('/', function (req, res) {
 });
 
 // expose public & static resources
-app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 //
 //
