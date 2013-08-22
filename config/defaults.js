@@ -6,34 +6,35 @@ module.exports = {
     port: 3000
   },
   "pictor": {
+    "tempDir": "/tmp/pictor/temp",
     "data": {
       "provider": "local",
-      "baseUrl": "http://localhost:3000/pictor/data",
-      "basePath": "/tmp/pictor/data"
+      "baseDir": "/tmp/pictor/data",
+      "baseUrl": "http://localhost:3000/pictor/data"
     },
     "cache": {
       "provider": "local",
-      "baseUrl": "http://localhost:3000/pictor/cache",
-      "basePath": "/tmp/pictor/cache"
+      "baseDir": "/tmp/pictor/cache",
+      "baseUrl": "http://localhost:3000/pictor/cache"
     },
-    /* not yet working!!!
+    /*
     "data": {
       "provider": "ftp",
-      "baseUrl": "http://jdongsu.jpg2.kr/pictor/data",
-      "basePath": "/pictor/data",
       "host": "jdongsu.jpg2.kr",
       "port": 21,
-      "username": process.env['jdongsu.jpg2.kr.username'],
-      "password": process.env['jdongsu.jpg2.kr.password']
+      "username": process.env['jdongsu.jpg2.kr.ftp.username'],
+      "password": process.env['jdongsu.jpg2.kr.ftp.password'],
+      "baseDir": "/pictor/data",
+      "baseUrl": "http://jdongsu.jpg2.kr/pictor/data"
     },
     "cache": {
       "provider": "ftp",
-      "baseUrl": "http://jdongsu.jpg2.kr/pictor/data",
-      "basePath": "/pictor/data",
       "host": "jdongsu.jpg2.kr",
       "port": 21,
-      "username": process.env['jdongsu.jpg2.kr.username'],
-      "password": process.env['jdongsu.jpg2.kr.password']
+      "username": process.env['jdongsu.jpg2.kr.ftp.username'],
+      "password": process.env['jdongsu.jpg2.kr.ftp.password'],
+      "baseDir": "/pictor/cache",
+      "baseUrl": "http://jdongsu.jpg2.kr/pictor/cache"
     },
     */
     "routes": {
