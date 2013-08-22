@@ -1,6 +1,7 @@
 'use strict';
 
 var
+  util = require('util'),
   debug = require('debug')('pictor:storage'),
   DEBUG = debug.enabled;
 
@@ -9,12 +10,10 @@ var
  *
  * `config` contains:
  *
- *    - {string} [baseUrl]: base url for files
- *    - {string} [basePath]: base directory path for files
+ *    - {string} baseDir: base directory to store files
+ *    - {string} [baseUrl]: http url to access `baseDir`.
  *
- * `baseUrl` should be `null` when the storage doesn't support http access.
- *
- * TODO: support streaming...
+ * NOTE: `config.baseUrl` should be `null` when this storage doesn't support http access.
  *
  * @param {object} config
  * @constructor
@@ -24,140 +23,71 @@ function StorageProvider(config) {
   this.config = config;
 }
 
-/**
- * sanitize the given string for using in file system path.
- *
- * @param {string} str
- * @returns {string}
- * @private
- */
-StorageProvider.prototype._sanitize = function (str) {
-  // TODO: more robust impl.
-  return str ? String(str).replace(/[^\w\.]/g, '-') : '';
+StorageProvider.prototype._getPath = function (id) {
+  return this.config.baseDir + '/' + id;
 };
 
-/**
- * get the http url for the file in storage.
- *
- * @param {string} id
- * @param {string} [format] file extension without leading dot.
- * @returns {string} url or `null` if the storage doesn't support http access.
- */
-StorageProvider.prototype.getUrl = function (id, format) {
-  // TODO: more robust impl.
+StorageProvider.prototype._getUrl = function (id) {
   if (!this.config.baseUrl) {
+    // this provider doesn't support public url
     return null;
   }
-  var url = this.config.baseUrl + '/' + this._sanitize(id);
-  if (format) {
-    url += '.' + this._sanitize(format);
-  }
-  return url;
+  return this.config.baseUrl + '/' + id;
 };
 
 /**
- * get the http url for the variant file in storage.
+ * put local file into remote storage.
+ *
+ * resolved result contains:
+ *    - {string} [file]
+ *    - {string} [stream]
+ *    - {string} [url]
+ *    - {string} [type]
+ *    - {number} [size]
+ *
+ * the result should have valid `stream` or `file` or `url` at least.
  *
  * @param {string} id
- * @param {string} [format] file extension without leading dot.
- * @param {string} [variant] variant suffix
- * @returns {string} url or `null` if the storage doesn't support http access.
+ * @param {string} src
+ * @return {Promise}
  */
-/*
-StorageProvider.prototype.getCacheUrl = function (id, format, variant) {
-  // TODO: more robust impl.
-  if (!this.config.cacheUrl) {
-    return null;
-  }
-  var url = this.config.cacheUrl + '/' + this._sanitize(id) + '-_-' + this._sanitize(variant);
-  if (format) {
-    url += '.' + this._sanitize(format);
-  }
-  return url;
-};
-*/
-
-/**
- * get the path for the file in storage.
- *
- * @param {string} id
- * @param {string} [format] file extension without leading dot.
- * @returns {string}
- */
-StorageProvider.prototype.getPath = function (id, format) {
-  // TODO: more robust impl.
-  var filePath = this.config.basePath + '/' + this._sanitize(id);
-  if (format) {
-    filePath += '.' + this._sanitize(format);
-  }
-  return filePath;
-};
-
-/**
- * get the path for the variant file in storage.
- *
- * @param {string} id
- * @param {string} [format] file extension without leading dot.
- * @param {string} [variant] variant suffix
- * @returns {string}
- */
-/*
-StorageProvider.prototype.getCachePath = function (id, format, variant) {
-  // TODO: more robust impl.
-  var filePath = this.config.cachePath + '/' + this._sanitize(id) + '-_-' + this._sanitize(variant);
-  if (format) {
-    filePath += '.' + this._sanitize(format);
-  }
-  return filePath;
-};
-*/
-
-/**
- * check the file at `storagePath` is exist or not.
- *
- * @param {string} storagePath
- * @return {Promise} boolean. exist or not
- */
-StorageProvider.prototype.exists = function (storagePath) {
-  DEBUG && debug('storage.exists:', storagePath);
+StorageProvider.prototype.putFile = function (id, src) {
+  DEBUG && debug('storage.putFile:', src, '--->', id);
   throw new Error('abstract method');
 };
 
 /**
- * upload the file at `filePath` into `storagePath`.
+ * get file from remote storage.
  *
- * @param {string} filePath
- * @param {string} storagePath
- * @return {Promise} success or not.
+ * resolved result contains:
+ *    - {string} [file]
+ *    - {string} [stream]
+ *    - {string} [url]
+ *    - {string} [type]
+ *    - {number} [size]
+ *
+ * @param {string} id
+ * @return {Promise} url, file or stream
  */
-StorageProvider.prototype.putFile = function (filePath, storagePath) {
-  DEBUG && debug('storage.putFile:', filePath, '--->', storagePath);
+StorageProvider.prototype.getFile = function (id) {
+  DEBUG && debug('storage.getFile:', id);
   throw new Error('abstract method');
 };
 
 /**
- * download the file at `storagePath` into `filePath`.
+ * delete file from the remote storage.
  *
- * @param {string} filePath
- * @param {string} storagePath
+ * @param {string} id
  * @return {Promise} success or not.
  */
-StorageProvider.prototype.getFile = function (filePath, storagePath) {
-  DEBUG && debug('storage.gutFile:', filePath, '<---', storagePath);
-  throw new Error('abstract method');
-};
-
-/**
- * delete the file at `storagePath`.
- *
- * @param {string} storagePath
- * @return {Promise} success or not.
- */
-StorageProvider.prototype.deleteFile = function (storagePath) {
-  DEBUG && debug('storage.deleteFile:', storagePath);
+StorageProvider.prototype.deleteFile = function (id) {
+  DEBUG && debug('storage.deleteFile:', id);
   throw new Error('abstract method');
 };
 
 module.exports = {
-  StorageProvider: StorageProvider
+  StorageProvider: StorageProvider,
+  inherited: function (ProviderCtor) {
+    util.inherits(ProviderCtor, StorageProvider);
+  }
 };

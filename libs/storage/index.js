@@ -10,6 +10,16 @@ var
   };
 
 /**
+ * register a storage provider.
+ *
+ * @param {string} name
+ * @param {function} ctor constructor function
+ */
+function registerProvider(name, ctor) {
+  providers[name] = ctor;
+}
+
+/**
  * create a storage provider.
  *
  * @param {string} name
@@ -22,5 +32,6 @@ function createProvider(name, config) {
 }
 
 module.exports = {
+  registerProvider: registerProvider,
   createProvider: createProvider
 };
