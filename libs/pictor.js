@@ -1,27 +1,28 @@
 'use strict';
 
 var
-  fs = require('fs'),
   path = require('path'),
   _ = require('lodash'),
   Q = require('q'),
-  fileutils = require('./fileutils'),
+  FS = require('q-io/fs'),
   imgutils = require('./imgutils'),
   debug = require('debug')('pictor'),
   DEBUG = debug.enabled;
 
 var
-  dataStorage,
-  cacheStorage,
+  tempDir = '/tmp/pictor/temp',
+  tempFileSeq = 0,
   presets = {
-    xxs: {op: 'thumbnail', w: 16},
-    xs: {op: 'thumbnail', w: 24},
-    s: {op: 'thumbnail', w: 32},
-    m: {op: 'thumbnail', w: 48},
-    l: {op: 'thumbnail', w: 64},
-    xl: {op: 'thumbnail', w: 128},
-    xxl: {op: 'thumbnail', w: 256}
-  };
+    xxs: {w: 16},
+    xs: {w: 24},
+    s: {w: 32},
+    m: {w: 48},
+    l: {w: 64},
+    xl: {w: 128},
+    xxl: {w: 256}
+  },
+  dataStorage,
+  cacheStorage;
 
 //var presets = { // see http://trend21c.tistory.com/m/1521
 //  IPHONE: [57, 57], //아이폰	57 x 57
@@ -64,104 +65,154 @@ var
 //  TW_ICON_SMALL: [31, 31]
 //};
 //
-//var IMAGE_EXTENSIONS = {
-//  'image/png': 'png',
-//  'image/jpeg': 'jpg',
-//  'image/pjpeg': 'jpg',
-//  'image/gif': 'gif'
-//};
+
+var DEF_EXTENSION = '.bin';
+var DEF_MIME_TYPE = 'application/octet-stream';
+
+var IMAGE_EXTENSIONS = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/pjpeg': 'jpg',
+  'image/gif': 'gif'
+};
+
+var IMAGE_MIME_TYPES = {
+  'png': 'image/png',
+  'jpg': 'image/jpeg',
+  'jpeg': 'image/jpeg',
+  'gif': 'image/gif'
+};
+
+function getExtension(mimeType) {
+  return IMAGE_EXTENSIONS[mimeType] || DEF_EXTENSION;
+}
+
+function getMimeType(ext) {
+  return IMAGE_MIME_TYPES[ext] || DEF_MIME_TYPE;
+}
+
+function getTempFilePath(ext) {
+  var seq = (++tempFileSeq) + 1;
+  var tstamp = Date.now();
+  var nonce = Math.floor(Math.random() * 100000);
+  return path.join(tempDir, 'pictor_' + seq + '_' + tstamp + '_' + nonce + '.' + (ext || DEF_EXTENSION));
+}
+
 //
-//var IMAGE_MIME_TYPES = {
-//  'png': 'image/png',
-//  'jpg': 'image/jpeg',
-//  'jpeg': 'image/jpeg',
-//  'gif': 'image/gif'
-//};
+// CRUD operations for common files
 //
-//var RESIZE_FLAGS = {
-//  'force': '!',
-//  'percent': '%',
-//  'fillarea': '^',
-//  'enlarge': '<',
-//  'shrink': '>',
-//  'pixel': '@'
-//};
 
 /**
- * put a file into storage.
+ * put a file.
+ *
+ * delete the old file and all its variants.
  *
  * @param {string} id
- * @param {string} format
  * @param {string} filePath
  * @returns {promise}
  */
-function putFile(id, format, filePath) {
-  var dataPath = dataStorage.getPath(id, format);
-  return dataStorage.putFile(filePath, dataPath);
-  // TODO: delete all variants from cache.
-  //var cachePath = cacheStorage.getPath(id);
-  //cacheStorage.deleteFiles(cachePath + '*');
-}
-
-/**
- * delete a file and its variants from storage.
- *
- * @param {string} id
- * @param {string} format
- * @returns {promise} success or not
- */
-function deleteFile(id, format) {
-  var dataPath = dataStorage.getPath(id, format);
-  return dataStorage.deleteFile(dataPath);
-  // TODO: delete all variants from cache.
-  //var cachePath = cacheStorage.getPath(id);
-  //cacheStorage.deleteFiles(cachePath + '*');
-}
-
-/**
- * get a file from storage.
- *
- * @param {string} id
- * @param {string} format
- * @returns {promise} object contains local file path or remote url
- */
-function getFile(id, format) {
-  var dataPath = dataStorage.getPath(id, format);
-  return dataStorage.exists(dataPath)
+function putFile(id, filePath) {
+  return cacheStorage.deleteFile(_getVariantId(id))
+    .fail(function () {
+      //if(err instanceof NotFoundError) { return true; } else throw err;
+      return true;
+    })
     .then(function () {
-      // exists... download it!
-      return {file: dataPath};
+      return dataStorage.putFile(id, filePath);
     });
 }
 
-function parseVariantGeometry(geometry) {
+/**
+ * get a file.
+ *
+ * @param {string} id
+ * @returns {promise} file, url or stream
+ */
+function getFile(id) {
+  return dataStorage.getFile(id);
+}
+
+/**
+ * delete a file and its variants.
+ *
+ * @param {string} id
+ * @returns {promise} success or not
+ */
+function deleteFile(id) {
+  return cacheStorage.deleteFile(_getVariantId(id))
+    .fail(function () {
+      //if(err instanceof NotFoundError) { return true; } else throw err;
+      return true;
+    })
+    .then(function () {
+      return dataStorage.deleteFile(id);
+    });
+}
+
+//
+// extra operations for image files
+//
+
+function getPreset(name) {
+  return presets[name];
+}
+
+
+function _sanitizeId(id) {
+  return id ? String(id).replace(/[^a-zA-Z0-9가-힣-_.]/g, '_') : '';
+  //return id ? String(id).replace(/[^\w\.]/g, '_') : '';
+  //return encodeURIComponent(id);
+}
+
+function _getVariantId(id, variation, ext) {
+  var variantId = id + '.d';
+  if (variation) {
+    variantId += '/' + variation;
+  }
+  if (ext) {
+    variantId += '.' + ext;
+  }
+  return variantId;
+}
+
+/**
+ * parse common geometry string.
+ *
+ * result contains:
+ *    - {number} w
+ *    - {number} h
+ *    - {number} x
+ *    - {number} y
+ *    - {string} flags
+ *
+ * @param {string} geometry
+ * @returns {object} parsed geometry
+ */
+function parseGeometry(geometry) {
+  var result = {};
   if (!geometry) {
-    return imgutils.convertOpts();
+    return result;
   }
   //..............12.....3.4......5..6......7.......8....9.0
   var matches = /^((\d+)?(x(\d+))?(\+(\d+)\+(\d+))?)(\w*)(@(\d)x)?$/.exec(geometry);
   if (!matches) {
     throw new Error('invalid_param_geometry');
   }
-  //console.log('variant geometry:', geometry, '--->matches:', matches);
-  var convertOpts;
   if (matches[1]) {
-    var w = parseInt(matches[2], 10);
-    var h = parseInt(matches[4], 10);
-    if (isNaN(w) && isNaN(h)) {
+    result.w = parseInt(matches[2], 10);
+    result.h = parseInt(matches[4], 10);
+    if (isNaN(result.w) && isNaN(result.h)) {
       throw new Error('invalid_param_geometry_size');
     }
-    var flags = matches[8];
     if (matches[5]) {
-      var x = parseInt(matches[6], 10);
-      var y = parseInt(matches[7], 10);
-      convertOpts = imgutils.cropOpts(w, h, x, y, flags);
+      result.x = parseInt(matches[6], 10);
+      result.y = parseInt(matches[7], 10);
     } else {
-      convertOpts = imgutils.resizeOpts(w, h, flags);
+      result.flags = matches[8];
     }
   } else {
-    convertOpts = presets[matches[8]];
-    if (!convertOpts) {
+    result = getPreset(matches[8]);
+    if (!result) {
       throw new Error('invalid_param_geometry_preset');
     }
   }
@@ -170,19 +221,16 @@ function parseVariantGeometry(geometry) {
     if (scale < 2 || scale > 9) {
       throw new Error('invalid_param_geometry_scale');
     }
-    convertOpts.w *= scale;
-    convertOpts.h *= scale;
-    convertOpts.x *= scale;
-    convertOpts.y *= scale;
+    result.w *= scale;
+    result.h *= scale;
+    result.x *= scale;
+    result.y *= scale;
   }
-  return convertOpts;
-}
-
-function getVariantId(id, geometry) {
-  return (geometry) ? id + '-_-' + geometry : id;
+  return result;
 }
 
 /**
+ * get resized/cropped/converted image.
  *
  * @param {string} id
  * @param {string} geometry
@@ -190,120 +238,211 @@ function getVariantId(id, geometry) {
  * @returns {promise}
  */
 function getVariantImageFile(id, geometry, format) {
-  var cachePath = cacheStorage.getPath(getVariantId(id, geometry), format);
-  return cacheStorage.exists(cachePath)
+  var variantId = _getVariantId(id, geometry, format);
+  return cacheStorage.getFile(variantId)
     .fail(function () {
-      // cache doesn't have the variant... create it now! and...
-      var dataPath = dataStorage.getPath(id);
-      var convertOpts = parseVariantGeometry(geometry);
-      console.log('convert opts:', convertOpts);
-      return imgutils.convert(dataPath, cachePath, convertOpts);
-    })
-    .then(function () {
-      // exists... download it!
-      return {file: cachePath};
+      var dst = getTempFilePath(format);
+      return dataStorage.getFile(id)
+        .then(function (src) {
+          var geom = parseGeometry(geometry);
+          if (!isNaN(geom.x) || !isNaN(geom.y)) {
+            return imgutils.crop(src.file || src.stream, dst, geom.w, geom.h, geom.x, geom.y);
+          }
+          if (!isNaN(geom.w) || !isNaN(geom.h)) {
+            return imgutils.resize(src.file || src.stream, dst, geom.w, geom.h, geom.flags);
+          }
+          return imgutils.convert(src.file || src.stream, dst);
+        })
+        .then(function () {
+          return cacheStorage.putFile(variantId, dst);
+        });
     });
 }
 
-function parseHolderGeometry(geometry) {
-  //..............12.....3.4.......5....6.7
-  var matches = /^((\d+)?(x(\d+))?)(\w*)(@(\d)x)?$/.exec(geometry);
-  if (!matches) {
-    throw new Error('invalid_param_geometry');
-  }
-  //console.log('holder geometry:', geometry, '--->matches:', matches);
-  var createOpts;
-  if (matches[1]) {
-    var w = parseInt(matches[2], 10);
-    var h = parseInt(matches[4], 10);
-    if (isNaN(w) && isNaN(h)) {
-      throw new Error('invalid_param_geometry_size');
-    }
-    createOpts = {w: w, h: h};
-  } else {
-    createOpts = presets[matches[5]];
-    if (!createOpts) {
-      throw new Error('invalid_param_geometry_preset');
-    }
-  }
-  if (matches[7]) {
-    var scale = parseInt(matches[7], 10);
-    if (scale < 2 || scale > 9) {
-      throw new Error('invalid_param_geometry_scale');
-    }
-    createOpts.w *= scale;
-    createOpts.h *= scale;
-  }
-  return createOpts;
-}
-
 /**
+ * get resized image.
  *
- * @param {string} geometry
+ * @param {string} id
+ * @param {number} w
+ * @param {number} h
+ * @param {string} flags
  * @param {string} format
  * @returns {promise}
  */
-function getHolderImageFile(geometry, format) {
-  var cachePath = cacheStorage.getPath(getVariantId('holder', geometry), format);
-  return cacheStorage.exists(cachePath)
+function getResizedImageFile(id, w, h, flags, format) {
+  var variantId = _getVariantId(id, 'resize_' + w + 'x' + h + '_' + flags, format);
+  return cacheStorage.getFile(variantId)
     .fail(function () {
-      var createOpts = parseHolderGeometry(geometry);
-      return imgutils.createImage(cachePath, createOpts);
-    })
-    .then(function () {
-      return {file: cachePath};
+      var dst = getTempFilePath(format);
+      return dataStorage.getFile(id)
+        .then(function (src) {
+          return imgutils.resize(src.file, dst, w, h, flags);
+        })
+        .then(function () {
+          return cacheStorage.putFile(variantId, dst);
+        });
     });
 }
 
 /**
- * get a json file contains image meta data.
+ * get thumbnail image.
  *
- * `result` contains:
- *    - {number} width
- *    - {number} height
- *    - {number} colors
- *    - {number} depth
- *    - {string} size
- *    - {string} format
+ * @param {string} id
+ * @param {number} w
+ * @param {number} h
+ * @param {string} format
+ * @returns {promise}
+ */
+function getThumbnailImageFile(id, w, h, format) {
+  var variantId = _getVariantId(id, 'thumb_' + w + 'x' + h, format);
+  return cacheStorage.getFile(variantId)
+    .fail(function () {
+      var dst = getTempFilePath(format);
+      return dataStorage.getFile(id)
+        .then(function (src) {
+          return imgutils.thumbnail(src.file, dst, w, h);
+        })
+        .then(function () {
+          return cacheStorage.putFile(variantId, dst);
+        });
+    });
+}
+
+/**
+ * get cropped image.
+ *
+ * @param {string} id
+ * @param {number} w
+ * @param {number} h
+ * @param {number} x
+ * @param {number} y
+ * @param {string} format
+ * @returns {promise}
+ */
+function getCroppedImageFile(id, w, h, x, y, format) {
+  var variantId = _getVariantId(id, 'crop_' + w + 'x' + h + '+' + x + '+' + y, format);
+  return cacheStorage.getFile(variantId)
+    .fail(function () {
+      var dst = getTempFilePath(format);
+      return dataStorage.getFile(id)
+        .then(function (src) {
+          return imgutils.crop(src.file, dst, w, h, x, y);
+        })
+        .then(function () {
+          return cacheStorage.putFile(variantId, dst);
+        });
+    });
+}
+
+/**
+ * get converted image.
+ *
+ * @param {string} id
+ * @param {string} format
+ * @returns {promise}
+ */
+function getConvertedImageFile(id, format) {
+  var variantId = _getVariantId(id, 'converted', format);
+  return cacheStorage.getFile(variantId)
+    .fail(function () {
+      var dst = getTempFilePath(format);
+      return dataStorage.getFile(id)
+        .then(function (src) {
+          return imgutils.convert(src.file, dst);
+        })
+        .then(function () {
+          return cacheStorage.putFile(variantId, dst);
+        });
+    });
+}
+
+/**
+ * get optimized image.
+ *
+ * @param {string} id
+ * @param {string} format
+ * @returns {promise}
+ */
+function getOptimizedImageFile(id, format) {
+  var variantId = _getVariantId(id, 'optimized', format);
+  return cacheStorage.getFile(variantId)
+    .fail(function () {
+      var dst = getTempFilePath(format);
+      return dataStorage.getFile(id)
+        .then(function (src) {
+          return imgutils.optimize(src.file, dst);
+        })
+        .then(function () {
+          return cacheStorage.putFile(variantId, dst);
+        });
+    });
+}
+
+/**
+ * get image meta data.
  *
  * @param {string} id
  * @returns {promise}
  */
 function getImageMetaFile(id) {
-  var cachePath = cacheStorage.getPath(id, 'meta');
-  return cacheStorage.exists(cachePath)
+  var variantId = _getVariantId(id, 'meta', 'json');
+  return cacheStorage.getFile(variantId)
     .fail(function () {
-      var dataPath = dataStorage.getPath(id);
-      return imgutils.meta(dataPath)
-        .then(function (result) {
-          return fileutils.writeFile(cachePath, JSON.stringify(result));
+      var dst = getTempFilePath('json');
+      return dataStorage.getFile(id)
+        .then(function (src) {
+          return imgutils.meta(src.file);
+        })
+        .then(function (meta) {
+          return FS.write(dst, JSON.stringify(meta));
+        })
+        .then(function () {
+          return cacheStorage.putFile(variantId, dst);
         });
-    })
-    .then(function () {
-      return {file: cachePath, type: 'json'};
     });
 }
 
 /**
- * get a json file contains image *EXIF* data.
- *
- * `rresult` contains:
- *    - ...
+ * get image EXIF data.
  *
  * @param {string} id
  * @returns {promise}
  */
 function getImageExifFile(id) {
-  var cachePath = cacheStorage.getPath(id, 'exif');
-  return cacheStorage.exists(cachePath)
+  var variantId = _getVariantId(id, 'exif', 'json');
+  return cacheStorage.getFile(variantId)
     .fail(function () {
-      var dataPath = dataStorage.getPath(id);
-      return imgutils.exif(dataPath).then(function (result) {
-        return fileutils.writeFile(cachePath, JSON.stringify(result));
-      });
-    })
-    .then(function () {
-      return {file: cachePath, type: 'json'};
+      var dst = getTempFilePath('json');
+      return dataStorage.getFile(id)
+        .then(function (src) {
+          return imgutils.exif(src.file);
+        })
+        .then(function (exif) {
+          return FS.write(dst, JSON.stringify(exif));
+        })
+        .then(function () {
+          return cacheStorage.putFile(variantId, dst);
+        });
+    });
+}
+
+/**
+ * get holder image.
+ *
+ * @param {number} w
+ * @param {number} h
+ * @param {string} format
+ * @returns {promise}
+ */
+function getHolderImageFile(w, h, format) {
+  var variantId = _getVariantId('holder', w + 'x' + h, format);
+  return cacheStorage.getFile(variantId)
+    .fail(function () {
+      var dst = getTempFilePath(format);
+      return imgutils.holder(dst, w, h)
+        .then(function () {
+          return cacheStorage.putFile(variantId, dst);
+        });
     });
 }
 
@@ -316,31 +455,62 @@ function getImageExifFile(id) {
  *
  * `config` contains:
  *
+ *    - {string} tempDir
  *    - {object} presets
- *    - {object} local
- *    - {object} remote
+ *    - {object} data
+ *    - {object} cache
+ *    - {object} imgutils
  *
  * @param {object} config
  */
 function configure(config) {
   DEBUG && debug('configure pictor...');
 
+  imgutils.configure(config.imgutils);
+
+  tempDir = config.tempDir || require('os').tmpdir();//'/tmp/pictor/temp';
+  FS.makeTree(tempDir)
+    .fail(function (err) {
+      console.warn(err);
+      DEBUG && debug('** warning ** failed to create tempDir:', tempDir, 'user default:', tempDir);
+      tempDir = require('os').tmpdir();
+    })
+    .then(function () {
+      DEBUG && debug('tempDir:', tempDir);
+    })
+    .done();
+
   _.extend(presets, config.presets);
+  DEBUG && debug('presets: ', presets);
 
-  dataStorage = require('./storage').createProvider('local', config.data);
-  cacheStorage = require('./storage').createProvider('local', config.cache);
+  if (!config.data) {
+    DEBUG && debug('** warning ** no data storage configuration!');
+  }
+  dataStorage = require('./storage').createProvider(config.data.provider, config.data);
 
-  // TOOD: multiple remote storages
-  //remoteStorage = require('./storage').createProvider('ftp', config.remote);
+  if (!config.cache) {
+    DEBUG && debug('** warning ** no cache storage configuration!');
+  }
+  cacheStorage = require('./storage').createProvider(config.cache.provider, config.cache);
 }
 
 module.exports = {
+  getExtension: getExtension,
+  getMimeType: getMimeType,
+  getTempFilePath: getTempFilePath,
   putFile: putFile,
   deleteFile: deleteFile,
   getFile: getFile,
+  getPreset: getPreset,
+  parseGeometry: parseGeometry,
   getVariantImageFile: getVariantImageFile,
-  getHolderImageFile: getHolderImageFile,
+  getResizedImageFile: getResizedImageFile,
+  getCroppedImageFile: getCroppedImageFile,
+  getThumbnailImageFile: getThumbnailImageFile,
+  getConvertedImageFile: getConvertedImageFile,
+  getOptimizedImageFile: getOptimizedImageFile,
   getImageMetaFile: getImageMetaFile,
   getImageExifFile: getImageExifFile,
+  getHolderImageFile: getHolderImageFile,
   configure: configure
 };
