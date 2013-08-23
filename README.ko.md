@@ -29,7 +29,7 @@ pictor는 기본적으로 다음과 같이 동작합니다:
 - 모든 파일은 클라우드/원격 저장소에 보관됩니다. 물론 로컬 저장소도 사용할 수 있습니다.
 - 모든 변환된 파일(pictor가 생성한)은 *언제든지* 삭제해도 됩니다. 필요하면 pictor가 다시 생성합니다.
 
-![다이어그램](../blob/master/public/docs/pictor.png?raw=true)
+![다이어그램](../master/public/docs/pictor.png?raw=true)
 
 시작하기
 ------
@@ -69,7 +69,7 @@ pictor는 기본적으로 다음과 같이 동작합니다:
 
 설정 파일은 `config` 디렉토리 아래에 각 환경(`NODE_ENV` 환경 변수)별로 분리되어 있습니다.
 
-자세한 내용은 [기본 설정의 소스 코드](../blob/master/config/defaults.js)를 참고하세요.
+자세한 내용은 [기본 설정의 소스 코드](../master/config/defaults.js)를 참고하세요.
 
 문서
 ---------
