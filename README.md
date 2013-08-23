@@ -69,7 +69,7 @@ configuration
 
 configuration files are separated for each envionment(`NODE_ENV` environment variable) in `config` directory.
 
-for more details, see [source code of default configuration](../config/defaults.js).
+for more details, see [source code of default configuration](../master/config/defaults.js).
 
 documents
 ---------
