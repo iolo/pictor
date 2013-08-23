@@ -4,9 +4,9 @@ var
   providers = {
     'local': require('./local').LocalStorageProvider,
     'ftp': require('./ftp').FtpStorageProvider,
-    's3': require('./ftp').S3StorageProvider,
-    'gcs': require('./ftp').GCSStorageProvider,
-    'gridfs': require('./ftp').GridFSStorageProvider
+    's3': require('./s3').S3StorageProvider
+    //'gcs': require('./gcs').GCSStorageProvider,
+    //'gridfs': require('./gridfs').GridFSStorageProvider
   };
 
 /**
