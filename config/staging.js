@@ -8,22 +8,11 @@ module.exports = {
   "pictor": {
     "tempDir": "/tmp/pictor/temp",
     "data": {
-      "provider": "local",
-      "baseDir": "/tmp/pictor/data",
-      "baseUrl": "http://pictor.iolo.kr/pictor/data"
-    },
-    "cache": {
-      "provider": "local",
-      "baseDir": "/tmp/pictor/cache",
-      "baseUrl": "http://pictor.iolo.kr/pictor/cache"
-    },
-    /*
-    "data": {
       "provider": "ftp",
       "host": "jdongsu.jpg2.kr",
       "port": 21,
-      "username": process.env['jdongsu.jpg2.kr.ftp.username'],
-      "password": process.env['jdongsu.jpg2.kr.ftp.password'],
+      "username": process.env.PICTOR_FTP_USERNAME,
+      "password": process.env.PICTOR_FTP_PASSWORD,
       "baseDir": "/pictor/data",
       "baseUrl": "http://jdongsu.jpg2.kr/pictor/data"
     },
@@ -31,14 +20,14 @@ module.exports = {
       "provider": "ftp",
       "host": "jdongsu.jpg2.kr",
       "port": 21,
-      "username": process.env['jdongsu.jpg2.kr.ftp.username'],
-      "password": process.env['jdongsu.jpg2.kr.ftp.password'],
+      "username": process.env.PICTOR_FTP_USERNAME,
+      "password": process.env.PICTOR_FTP_PASSWORD,
       "baseDir": "/pictor/cache",
       "baseUrl": "http://jdongsu.jpg2.kr/pictor/cache"
     },
-    */
     "routes": {
       "route": "/pictor",
+      "redirectStatusCode": 307, // for easy test, redirect temporary!
       "skipCommonMiddlewares": false,
       "statics": {
         "/data": "/tmp/pictor/data",
