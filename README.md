@@ -1,12 +1,16 @@
 pictor
 ======
 
+[한글](README.ko.md)
+
 pictor is simple image upload/convert/download server.
 
-![logo](../blob/master/public/pictor.jpg?raw=true)
+The name of pictor comes from [Pictor, a constellation](http://en.wikipedia.org/wiki/Pictor).
 
-why pictor
-----------
+![logo](../master/public/pictor.jpg?raw=true)
+
+introduction
+------------
 
 Local storages and traffic are *expensive*, especially in cloud envionment.
 

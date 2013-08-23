@@ -1,10 +1,16 @@
 pictor
 ======
 
+[English](README.md)
+
 pictor는 간단한 이미지 업로드/변환/다운로드 서버입니다.
 
-pictor를 써야 하나요?
-------------------
+pictor의 이름은 [화가의 별자리](http://en.wikipedia.org/wiki/Pictor)에서 따왔습니다.
+
+![logo](../master/public/pictor.jpg?raw=true)
+
+소개
+---
 
 로컬 저장소와 트래픽은 *비쌉니다*. 클라우드 환경에서는 특히 그렇죠.
 
