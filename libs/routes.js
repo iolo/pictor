@@ -1,6 +1,8 @@
 'use strict';
 
 var
+  fs = require('fs'),
+  http = require('http'),
   Q = require('q'),
   _ = require('lodash'),
   express = require('express'),
@@ -8,38 +10,60 @@ var
   debug = require('debug')('pictor:routes'),
   DEBUG = debug.enabled;
 
+var
+  DEF_REDIRECT_STATUS_CODE = false,//or 301,302,307
+  redirectStatusCode;
+
 //
 //
 //
 
-function _validateId(id) {
-  //throw new errors.BadRequest('invalid_param_id');
+function _validateId(id, prefix) {
+  var matches = /([\w]+)(\.[\w]+)?/.exec(id);
+  if (!matches) {
+    throw 'invalid_param_id';
+    //throw new errors.BadRequest('invalid_param_id');
+  }
+  if (matches[1] === 'new') {
+    id = _.uniqueId(prefix || 'pictor_');
+    if (matches[2]) {
+      id += matches[2]; // .ext
+    }
+  }
   return id;
 }
 
 function _sendFileResponse(res, result) {
-  if (result) {
-    if (result.type) {
-      console.log('*** send type:', result.type);
-      res.type(result.type);
-    }
-    if (result.stream) {
-      console.log('*** send stream');
-      return result.stream.pipe(res);
-    }
-    if (result.file) {
-      console.log('send file:', result.file);
-      return res.sendfile(result.file);
-    }
-    if (result.url) {
-      console.log('redirect file:', result.url);
-      return res.redirect(result.url);
-      //return res.redirect(errors.StatusCode.TEMPORARY_REDIRECT, result.url);
-      //return res.redirect(errors.StatusCode.MOVED_PERMANENTLY, result.url);
-    }
-    return res.send(result.status, result);
+  if (!result) {
+    return res.send(500);
   }
-  return res.send(500);
+  if (result.type) {
+    console.log('*** send type:', result.type);
+    res.type(result.type);
+  }
+  if (redirectStatusCode) {
+    if (result.url) {
+      console.log('*** redirect:', redirectStatusCode, result.url);
+      return res.redirect(redirectStatusCode, result.url);
+    } else {
+      console.log('*** redirect fail! storage does not provide url!');
+    }
+  }
+  if (result.stream) {
+    console.log('*** send stream');
+    return result.stream.pipe(res);
+  }
+  if (result.file) {
+    console.log('*** send file:', result.file);
+    return res.sendfile(result.file);
+  }
+  if (result.url) {
+    console.log('*** manual proxy:', result.url);
+    return http.get(result.url, function (response) {
+      return response.pipe(res);
+    });
+  }
+  return res.send(result.status, result);
 }
 
 /**
@@ -47,7 +71,8 @@ function _sendFileResponse(res, result) {
  * @apiName uploadFiles
  * @apiGroup pictor
  *
- * @apiParam {*} file... encoded with multipart/upload-data
+ * @apiParam {array} files encoded with multipart/upload-data. param names are `id` for each file.
+ * @apiParam {string} [idprefix] used to generate new id if basename of `id` is 'new'
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 200 OK
@@ -77,9 +102,8 @@ function uploadFiles(req, res) {
 
   var putFilePromises = Object.keys(req.files).map(function (fileParamName) {
     console.log('***file:', fileParamName, req.files[fileParamName]);
-    var id = _validateId(fileParamName);
-    //var id = _.uniqueId();
-    var file = req.files[id];
+    var id = _validateId(fileParamName, req.param('idprefix'));
+    var file = req.files[fileParamName];
     return pictor.putFile(id, file.path);
   });
 
@@ -101,7 +125,8 @@ function uploadFiles(req, res) {
  * @apiName uploadFile
  * @apiGroup pictor
  *
- * @apiParam {string} id
+ * @apiParam {string} id identifier with extension to guess mimetype
+ * @apiParam {string} [idprefix] used to generate new id if basename of `id` is 'new'
  * @apiParam {*} file encoded with multipart/upload-data
  *
  * @apiSuccessExample success response:
@@ -126,7 +151,7 @@ function uploadFile(req, res) {
     //throw new errors.BadRequest('required_param_file');
   }
 
-  var id = _validateId(req.param('id'));
+  var id = _validateId(req.param('id'), req.param('idprefix'));
 
   return pictor.putFile(id, file.path)
     .then(function (result) {
@@ -141,14 +166,38 @@ function uploadFile(req, res) {
     .done();
 }
 
+/**
+ * @api {put} /pictor/:id upload a file with raw data.
+ * @apiName uploadFile
+ * @apiGroup pictor
+ *
+ * @apiParam {string} id identifier with extension to guess mimetype
+ * @apiParam {string} [idprefix] used to generate new id if basename of `id` is 'new'
+ * @apiParam {*} file binary data
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 200
+ *    {
+ *      result: {id: "foo", url: "http://..."}
+ *    }
+ *
+ * @apiErrorExample error response:
+ *    HTTP/1.1 400 Bad Request
+ *    {
+ *      error: {
+ *        status: 400,
+ *        message: "required_param_file"
+ *      }
+ *    }
+ */
 function uploadFileRaw(req, res) {
-  var id = _validateId(req.param('id'));
+  var id = _validateId(req.param('id'), req.param('idprefix'));
 
   var tempFilePath = '/tmp/' + id;
 
-  require('fs').createWriteStream(tempFilePath).pipe(req)
+  fs.createWriteStream(tempFilePath).pipe(req)
     .on('error', function (err) {
-      return res.send(500, err)
+      return res.send(500, err);
     })
     .on('end', function () {
       return pictor.putFile(id, tempFilePath)
@@ -170,7 +219,7 @@ function uploadFileRaw(req, res) {
  * @apiName deleteFile
  * @apiGroup pictor
  *
- * @apiParam {string} id
+ * @apiParam {string} id identifier with extension to guess mimetype
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 204 No Content
@@ -194,12 +243,11 @@ function deleteFile(req, res) {
 }
 
 /**
- * @api {get} /pictor/:id.:format download the file.
+ * @api {get} /pictor/:id download the file.
  * @apiName downloadFile
  * @apiGroup pictor
  *
  * @apiParam {string} id
- * @apiParam {string} format
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 200 OK
@@ -359,7 +407,7 @@ function downloadConvertedImage(req, res) {
 
 /**
  * @api {get} /pictor/:id/optimized.:format get optimized image for the file.
- * @apiName downloadOptimziedImage
+ * @apiName downloadOptimzedImage
  * @apiGroup pictor
  *
  * @apiParam {string} id
@@ -422,6 +470,7 @@ function downloadHolderImage(req, res) {
  *  configure middlewares for the express app.
  *
  * `config` contains:
+ *    - {boolean|number} [redirectStatusCode=false]: 301, 302 or 307 to use redirect.
  *    - {boolean} [skipCommonMiddlewares=false]
  *    - {object} [statics] pairs of url prefix and document root.
  *
@@ -431,6 +480,8 @@ function downloadHolderImage(req, res) {
  */
 function configureMiddlewares(app, config) {
   DEBUG && debug('create pictor middlewares...');
+
+  redirectStatusCode = config.redirectStatusCode || DEF_REDIRECT_STATUS_CODE;
 
   if (!config.skipCommonMiddlewares) {
     app.use(express.cookieParser());
