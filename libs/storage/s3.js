@@ -48,7 +48,7 @@ S3StorageProvider.prototype.putFile = function (id, src) {
     .fail(function (err) {
       console.log('*** putfile err:', err);
       throw err;
-    })
+    });
 };
 
 S3StorageProvider.prototype.getFile = function (id) {
