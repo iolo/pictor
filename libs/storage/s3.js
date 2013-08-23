@@ -37,7 +37,7 @@ S3StorageProvider.prototype.putFile = function (id, src) {
   return Q.ninvoke(this.s3Client, 'putFile', src, dst)
     .then(function (result) {
       console.log('*** putfile ok:', result.statusCode, result.headers);
-      if (result.statusCode !== 200) {
+      if (result.statusCode < 200 || result.statusCode >= 300) {
         throw new Error('file_not_found');
       }
       return {
@@ -59,7 +59,7 @@ S3StorageProvider.prototype.getFile = function (id) {
   return Q.ninvoke(this.s3Client, 'getFile', src)
     .then(function (result) {
       console.log('*** getfile ok:', result.statusCode, result.headers);
-      if (result.statusCode !== 200) {
+      if (result.statusCode < 200 || result.statusCode >= 300) {
         throw new Error('file_not_found');
       }
       return {
@@ -82,20 +82,32 @@ S3StorageProvider.prototype.deleteFile = function (id) {
   return Q.ninvoke(s3Client, 'deleteFile', src)
     .then(function (result) {
       console.log('*** deletefile ok:', result.statusCode, result.headers);
-      if (result.statusCode !== 200) {
-        throw new Error('file_not_found');
+      if (result.statusCode < 200 || result.statusCode >= 300) {
+        console.log('*** deletefile not found: ignore');
+        //throw new Error('file_not_found');
       }
-      return Q.ninvoke(s3Client, 'list', { prefix: src + '/' });
+      return Q.ninvoke(s3Client, 'list', { prefix: src.substring(1) + '/' }); // s3 key has no leading '/'
     })
     .then(function (result) {
-      console.log('*** list ok:', result.statusCode, result.headers);
-      if (result.statusCode !== 200) {
-        throw new Error('file_not_found');
+      console.log('*** list ok:', result);//result.statusCode, result.headers);
+      //if (result.statusCode < 200 || result.statusCode >= 300) {
+      //  throw new Error('file_not_found');
+      //}
+      if (result.Contents.length === 0) {
+        return true;
       }
       var srcs = result.Contents.map(function (file) {
-        return src + '/' + file.Key;
+        return file.Key;
       });
+      console.log('*** srcs:', srcs);
       return Q.ninvoke(s3Client, 'deleteMultiple', srcs);
+    })
+    .then(function (result) {
+      console.log('*** deletemultiple ok:', result.statusCode, result.headers);
+      if (result.statusCode < 200 || result.statusCode >= 300) {
+        //throw new Error('file_not_found');
+      }
+      return true;
     })
     .fail(function (err) {
       console.log('*** deletefile err:', err);
