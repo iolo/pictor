@@ -33,11 +33,10 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-nodeunit');
   grunt.loadNpmTasks('grunt-apidoc');
-  grunt.loadNpmTasks('grunt-dox');
 
   grunt.registerTask('rsync', function() {
     var done = this.async();
-    var rsync_cmdline = 'rsync -av --delete . root@iolo.kr:/var/www/pictor';
+    var rsync_cmdline = 'rsync -az --delete . root@iolo.kr:/var/www/pictor';
     grunt.log.ok(rsync_cmdline);
     require('child_process').exec(rsync_cmdline, function(err, stdout, stderr) {
       if(err) {
@@ -47,7 +46,7 @@ module.exports = function (grunt) {
         grunt.verbose.writeln(stdout);
         grunt.log.ok('rsync complete.');
       }
-      done();
+      done(err);
     });
   });
   grunt.registerTask('doxx', function() {
@@ -62,11 +61,12 @@ module.exports = function (grunt) {
         grunt.verbose.writeln(stdout);
         grunt.log.ok('doxx complete.');
       }
-      done();
+      done(err);
     });
   });
   grunt.registerTask('default', ['jshint']);
   grunt.registerTask('test', ['nodeunit']);
-  grunt.registerTask('build', ['clean', 'jshint', 'test', 'apidoc', 'doxx']);
+  grunt.registerTask('docs', ['doxx', 'apidoc']);
+  grunt.registerTask('build', ['clean', 'jshint', 'test', 'docs']);
   grunt.registerTask('deploy', ['build', 'rsync']);
 };

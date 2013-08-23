@@ -212,9 +212,12 @@ function holder(dst, w, h, opts) {
 //
 //
 
+/**
+ *
+ * @param {object} config
+ */
 function configure(config) {
   DEBUG && debug('configure imgutils...', config);
-  return this;
 }
 
 module.exports = {
