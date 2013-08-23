@@ -1,6 +1,7 @@
 node_modules
 build
-public/docs
+public/docs/api
+public/docs/dox
 .DS_Store
 .idea
 *.iml
