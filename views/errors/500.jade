@@ -1,0 +1,12 @@
+doctype 5
+html
+  head
+    title 500 INTERNAL SERVER ERROR
+  body
+    h1 500 INTERNAL SERVER ERROR
+
+    p
+      a(href="/") Take me home!
+
+    if (typeof error !== 'undefined')
+      pre #{error}
