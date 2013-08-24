@@ -5,6 +5,7 @@ var
   _ = require('lodash'),
   Q = require('q'),
   FS = require('q-io/fs'),
+  storage = require('./storage'),
   imgutils = require('./imgutils'),
   debug = require('debug')('pictor'),
   DEBUG = debug.enabled;
@@ -472,7 +473,7 @@ function configure(config) {
   FS.makeTree(tempDir)
     .fail(function (err) {
       console.warn(err);
-      DEBUG && debug('** warning ** failed to create tempDir:', tempDir, 'user default:', tempDir);
+      DEBUG && debug('** warning ** failed to create tempDir:', tempDir);
       tempDir = require('os').tmpdir();
     })
     .then(function () {
@@ -484,14 +485,16 @@ function configure(config) {
   DEBUG && debug('presets: ', presets);
 
   if (!config.data) {
-    DEBUG && debug('** warning ** no data storage configuration!');
+    console.error('** fatal ** no data storage configuration!');
+    process.exit(1);
   }
-  dataStorage = require('./storage').createProvider(config.data.provider, config.data);
+  dataStorage = storage.createStorage(config.data.provider, config.data);
 
   if (!config.cache) {
-    DEBUG && debug('** warning ** no cache storage configuration!');
+    console.error('** fatal ** no cache storage configuration!');
+    process.exit(1);
   }
-  cacheStorage = require('./storage').createProvider(config.cache.provider, config.cache);
+  cacheStorage = storage.createStorage(config.cache.provider, config.cache);
 }
 
 module.exports = {

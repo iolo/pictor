@@ -2,12 +2,12 @@
 
 var
   util = require('util'),
-  StorageProvider = require('./storage').StorageProvider,
+  storage = require('./storage'),
   debug = require('debug')('pictor:storage:gcs'),
   DEBUG = debug.enabled;
 
 /**
- * GCS(Google Cloud Storage) based implementation of {@link StorageProvider}.
+ * GCS(Google Cloud Storage) based implementation of {@link Storage}.
  *
  * `config` contains:
  *
@@ -16,14 +16,12 @@ var
  * @param config
  * @constructor
  */
-function GCSStorageProvider(config) {
-  GCSStorageProvider.super_.apply(this, arguments);
-  DEBUG && debug('create gcs storage provider: ', config);
+function GCSStorage(config) {
+  GCSStorage.super_.apply(this, arguments);
+  DEBUG && debug('create gcs storage:', config);
 }
-util.inherits(GCSStorageProvider, StorageProvider);
+util.inherits(GCSStorage, storage.Storage);
 
 // TODO: ...
 
-module.exports = {
-  GCSStorageProvider: GCSStorageProvider
-};
+module.exports = GCSStorage;

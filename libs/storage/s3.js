@@ -4,12 +4,12 @@ var
   util = require('util'),
   knox = require('knox'),
   Q = require('q'),
-  StorageProvider = require('./storage').StorageProvider,
+  storage = require('./storage'),
   debug = require('debug')('pictor:storage:s3'),
   DEBUG = debug.enabled;
 
 /**
- * Amazon S3 based implementation of {@link StorageProvider}.
+ * Amazon S3 based implementation of {@link Storage}.
  *
  * `config` contains:
  *
@@ -22,99 +22,86 @@ var
  * @param {object} config
  * @constructor
  */
-function S3StorageProvider(config) {
-  S3StorageProvider.super_.apply(this, arguments);
+function S3Storage(config) {
+  // s3 key has no leading '/'
+  if (config.baseDir && config.baseDir.charAt(0) === '/') {
+    config.baseDir = config.baseDir.substring(1);
+  }
+  S3Storage.super_.apply(this, arguments);
   this.s3Client = knox.createClient({key: config.key, secret: config.secret, bucket: config.bucket});
-  DEBUG && debug('create s3 storage provider: ', config);
+  DEBUG && debug('create s3 storage:', config);
 }
-util.inherits(S3StorageProvider, StorageProvider);
+util.inherits(S3Storage, storage.Storage);
 
-S3StorageProvider.prototype.putFile = function (id, src) {
+S3Storage.prototype.putFile = function (id, src) {
   DEBUG && debug('s3.putFile', src, '---->', id);
   var dst = this._getPath(id);
   var url = this._getUrl(id);
 
   return Q.ninvoke(this.s3Client, 'putFile', src, dst)
     .then(function (result) {
-      console.log('*** putfile ok:', result.statusCode, result.headers);
+      DEBUG && debug('s3.putFile', id, 'ok', result.statusCode, result.headers);
       if (result.statusCode < 200 || result.statusCode >= 300) {
-        throw new Error('file_not_found');
+        throw new storage.StorageError('putFile err', result.statusCode, result);
       }
       return {
         url: url,
         file: src
       };
-    })
-    .fail(function (err) {
-      console.log('*** putfile err:', err);
-      throw err;
     });
 };
 
-S3StorageProvider.prototype.getFile = function (id) {
+S3Storage.prototype.getFile = function (id) {
   DEBUG && debug('s3.getFile', id);
   var src = this._getPath(id);
   var url = this._getUrl(id);
 
   return Q.ninvoke(this.s3Client, 'getFile', src)
     .then(function (result) {
-      console.log('*** getfile ok:', result.statusCode, result.headers);
+      DEBUG && debug('s3.getFile', id, 'ok', result.statusCode, result.headers);
       if (result.statusCode < 200 || result.statusCode >= 300) {
-        throw new Error('file_not_found');
+        throw new storage.StorageError('getFile err', result.statusCode, result);
       }
       return {
         url: url,
         stream: result
       };
-    })
-    .fail(function (err) {
-      console.log('*** getfile err:', err);
-      throw err;
     });
 };
 
-S3StorageProvider.prototype.deleteFile = function (id) {
+S3Storage.prototype.deleteFile = function (id) {
   DEBUG && debug('s3.deleteFile', id);
 
   var src = this._getPath(id);
 
+  // assume 'src' is file
   var s3Client = this.s3Client;
   return Q.ninvoke(s3Client, 'deleteFile', src)
     .then(function (result) {
-      console.log('*** deletefile ok:', result.statusCode, result.headers);
-      if (result.statusCode < 200 || result.statusCode >= 300) {
-        console.log('*** deletefile not found: ignore');
-        //throw new Error('file_not_found');
+      DEBUG && debug('s3.deleteFile', id, 'ok', result.statusCode, result.headers);
+      if (result.statusCode === 404) {
+        // err... assume 'src' is directory
+        return Q.ninvoke(s3Client, 'list', { prefix: src + '/' })
+          .then(function (result) {
+            DEBUG && debug('s3.list ok', result);
+            if (result.Contents.length === 0) {
+              return true;
+            }
+            var srcs = result.Contents.map(function (file) {
+              return file.Key;
+            });
+            return Q.ninvoke(s3Client, 'deleteMultiple', srcs);
+          })
+          .then(function (result) {
+            DEBUG && debug('s3.deleteMultiple ok', result.statusCode, result.headers);
+            return true;
+          });
       }
-      return Q.ninvoke(s3Client, 'list', { prefix: src.substring(1) + '/' }); // s3 key has no leading '/'
-    })
-    .then(function (result) {
-      console.log('*** list ok:', result);//result.statusCode, result.headers);
-      //if (result.statusCode < 200 || result.statusCode >= 300) {
-      //  throw new Error('file_not_found');
-      //}
-      if (result.Contents.length === 0) {
-        return true;
-      }
-      var srcs = result.Contents.map(function (file) {
-        return file.Key;
-      });
-      console.log('*** srcs:', srcs);
-      return Q.ninvoke(s3Client, 'deleteMultiple', srcs);
-    })
-    .then(function (result) {
-      console.log('*** deletemultiple ok:', result.statusCode, result.headers);
       if (result.statusCode < 200 || result.statusCode >= 300) {
-        //throw new Error('file_not_found');
+        throw new storage.StorageError('deleteFile err', result.statusCode, result);
       }
       return true;
-    })
-    .fail(function (err) {
-      console.log('*** deletefile err:', err);
-      throw err;
     });
 };
 
-module.exports = {
-  S3StorageProvider: S3StorageProvider
-};
+module.exports = S3Storage;

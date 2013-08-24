@@ -5,12 +5,12 @@ var
   path = require('path'),
   Q = require('q'),
   ftp = require('ftp'),
-  StorageProvider = require('./storage').StorageProvider,
+  storage = require('./storage'),
   debug = require('debug')('pictor:storage:ftp'),
   DEBUG = debug.enabled;
 
 /**
- * ftp based implementation of {@link StorageProvider}.
+ * ftp based implementation of {@link Storage}.
  *
  * TODO: connection keep alive and/or pooling...
  *
@@ -28,14 +28,14 @@ var
  * @param {object} config
  * @constructor
  */
-function FtpStorageProvider(config) {
-  FtpStorageProvider.super_.apply(this, arguments);
+function FtpStorage(config) {
+  FtpStorage.super_.apply(this, arguments);
   this.ftpClientOpts = {host: config.host, port: config.port, user: config.username, password: config.password};
-  DEBUG && debug('create ftp storage provider: ', config);
+  DEBUG && debug('create ftp storage: ', config);
 }
-util.inherits(FtpStorageProvider, StorageProvider);
+util.inherits(FtpStorage, storage.Storage);
 
-FtpStorageProvider.prototype._withFtpClient = function (callback) {
+FtpStorage.prototype._withFtpClient = function (callback) {
   var d = Q.defer();
   var ftpClient = new ftp();
   ftpClient.on('ready', function () {
@@ -70,7 +70,7 @@ FtpStorageProvider.prototype._withFtpClient = function (callback) {
   return d.promise;
 };
 
-FtpStorageProvider.prototype.putFile = function (id, src) {
+FtpStorage.prototype.putFile = function (id, src) {
   DEBUG && debug('ftp.putFile', src, '---->', id);
   var dst = this._getPath(id);
   var url = this._getUrl(id);
@@ -93,7 +93,7 @@ FtpStorageProvider.prototype.putFile = function (id, src) {
   });
 };
 
-FtpStorageProvider.prototype.getFile = function (id) {
+FtpStorage.prototype.getFile = function (id) {
   DEBUG && debug('ftp.getFile', id);
   var src = this._getPath(id);
   var url = this._getUrl(id);
@@ -111,7 +111,7 @@ FtpStorageProvider.prototype.getFile = function (id) {
   });
 };
 
-FtpStorageProvider.prototype.deleteFile = function (id) {
+FtpStorage.prototype.deleteFile = function (id) {
   DEBUG && debug('ftp.deleteFile', id);
 
   function _removeTree(ftpClient, src) {
@@ -140,6 +140,4 @@ FtpStorageProvider.prototype.deleteFile = function (id) {
   });
 };
 
-module.exports = {
-  FtpStorageProvider: FtpStorageProvider
-};
+module.exports = FtpStorage;

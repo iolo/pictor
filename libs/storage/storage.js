@@ -2,11 +2,41 @@
 
 var
   util = require('util'),
+  Q = require('q'),
   debug = require('debug')('pictor:storage'),
   DEBUG = debug.enabled;
 
+//
+//
+//
+
 /**
- * abstract parent class of storage provider.
+ * abstract superclass for storage specific error.
+ *
+ * @param {string} [message='unknown']
+ * @param {number} [status=0]
+ * @param {*} [cause]
+ * @constructor
+ * @abstract
+ */
+function StorageError(message, status, cause) {
+  this.message = message || 'unknown';
+  this.status = status || 0;
+  this.cause = cause;
+  StorageError.super_.call(this, message);
+}
+util.inherits(StorageError, Error);
+StorageError.prototype.name = 'StorageError';
+StorageError.prototype.toString = function () {
+  return 'StorageError: ' + this.message;
+};
+
+//
+//
+//
+
+/**
+ * abstract parent class of storage.
  *
  * `config` contains:
  *
@@ -19,20 +49,27 @@ var
  * @constructor
  * @abstract
  */
-function StorageProvider(config) {
+function Storage(config) {
+  // ensure trailing slash
+  if (config.baseDir && config.baseDir.substr(-1) !== '/') {
+    config.baseDir = config.baseDir + '/';
+  }
+  if (config.baseUrl && config.baseUrl.substr(-1) !== '/') {
+    config.baseUrl = config.baseUrl + '/';// ensure trailing slash
+  }
   this.config = config;
 }
 
-StorageProvider.prototype._getPath = function (id) {
-  return this.config.baseDir + '/' + id;
+Storage.prototype._getPath = function (id) {
+  return this.config.baseDir + id;
 };
 
-StorageProvider.prototype._getUrl = function (id) {
+Storage.prototype._getUrl = function (id) {
   if (!this.config.baseUrl) {
-    // this provider doesn't support public url
+    // this storage doesn't support public url
     return null;
   }
-  return this.config.baseUrl + '/' + id;
+  return this.config.baseUrl + id;
 };
 
 /**
@@ -51,9 +88,9 @@ StorageProvider.prototype._getUrl = function (id) {
  * @param {string} src
  * @return {Promise}
  */
-StorageProvider.prototype.putFile = function (id, src) {
+Storage.prototype.putFile = function (id, src) {
   DEBUG && debug('storage.putFile:', src, '--->', id);
-  throw new Error('abstract method');
+  return Q.reject(new Error('abstract method'));
 };
 
 /**
@@ -69,9 +106,9 @@ StorageProvider.prototype.putFile = function (id, src) {
  * @param {string} id
  * @return {Promise} url, file or stream
  */
-StorageProvider.prototype.getFile = function (id) {
+Storage.prototype.getFile = function (id) {
   DEBUG && debug('storage.getFile:', id);
-  throw new Error('abstract method');
+  return Q.reject(new Error('abstract method'));
 };
 
 /**
@@ -80,14 +117,12 @@ StorageProvider.prototype.getFile = function (id) {
  * @param {string} id
  * @return {Promise} success or not.
  */
-StorageProvider.prototype.deleteFile = function (id) {
+Storage.prototype.deleteFile = function (id) {
   DEBUG && debug('storage.deleteFile:', id);
-  throw new Error('abstract method');
+  return Q.reject(new Error('abstract method'));
 };
 
 module.exports = {
-  StorageProvider: StorageProvider,
-  inherited: function (ProviderCtor) {
-    util.inherits(ProviderCtor, StorageProvider);
-  }
+  StorageError: StorageError,
+  Storage: Storage
 };

@@ -1,37 +1,37 @@
 'use strict';
 
 var
-  providers = {
-    'local': require('./local').LocalStorageProvider,
-    'ftp': require('./ftp').FtpStorageProvider,
-    's3': require('./s3').S3StorageProvider
-    //'gcs': require('./gcs').GCSStorageProvider,
-    //'gridfs': require('./gridfs').GridFSStorageProvider
+  storages = {
+    'local': require('./local'),
+    'ftp': require('./ftp'),
+    's3': require('./s3')
+    //'gcs': require('./gcs'),
+    //'gridfs': require('./gridfs')
   };
 
 /**
- * register a storage provider.
+ * register a storage.
  *
  * @param {string} name
- * @param {function} ctor constructor function
+ * @param {function} ctor constructor function of the storage
  */
-function registerProvider(name, ctor) {
-  providers[name] = ctor;
+function registerStorage(name, ctor) {
+  storages[name] = ctor;
 }
 
 /**
- * create a storage provider.
+ * create a storage.
  *
  * @param {string} name
  * @param {object} config
- * @returns {object} a provider instance or `null`
+ * @returns {object} a storage instance or `null`
  */
-function createProvider(name, config) {
-  var ProviderCtor = providers[name];
-  return ProviderCtor ? new ProviderCtor(config) : null;
+function createStorage(name, config) {
+  var StorageCtor = storages[name];
+  return StorageCtor ? new StorageCtor(config) : null;
 }
 
 module.exports = {
-  registerProvider: registerProvider,
-  createProvider: createProvider
+  registerStorage: registerStorage,
+  createStorage: createStorage
 };

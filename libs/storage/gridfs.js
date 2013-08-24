@@ -2,12 +2,12 @@
 
 var
   util = require('util'),
-  StorageProvider = require('./storage').StorageProvider,
+  storage = require('./storage'),
   debug = require('debug')('pictor:storage:gridfs'),
   DEBUG = debug.enabled;
 
 /**
- * GridFS(mongodb) based implementation of {@link StorageProvider}.
+ * GridFS(mongodb) based implementation of {@link Storage}.
  *
  * `config` contains:
  *
@@ -16,14 +16,12 @@ var
  * @param config
  * @constructor
  */
-function GridFSStorageProvider(config) {
-  GridFSStorageProvider.super_.apply(this, arguments);
-  DEBUG && debug('create gridfs storage provider: ', config);
+function GridFSStorage(config) {
+  GridFSStorage.super_.apply(this, arguments);
+  DEBUG && debug('create gridfs storage:', config);
 }
-util.inherits(GridFSStorageProvider, StorageProvider);
+util.inherits(GridFSStorage, storage.Storage);
 
 // TODO: ...
 
-module.exports = {
-  GridFSStorageProvider: GridFSStorageProvider
-};
+module.exports = GridFSStorage;
