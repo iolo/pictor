@@ -18,8 +18,6 @@ module.exports = {
      "baseDir": "/tmp/pictor/cache",
      "baseUrl": "http://localhost:3000/pictor/cache"
      },
-     */
-    /*
      "data": {
      "provider": "ftp",
      "host": "jdongsu.jpg2.kr",
@@ -38,25 +36,23 @@ module.exports = {
      "baseDir": "/pictor/cache",
      "baseUrl": "http://jdongsu.jpg2.kr/pictor/cache"
      },
+     "data": {
+     "provider": "s3",
+     "key": process.env.PICTOR_S3_KEY,
+     "secret": process.env.PICTOR_S3_SECRET,
+     "bucket": "s3pictor",
+     "baseDir": "/pictor/data",
+     "baseUrl": "http://s3.amazonaws.com/s3pictor/pictor/data"
+     },
+     "cache": {
+     "provider": "s3",
+     "key": process.env.PICTOR_S3_KEY,
+     "secret": process.env.PICTOR_S3_SECRET,
+     "bucket": "s3pictor",
+     "baseDir": "/pictor/cache",
+     "baseUrl": "http://s3.amazonaws.com/s3pictor/pictor/cache"
+     },
      */
-    /**/
-    "data": {
-      "provider": "s3",
-      "key": process.env.PICTOR_S3_KEY,
-      "secret": process.env.PICTOR_S3_SECRET,
-      "bucket": "s3pictor",
-      "baseDir": "/pictor/data",
-      "baseUrl": "http://s3.amazonaws.com/s3pictor/pictor/data"
-    },
-    "cache": {
-      "provider": "s3",
-      "key": process.env.PICTOR_S3_KEY,
-      "secret": process.env.PICTOR_S3_SECRET,
-      "bucket": "s3pictor",
-      "baseDir": "/pictor/cache",
-      "baseUrl": "http://s3.amazonaws.com/s3pictor/pictor/cache"
-    },
-    /**/
     "routes": {
       "route": "/pictor",
       "redirectStatusCode": false,//false,301,302,307

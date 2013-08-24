@@ -1,12 +1,7 @@
 'use strict';
 
 module.exports = {
-  "http": {
-    host: "pictor.iolo.kr",
-    port: 3001
-  },
   "pictor": {
-    "tempDir": "/tmp/pictor/temp",
     "data": {
       "provider": "ftp",
       "host": "jdongsu.jpg2.kr",
@@ -24,15 +19,6 @@ module.exports = {
       "password": process.env.PICTOR_FTP_PASSWORD,
       "baseDir": "/pictor/cache",
       "baseUrl": "http://jdongsu.jpg2.kr/pictor/cache"
-    },
-    "routes": {
-      "route": "/pictor",
-      "redirectStatusCode": 307, // for easy test, redirect temporary!
-      "skipCommonMiddlewares": false,
-      "statics": {
-        "/data": "/tmp/pictor/data",
-        "/cache": "/tmp/pictor/cache"
-      }
     }
   }
 };
