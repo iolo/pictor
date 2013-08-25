@@ -50,26 +50,34 @@ StorageError.prototype.toString = function () {
  * @abstract
  */
 function Storage(config) {
+  this.config = config || {};
   // ensure trailing slash
-  if (config.baseDir && config.baseDir.substr(-1) !== '/') {
-    config.baseDir = config.baseDir + '/';
+  if (this.config.baseDir && this.config.baseDir.substr(-1) !== '/') {
+    this.config.baseDir = this.config.baseDir + '/';
   }
-  if (config.baseUrl && config.baseUrl.substr(-1) !== '/') {
-    config.baseUrl = config.baseUrl + '/';// ensure trailing slash
+  if (this.config.baseUrl && this.config.baseUrl.substr(-1) !== '/') {
+    this.config.baseUrl = this.config.baseUrl + '/';
   }
-  this.config = config;
 }
 
 Storage.prototype._getPath = function (id) {
-  return this.config.baseDir + id;
+  var result = this.config.baseDir;
+  if (id) {
+    result += id;
+  }
+  return result;
 };
 
 Storage.prototype._getUrl = function (id) {
-  if (!this.config.baseUrl) {
-    // this storage doesn't support public url
+  var result = this.config.baseUrl;
+  // return `null` if this storage doesn't support public url
+  if (!result) {
     return null;
   }
-  return this.config.baseUrl + id;
+  if (id) {
+    result += id;
+  }
+  return result;
 };
 
 /**
@@ -122,7 +130,28 @@ Storage.prototype.deleteFile = function (id) {
   return Q.reject(new Error('abstract method'));
 };
 
+//
+//
+//
+
+function wrapError(err) {
+  if (err) {
+    if (err instanceof StorageError) {
+      //throw err;
+      return Q.reject(err);
+    }
+    if (err.code === 'ENOENT') {
+      //throw new StorageError('file not found', 404, err);
+      return Q.reject(new StorageError('file not found', 404, err));
+    }
+  }
+  //throw new StorageError('io error', 500, err);
+  return Q.reject(new StorageError('io error', 500, err));
+}
+
+
 module.exports = {
   StorageError: StorageError,
-  Storage: Storage
+  Storage: Storage,
+  wrapError: wrapError
 };

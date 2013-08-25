@@ -24,7 +24,7 @@ var
  */
 function LocalStorage(config) {
   LocalStorage.super_.apply(this, arguments);
-  DEBUG && debug('create local storage:', config);
+  DEBUG && debug('create local storage:', this.config);
   FS.makeTree(this.config.baseDir).done();
 }
 util.inherits(LocalStorage, storage.Storage);
@@ -39,7 +39,8 @@ LocalStorage.prototype.putFile = function (id, src) {
     })
     .then(function () {
       return {url: url, file: dst};
-    });
+    })
+    .fail(storage.wrapError);
 };
 
 LocalStorage.prototype.getFile = function (id) {
@@ -49,12 +50,14 @@ LocalStorage.prototype.getFile = function (id) {
   var url = this._getUrl(id);
   return FS.stat(src)
     .then(function (result) {
-      if (!result) {
-        // not exist or not a regular file...
-        throw new Error('bad or missing file: ' + src);
+      console.log('local.getFile:', src, result);
+      if (!result.isFile()) {
+        return storage.wrapError('not regular file: ' + src, 500, result);
+        //throw new storage.StorageError('not regular file: ' + src, 500, result);
       }
       return {url: url, file: src};
-    });
+    })
+    .fail(storage.wrapError);
 };
 
 LocalStorage.prototype.deleteFile = function (id) {
@@ -63,7 +66,8 @@ LocalStorage.prototype.deleteFile = function (id) {
   return FS.removeTree(src)
     .then(function () {
       return true;
-    });
+    })
+    .fail(storage.wrapError);
 };
 
 module.exports = LocalStorage;

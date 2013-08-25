@@ -13,12 +13,12 @@ var
  *
  *    - ...
  *
- * @param config
+ * @param {object} config
  * @constructor
  */
 function GridFSStorage(config) {
   GridFSStorage.super_.apply(this, arguments);
-  DEBUG && debug('create gridfs storage:', config);
+  DEBUG && debug('create gridfs storage:', this.config);
 }
 util.inherits(GridFSStorage, storage.Storage);
 

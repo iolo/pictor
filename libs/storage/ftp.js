@@ -30,11 +30,12 @@ var
  */
 function FtpStorage(config) {
   FtpStorage.super_.apply(this, arguments);
-  this.ftpClientOpts = {host: config.host, port: config.port, user: config.username, password: config.password};
-  DEBUG && debug('create ftp storage: ', config);
+  this.ftpClientOpts = {host: this.config.host, port: this.config.port, user: this.config.username, password: this.config.password};
+  DEBUG && debug('create ftp storage:', this.config);
 }
 util.inherits(FtpStorage, storage.Storage);
 
+// TODO: more robust connection management: keep alive or pooling...
 FtpStorage.prototype._withFtpClient = function (callback) {
   var d = Q.defer();
   var ftpClient = new ftp();
@@ -42,21 +43,22 @@ FtpStorage.prototype._withFtpClient = function (callback) {
     console.log('*** ftp ready!');
     callback(ftpClient)
       .then(function (result) {
-        console.log('*** ftp worker then:', result);
+        console.log('*** ftp worker then:', typeof(result));
         return d.resolve(result);
       })
       .fail(function (err) {
         console.log('*** ftp worker fail:', err);
         return d.reject(err);
       })
-      .fin(function () {
-        console.log('*** ftp worker fin: close');
-        ftpClient.close();
-      });
+      .done();
+    // XXX: for some operation, wait until stream is closed...
+    setTimeout(function () {
+      ftpClient.end();
+    }, 1000);
   });
   ftpClient.on('error', function (err) {
     console.log('*** ftp error!', err);
-    return d.reject(err);
+    //return d.reject(err);
   });
   ftpClient.on('close', function (hadErr) {
     console.log('*** ftp close!', hadErr);
@@ -77,8 +79,7 @@ FtpStorage.prototype.putFile = function (id, src) {
   return this._withFtpClient(function (ftpClient) {
     return Q.ninvoke(ftpClient, 'mkdir', path.dirname(dst), true)
       .fail(function () {
-        //ignore err
-        //directory already exists!
+        //ignore err - directory already exists!
         return true;
       })
       .then(function () {
@@ -89,7 +90,8 @@ FtpStorage.prototype.putFile = function (id, src) {
           url: url,
           file: src
         };
-      });
+      })
+      .fail(storage.wrapError);
   });
 };
 
@@ -107,7 +109,8 @@ FtpStorage.prototype.getFile = function (id) {
           url: url,
           stream: stream
         };
-      });
+      })
+      .fail(storage.wrapError);
   });
 };
 
@@ -131,12 +134,13 @@ FtpStorage.prototype.deleteFile = function (id) {
       })
       .then(function () {
         return true;
-      });
+      })
   }
 
   var src = this._getPath(id);
   return this._withFtpClient(function (ftpClient) {
-    return _removeTree(ftpClient, src);
+    return _removeTree(ftpClient, src)
+      .fail(storage.wrapError);
   });
 };
 

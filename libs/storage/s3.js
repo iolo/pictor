@@ -23,13 +23,13 @@ var
  * @constructor
  */
 function S3Storage(config) {
-  // s3 key has no leading '/'
-  if (config.baseDir && config.baseDir.charAt(0) === '/') {
-    config.baseDir = config.baseDir.substring(1);
-  }
   S3Storage.super_.apply(this, arguments);
-  this.s3Client = knox.createClient({key: config.key, secret: config.secret, bucket: config.bucket});
-  DEBUG && debug('create s3 storage:', config);
+  // s3 key has no leading '/'
+  if (this.config.baseDir && this.config.baseDir.charAt(0) === '/') {
+    this.config.baseDir = this.config.baseDir.substring(1);
+  }
+  DEBUG && debug('create s3 storage:', this.config);
+  this.s3Client = knox.createClient({key: this.config.key, secret: this.config.secret, bucket: this.config.bucket});
 }
 util.inherits(S3Storage, storage.Storage);
 

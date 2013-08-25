@@ -13,12 +13,12 @@ var
  *
  *    - ...
  *
- * @param config
+ * @param {object} config
  * @constructor
  */
 function GCSStorage(config) {
   GCSStorage.super_.apply(this, arguments);
-  DEBUG && debug('create gcs storage:', config);
+  DEBUG && debug('create gcs storage:', this.config);
 }
 util.inherits(GCSStorage, storage.Storage);
 
