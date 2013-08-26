@@ -48,7 +48,8 @@ S3Storage.prototype.putFile = function (id, src) {
         url: url,
         file: src
       };
-    });
+    })
+    .fail(storage.wrapError);
 };
 
 S3Storage.prototype.getFile = function (id) {
@@ -66,7 +67,8 @@ S3Storage.prototype.getFile = function (id) {
         url: url,
         stream: result
       };
-    });
+    })
+    .fail(storage.wrapError);
 };
 
 S3Storage.prototype.deleteFile = function (id) {
@@ -79,29 +81,28 @@ S3Storage.prototype.deleteFile = function (id) {
   return Q.ninvoke(s3Client, 'deleteFile', src)
     .then(function (result) {
       DEBUG && debug('s3.deleteFile', id, 'ok', result.statusCode, result.headers);
-      if (result.statusCode === 404) {
-        // err... assume 'src' is directory
-        return Q.ninvoke(s3Client, 'list', { prefix: src + '/' })
-          .then(function (result) {
-            DEBUG && debug('s3.list ok', result);
-            if (result.Contents.length === 0) {
-              return true;
-            }
-            var srcs = result.Contents.map(function (file) {
-              return file.Key;
-            });
-            return Q.ninvoke(s3Client, 'deleteMultiple', srcs);
-          })
-          .then(function (result) {
-            DEBUG && debug('s3.deleteMultiple ok', result.statusCode, result.headers);
-            return true;
-          });
-      }
+      // XXX: s3 doesn't report error when delete not-existing file. :S
       if (result.statusCode < 200 || result.statusCode >= 300) {
         throw new storage.StorageError('deleteFile err', result.statusCode, result);
       }
+      // err... assume 'src' is directory
+      return Q.ninvoke(s3Client, 'list', { prefix: src + '/' })
+        .then(function (result) {
+          DEBUG && debug('s3.list ok', result);
+          if (result.Contents.length === 0) {
+            return true;
+          }
+          return Q.ninvoke(s3Client, 'deleteMultiple', result.Contents.map(function (file) {
+            return file.Key;
+          }));
+        })
+        .then(function (result) {
+          DEBUG && debug('s3.deleteMultiple ok', result.statusCode, result.headers);
+          return true;
+        });
       return true;
-    });
+    })
+    .fail(storage.wrapError);
 };
 
 module.exports = S3Storage;

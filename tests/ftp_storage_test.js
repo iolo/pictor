@@ -2,7 +2,6 @@
 
 var
   fs = require('fs'),
-  util = require('util'),
   Q = require('q'),
   test_config = {
     "host": "jdongsu.jpg2.kr",
@@ -122,7 +121,7 @@ module.exports = {
         return s._withFtpClient(function (ftpClient) {
           return Q.ninvoke(ftpClient, 'size', exist_file)
             .then(function (result) {
-              console.log('get deleted filet ok:', result);
+              console.log('get deleted file ok:', result);
               test.fail(result);
             })
             .fail(function (err) {
