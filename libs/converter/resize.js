@@ -2,7 +2,7 @@
 
 var
   util = require('util'),
-  converter = require('converter'),
+  converter = require('./converter'),
   imgutils = require('../imgutils'),
   debug = require('debug')('pictor:converter:resize'),
   DEBUG = debug.enabled;
@@ -13,8 +13,12 @@ function ResizeConverter(config) {
 }
 util.inherits(ResizeConverter, converter.Converter);
 
-ResizeConverter.prototype.convert = function (src, dst, opts) {
-  return imgutils.resize(src, dst, opts.w, opts.h, opts.flags);
+ResizeConverter.prototype.getVariation = function (opts) {
+  return 'resize_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.flags || '');
+};
+
+ResizeConverter.prototype.convert = function (opts) {
+  return imgutils.resize(opts.src, opts.dst, opts.w, opts.h, opts.flags);
 };
 
 module.exports = ResizeConverter;

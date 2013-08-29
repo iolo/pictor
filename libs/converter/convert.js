@@ -2,7 +2,7 @@
 
 var
   util = require('util'),
-  converter = require('converter'),
+  converter = require('./converter'),
   imgutils = require('../imgutils'),
   debug = require('debug')('pictor:converter:convert'),
   DEBUG = debug.enabled;
@@ -13,8 +13,12 @@ function ConvertConverter(config) {
 }
 util.inherits(ConvertConverter, converter.Converter);
 
-ConvertConverter.prototype.convert = function (src, dst, opts) {
-  return imgutils.convert(src, dst);
+ConvertConverter.prototype.getVariation = function (opts) {
+  return 'convert';
+};
+
+ConvertConverter.prototype.convert = function (opts) {
+  return imgutils.convert(opts.src, opts.dst);
 };
 
 module.exports = ConvertConverter;

@@ -2,13 +2,13 @@
 
 var
   converters = {
-    'convert': require('./convert')
-//    'resize': require('./resize'),
-//    'crop': require('./crop'),
-//    'exif': require('./exif'),
-//    'meta': require('./meta'),
-//    'optimize': require('./optimize'),
-//    'holder': require('./holder')
+    'convert': require('./convert'),
+    'resize': require('./resize'),
+    'crop': require('./crop'),
+    'meta': require('./meta'),
+    'exif': require('./exif'),
+    'optimize': require('./optimize'),
+    'holder': require('./holder')
   };
 
 /**
