@@ -7,6 +7,15 @@ module.exports = {
   },
   "pictor": {
     "tempDir": "/tmp/pictor/temp",
+    "converters": {
+      "convert": {},
+      "resize": {},
+      "crop": {},
+      "meta": {},
+      "exif": {},
+      "optimize": {},
+      "holder": {}
+    },
     /*
      "data": {
      "provider": "local",

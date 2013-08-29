@@ -62,7 +62,7 @@ Converter.prototype.getVariation = function (opts) {
 };
 
 Converter.prototype.getExtension = function (opts) {
-  return null;//opts.format || path.extname(opts.src).substring(1) || 'bin';
+  return opts.format || (opts.src && path.extname(opts.src).substring(1)) || this.config.format || 'bin';
 };
 
 /**

@@ -18,10 +18,10 @@ OptimizeConverter.prototype.getVariation = function (opts) {
   return 'optimize';
 };
 
-//OptimizeConverter.prototype.getExtension = function (opts) {
-//  // always same to src format!
-//  return path.extname(opts.src).substring(1);
-//};
+OptimizeConverter.prototype.getExtension = function (opts) {
+  // always same to src format!
+  return path.extname(opts.src).substring(1);
+};
 
 OptimizeConverter.prototype.convert = function (opts) {
   return imgutils.optimize(opts.src, opts.dst);

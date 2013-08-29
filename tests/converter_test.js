@@ -12,8 +12,19 @@ module.exports = {
   },
   test_getExtension: function (test) {
     var c = new converter.Converter({});
-    var opts = { };
-    test.equal(null, c.getExtension(opts));
+    test.equal('jpg', c.getExtension({format: 'jpg'}));
+    test.equal('jpg', c.getExtension({src: 'test.jpg'}));
+    test.equal('jpg', c.getExtension({format: 'jpg', src: 'test.png'}));
+    test.equal('bin', c.getExtension({src: 'test'}));
+    test.equal('bin', c.getExtension({}));
+
+    var c2 = new converter.Converter({format:'gif'});
+    test.equal('jpg', c2.getExtension({format: 'jpg'}));
+    test.equal('jpg', c2.getExtension({src: 'test.jpg'}));
+    test.equal('jpg', c2.getExtension({format: 'jpg', src: 'test.png'}));
+    test.equal('gif', c2.getExtension({src: 'test'}));
+    test.equal('gif', c2.getExtension({}));
+
     test.done();
   },
   test_convert: function (test) {

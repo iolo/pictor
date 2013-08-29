@@ -6,13 +6,13 @@ var
   Q = require('q'),
   FS = require('q-io/fs'),
   storage = require('./storage'),
+  converter = require('./converter'),
   imgutils = require('./imgutils'),
   debug = require('debug')('pictor'),
   DEBUG = debug.enabled;
 
 var
   tempDir = '/tmp/pictor/temp',
-  tempFileSeq = 0,
   presets = {
     xxs: {w: 16},
     xs: {w: 24},
@@ -22,6 +22,7 @@ var
     xl: {w: 128},
     xxl: {w: 256}
   },
+  converters = {},
   dataStorage,
   cacheStorage;
 
@@ -92,11 +93,8 @@ function getMimeType(ext) {
   return IMAGE_MIME_TYPES[ext] || DEF_MIME_TYPE;
 }
 
-function getTempFilePath(ext) {
-  var seq = (++tempFileSeq) + 1;
-  var tstamp = Date.now();
-  var nonce = Math.floor(Math.random() * 100000);
-  return path.join(tempDir, 'pictor_' + seq + '_' + tstamp + '_' + nonce + '.' + (ext || DEF_EXTENSION));
+function getTempPath(ext) {
+  return path.join(tempDir, _.uniqueId('pictor_') + '.' + (ext || DEF_EXTENSION));
 }
 
 //
@@ -150,6 +148,27 @@ function deleteFile(id) {
     });
 }
 
+function convertFile(opts) {
+  var converter = converters[opts.converter || 'convert'];
+  if (!converter) {
+    throw 'param not match';
+  }
+  console.log('convertFile:', opts);
+  var ext = converter.getExtension(opts);
+  var variantId = _getVariantId(opts.src, converter.getVariation(opts), ext);
+  return cacheStorage.getFile(variantId)
+    .fail(function () {
+      return dataStorage.getFile(opts.src)
+        .then(function (src) {
+          opts.src = src.file || src.stream;
+          opts.dst = getTempPath(ext);
+          return converter.convert(opts);
+        })
+        .then(function () {
+          return cacheStorage.putFile(variantId, opts.dst);
+        });
+    });
+}
 //
 // extra operations for image files
 //
@@ -157,7 +176,6 @@ function deleteFile(id) {
 function getPreset(name) {
   return presets[name];
 }
-
 
 function _sanitizeId(id) {
   return id ? String(id).replace(/[^a-zA-Z0-9가-힣-_.]/g, '_') : '';
@@ -177,18 +195,18 @@ function _getVariantId(id, variation, ext) {
 }
 
 /**
- * parse common geometry string.
- *
- * result contains:
- *    - {number} w
- *    - {number} h
- *    - {number} x
- *    - {number} y
- *    - {string} flags
- *
- * @param {string} geometry
- * @returns {object} parsed geometry
- */
+* parse common geometry string.
+*
+* result contains:
+*    - {number} w
+*    - {number} h
+*    - {number} x
+*    - {number} y
+*    - {string} flags
+*
+* @param {string} geometry
+* @returns {object} parsed geometry
+*/
 function parseGeometry(geometry) {
   var result = {};
   if (!geometry) {
@@ -230,223 +248,6 @@ function parseGeometry(geometry) {
   return result;
 }
 
-/**
- * get resized/cropped/converted image.
- *
- * @param {string} id
- * @param {string} geometry
- * @param {string} format
- * @returns {promise}
- */
-function getVariantImageFile(id, geometry, format) {
-  var variantId = _getVariantId(id, geometry, format);
-  return cacheStorage.getFile(variantId)
-    .fail(function () {
-      var dst = getTempFilePath(format);
-      return dataStorage.getFile(id)
-        .then(function (src) {
-          var geom = parseGeometry(geometry);
-          if (!isNaN(geom.x) || !isNaN(geom.y)) {
-            return imgutils.crop(src.file || src.stream, dst, geom.w, geom.h, geom.x, geom.y);
-          }
-          if (!isNaN(geom.w) || !isNaN(geom.h)) {
-            return imgutils.resize(src.file || src.stream, dst, geom.w, geom.h, geom.flags);
-          }
-          return imgutils.convert(src.file || src.stream, dst);
-        })
-        .then(function () {
-          return cacheStorage.putFile(variantId, dst);
-        });
-    });
-}
-
-/**
- * get resized image.
- *
- * @param {string} id
- * @param {number} w
- * @param {number} h
- * @param {string} flags
- * @param {string} format
- * @returns {promise}
- */
-function getResizedImageFile(id, w, h, flags, format) {
-  var variantId = _getVariantId(id, 'resize_' + w + 'x' + h + '_' + flags, format);
-  return cacheStorage.getFile(variantId)
-    .fail(function () {
-      var dst = getTempFilePath(format);
-      return dataStorage.getFile(id)
-        .then(function (src) {
-          return imgutils.resize(src.file, dst, w, h, flags);
-        })
-        .then(function () {
-          return cacheStorage.putFile(variantId, dst);
-        });
-    });
-}
-
-/**
- * get thumbnail image.
- *
- * @param {string} id
- * @param {number} w
- * @param {number} h
- * @param {string} format
- * @returns {promise}
- */
-function getThumbnailImageFile(id, w, h, format) {
-  var variantId = _getVariantId(id, 'thumb_' + w + 'x' + h, format);
-  return cacheStorage.getFile(variantId)
-    .fail(function () {
-      var dst = getTempFilePath(format);
-      return dataStorage.getFile(id)
-        .then(function (src) {
-          return imgutils.thumbnail(src.file, dst, w, h);
-        })
-        .then(function () {
-          return cacheStorage.putFile(variantId, dst);
-        });
-    });
-}
-
-/**
- * get cropped image.
- *
- * @param {string} id
- * @param {number} w
- * @param {number} h
- * @param {number} x
- * @param {number} y
- * @param {string} format
- * @returns {promise}
- */
-function getCroppedImageFile(id, w, h, x, y, format) {
-  var variantId = _getVariantId(id, 'crop_' + w + 'x' + h + '+' + x + '+' + y, format);
-  return cacheStorage.getFile(variantId)
-    .fail(function () {
-      var dst = getTempFilePath(format);
-      return dataStorage.getFile(id)
-        .then(function (src) {
-          return imgutils.crop(src.file, dst, w, h, x, y);
-        })
-        .then(function () {
-          return cacheStorage.putFile(variantId, dst);
-        });
-    });
-}
-
-/**
- * get converted image.
- *
- * @param {string} id
- * @param {string} format
- * @returns {promise}
- */
-function getConvertedImageFile(id, format) {
-  var variantId = _getVariantId(id, 'converted', format);
-  return cacheStorage.getFile(variantId)
-    .fail(function () {
-      var dst = getTempFilePath(format);
-      return dataStorage.getFile(id)
-        .then(function (src) {
-          return imgutils.convert(src.file, dst);
-        })
-        .then(function () {
-          return cacheStorage.putFile(variantId, dst);
-        });
-    });
-}
-
-/**
- * get optimized image.
- *
- * @param {string} id
- * @param {string} format
- * @returns {promise}
- */
-function getOptimizedImageFile(id, format) {
-  var variantId = _getVariantId(id, 'optimized', format);
-  return cacheStorage.getFile(variantId)
-    .fail(function () {
-      var dst = getTempFilePath(format);
-      return dataStorage.getFile(id)
-        .then(function (src) {
-          return imgutils.optimize(src.file, dst);
-        })
-        .then(function () {
-          return cacheStorage.putFile(variantId, dst);
-        });
-    });
-}
-
-/**
- * get image meta data.
- *
- * @param {string} id
- * @returns {promise}
- */
-function getImageMetaFile(id) {
-  var variantId = _getVariantId(id, 'meta', 'json');
-  return cacheStorage.getFile(variantId)
-    .fail(function () {
-      var dst = getTempFilePath('json');
-      return dataStorage.getFile(id)
-        .then(function (src) {
-          return imgutils.meta(src.file);
-        })
-        .then(function (meta) {
-          return FS.write(dst, JSON.stringify(meta));
-        })
-        .then(function () {
-          return cacheStorage.putFile(variantId, dst);
-        });
-    });
-}
-
-/**
- * get image EXIF data.
- *
- * @param {string} id
- * @returns {promise}
- */
-function getImageExifFile(id) {
-  var variantId = _getVariantId(id, 'exif', 'json');
-  return cacheStorage.getFile(variantId)
-    .fail(function () {
-      var dst = getTempFilePath('json');
-      return dataStorage.getFile(id)
-        .then(function (src) {
-          return imgutils.exif(src.file);
-        })
-        .then(function (exif) {
-          return FS.write(dst, JSON.stringify(exif));
-        })
-        .then(function () {
-          return cacheStorage.putFile(variantId, dst);
-        });
-    });
-}
-
-/**
- * get holder image.
- *
- * @param {number} w
- * @param {number} h
- * @param {string} format
- * @returns {promise}
- */
-function getHolderImageFile(w, h, format) {
-  var variantId = _getVariantId('holder', w + 'x' + h, format);
-  return cacheStorage.getFile(variantId)
-    .fail(function () {
-      var dst = getTempFilePath(format);
-      return imgutils.holder(dst, w, h)
-        .then(function () {
-          return cacheStorage.putFile(variantId, dst);
-        });
-    });
-}
-
 //
 //
 //
@@ -467,13 +268,10 @@ function getHolderImageFile(w, h, format) {
 function configure(config) {
   DEBUG && debug('configure pictor...');
 
-  imgutils.configure(config.imgutils);
-
   tempDir = config.tempDir || require('os').tmpdir();//'/tmp/pictor/temp';
   FS.makeTree(tempDir)
     .fail(function (err) {
-      console.warn(err);
-      DEBUG && debug('** warning ** failed to create tempDir:', tempDir);
+      console.warn('** warning ** failed to create tempDir:', tempDir, err);
       tempDir = require('os').tmpdir();
     })
     .then(function () {
@@ -483,6 +281,19 @@ function configure(config) {
 
   _.extend(presets, config.presets);
   DEBUG && debug('presets: ', presets);
+
+  if (config.converters) {
+    converters = Object.keys(config.converters).reduce(function (result, name) {
+      var opts = config.converters[name] || {};
+      result[name] = converter.createConverter(name, opts);
+      return result;
+    }, {});
+    DEBUG && debug('converters: ', Object.keys(converters));
+  } else {
+    console.warn('** waning ** no converters configured!');
+  }
+
+  imgutils.configure(config.imgutils);
 
   if (!config.data) {
     console.error('** fatal ** no data storage configuration!');
@@ -500,20 +311,21 @@ function configure(config) {
 module.exports = {
   getExtension: getExtension,
   getMimeType: getMimeType,
-  getTempFilePath: getTempFilePath,
+  getTempPath: getTempPath,
   putFile: putFile,
   deleteFile: deleteFile,
   getFile: getFile,
+  convertFile: convertFile,
   getPreset: getPreset,
   parseGeometry: parseGeometry,
-  getVariantImageFile: getVariantImageFile,
-  getResizedImageFile: getResizedImageFile,
-  getCroppedImageFile: getCroppedImageFile,
-  getThumbnailImageFile: getThumbnailImageFile,
-  getConvertedImageFile: getConvertedImageFile,
-  getOptimizedImageFile: getOptimizedImageFile,
-  getImageMetaFile: getImageMetaFile,
-  getImageExifFile: getImageExifFile,
-  getHolderImageFile: getHolderImageFile,
+//  getVariantImageFile: getVariantImageFile,
+//  getResizedImageFile: getResizedImageFile,
+//  getCroppedImageFile: getCroppedImageFile,
+//  getThumbnailImageFile: getThumbnailImageFile,
+//  getConvertedImageFile: getConvertedImageFile,
+//  getOptimizedImageFile: getOptimizedImageFile,
+//  getImageMetaFile: getImageMetaFile,
+//  getImageExifFile: getImageExifFile,
+//  getHolderImageFile: getHolderImageFile,
   configure: configure
 };

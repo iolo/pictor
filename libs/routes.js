@@ -5,6 +5,7 @@ var
   http = require('http'),
   Q = require('q'),
   _ = require('lodash'),
+  mime = require('mime'),
   express = require('express'),
   pictor = require('./pictor'),
   debug = require('debug')('pictor:routes'),
@@ -29,6 +30,21 @@ function _validateId(id, prefix) {
     if (matches[2]) {
       id += matches[2]; // .ext
     }
+  }
+  return id;
+}
+
+function _getIdParam(id, prefix, type) {
+  if (!id) {
+    throw 'invalid_param_id';
+  }
+  // id is 'new' -> generate new unique id
+  if (id === 'new') {
+    id = _.uniqueId(prefix || 'pictor_');
+  }
+  // id without extension -> guess extension from request content type
+  if (type && id.indexOf('.') === -1) {
+    id += '.' + mime.extension(type);
   }
   return id;
 }
@@ -67,12 +83,12 @@ function _sendFileResponse(res, result) {
 }
 
 /**
- * @api {post} /pictor/upload upload multiple files with http multipart post
+ * @api {post} /pictor/upload upload multiple files with http multipart/upload-data post
  * @apiName uploadFiles
  * @apiGroup pictor
  *
- * @apiParam {array} files encoded with multipart/upload-data. param names are `id` for each file.
  * @apiParam {string} [idprefix] used to generate new id if basename of `id` is 'new'
+ * @apiParam {array} files encoded with multipart/upload-data. param name wll be used as `id` for the file.
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 200 OK
@@ -102,8 +118,8 @@ function uploadFiles(req, res) {
 
   var putFilePromises = Object.keys(req.files).map(function (fileParamName) {
     console.log('***file:', fileParamName, req.files[fileParamName]);
-    var id = _validateId(fileParamName, req.param('idprefix'));
     var file = req.files[fileParamName];
+    var id = _getIdParam(fileParamName, req.param('idprefix'), file.type);
     return pictor.putFile(id, file.path);
   });
 
@@ -151,7 +167,7 @@ function uploadFile(req, res) {
     //throw new errors.BadRequest('required_param_file');
   }
 
-  var id = _validateId(req.param('id'), req.param('idprefix'));
+  var id = _getIdParam(req.param('id'), req.param('idprefix'), file.type);
 
   return pictor.putFile(id, file.path)
     .then(function (result) {
@@ -171,7 +187,7 @@ function uploadFile(req, res) {
  * @apiName uploadFile
  * @apiGroup pictor
  *
- * @apiParam {string} id identifier with extension to guess mimetype
+ * @apiParam {string} id identifier(with extension to guess mimetype)
  * @apiParam {string} [idprefix] used to generate new id if basename of `id` is 'new'
  * @apiParam {*} file binary data
  *
@@ -191,7 +207,7 @@ function uploadFile(req, res) {
  *    }
  */
 function uploadFileRaw(req, res) {
-  var id = _validateId(req.param('id'), req.param('idprefix'));
+  var id = _getIdParam(req.param('id'), req.param('idprefix'), req.get('content-type'));
 
   var tempFilePath = '/tmp/' + id;
 
@@ -219,7 +235,7 @@ function uploadFileRaw(req, res) {
  * @apiName deleteFile
  * @apiGroup pictor
  *
- * @apiParam {string} id identifier with extension to guess mimetype
+ * @apiParam {string} id identifier(with extension to guess mimetype)
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 204 No Content
@@ -247,7 +263,7 @@ function deleteFile(req, res) {
  * @apiName downloadFile
  * @apiGroup pictor
  *
- * @apiParam {string} id
+ * @apiParam {string} id identifier(with extension to guess mimetype)
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 200 OK
@@ -255,7 +271,13 @@ function deleteFile(req, res) {
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 301 Moved Permanently
+ *    Location: http://...
+ *
+ * @apiSuccessExample success response:
  *    HTTP/1.1 302 Found
+ *    Location: http://...
+ *
+ * @apiSuccessExample success response:
  *    HTTP/1.1 307 Temporary Redirect
  *    Location: http://...
  *
@@ -277,187 +299,38 @@ function downloadFile(req, res) {
 }
 
 /**
- * @api {get} /pictor/:id/:geometry.:format download the variant image.
- * @apiName downloadVariantImage
+ * @api {get} /pictor/convert convert one or more files
+ * @apiName convertFile
  * @apiGroup pictor
  *
- * @apiParam {string} id
- * @apiParam {string} format
- * @apiParam {string} geometry [WIDTH][xHEIGHT][+LEFT+TOP][PRESET][FLAGS][@2x]
+ * @apiParam {string} converter 'convert', 'resize', 'crop', 'meta', 'exif', ...
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 200 OK
- *    image binary...
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 301 Moved Permanently
- *    HTTP/1.1 302 Found
- *    HTTP/1.1 307 Temporary Redirect
- *    Location: http://...
+ *    { url: "http://..." }
  *
  * @apiSuccessExample error response:
  *    HTTP/1.1 404 Not Found
  */
-function downloadVariantImage(req, res) {
-  var id = req.param('id');
-  var format = req.param('format');
-  var geometry = req.param('geometry');
-
-  return pictor.getVariantImageFile(id, geometry, format)
+function convertFile(req, res) {
+  // TODO: more robust parser...
+  var opts = {
+    converter: req.param('converter'),
+    src: req.param('src'),
+    w: req.param('w'),
+    h: req.param('h'),
+    flags: req.param('flags'),
+    x: req.param('x'),
+    y: req.param('y'),
+    format: req.param('format')
+  };
+  return pictor.convertFile(opts)
     .then(function (result) {
-      return _sendFileResponse(res, result);
+      return res.send(result);
+      //return _sendFileResponse(res, result);
     })
     .fail(function (err) {
       return res.send(404, err);
-    })
-    .done();
-}
-
-/**
- * @api {get} /pictor/:id/meta get image meta data from the file.
- * @apiName downloadImageMeta
- * @apiGroup pictor
- *
- * @apiParam {string} id
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200 OK
- *    {
- *      "width": 400,
- *      "height": 300,
- *      "depth": 8,
- *      "colors": 32767,
- *      "format": "JPEG"
- *    }
- *
- * @apiSuccessExample error response:
- *    HTTP/1.1 404 Not Found
- */
-function downloadImageMeta(req, res) {
-  var id = req.param('id');
-
-  return pictor.getImageMetaFile(id)
-    .then(function (result) {
-      return _sendFileResponse(res, result);
-    })
-    .fail(function (err) {
-      return res.send(404, err);
-    })
-    .done();
-}
-
-/**
- * @api {get} /pictor/:id/exif get image EXIF data from the file.
- * @apiName downloadImageExif
- * @apiGroup pictor
- *
- * @apiParam {string} id
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200 OK
- *    {
- *      "Model": "Good Camera",
- *      ...
- *    }
- *
- * @apiSuccessExample error response:
- *    HTTP/1.1 404 Not Found
- */
-function downloadImageExif(req, res) {
-  var id = req.param('id');
-
-  return pictor.getImageExifFile(id)
-    .then(function (result) {
-      return _sendFileResponse(res, result);
-    })
-    .fail(function (err) {
-      return res.send(404, err);
-    })
-    .done();
-}
-
-/**
- * @api {get} /pictor/:id/converted.:format get converted image for the file.
- * @apiName downloadConvertedImage
- * @apiGroup pictor
- *
- * @apiParam {string} id
- * @apiParam {string} format
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200 OK
- *    binary data...
- *
- * @apiSuccessExample error response:
- *    HTTP/1.1 404 Not Found
- */
-function downloadConvertedImage(req, res) {
-  var id = req.param('id');
-  var format = req.param('format');
-
-  return pictor.getConvertedImageFile(id, format)
-    .then(function (result) {
-      return _sendFileResponse(res, result);
-    })
-    .fail(function (err) {
-      return res.send(404, err);
-    })
-    .done();
-}
-
-/**
- * @api {get} /pictor/:id/optimized.:format get optimized image for the file.
- * @apiName downloadOptimzedImage
- * @apiGroup pictor
- *
- * @apiParam {string} id
- * @apiParam {string} format
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200 OK
- *    binary data...
- *
- * @apiSuccessExample error response:
- *    HTTP/1.1 404 Not Found
- */
-function downloadOptimizedImage(req, res) {
-  var id = req.param('id');
-  var format = req.param('format');
-
-  return pictor.getOptimizedImageFile(id, format)
-    .then(function (result) {
-      return _sendFileResponse(res, result);
-    })
-    .fail(function (err) {
-      return res.send(404, err);
-    })
-    .done();
-}
-
-/**
- * @api {get} /pictor/holder/:geometry.:format download the holder image.
- * @apiName downloadHolderImage
- * @apiGroup pictor
- *
- * @apiParam {string} format
- * @apiParam {string} geometry [WIDTH][xHEIGHT][PRESET][@2x]
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200 OK
- *    image binary...
- */
-function downloadHolderImage(req, res) {
-  var geometry = req.param('geometry');
-  var format = req.param('format');
-
-  var g = pictor.parseGeometry(geometry);
-
-  return pictor.getHolderImageFile(g.w, g.h, format)
-    .then(function (result) {
-      return _sendFileResponse(res, result);
-    })
-    .fail(function (err) {
-      return res.send(500, err);
     })
     .done();
 }
@@ -471,7 +344,6 @@ function downloadHolderImage(req, res) {
  *
  * `config` contains:
  *    - {boolean|number} [redirectStatusCode=false]: 301, 302 or 307 to use redirect.
- *    - {boolean} [skipCommonMiddlewares=false]
  *    - {object} [statics] pairs of url prefix and document root.
  *
  * @param {express.application} app
@@ -482,12 +354,6 @@ function configureMiddlewares(app, config) {
   DEBUG && debug('create pictor middlewares...');
 
   redirectStatusCode = config.redirectStatusCode || DEF_REDIRECT_STATUS_CODE;
-
-  if (!config.skipCommonMiddlewares) {
-    app.use(express.cookieParser());
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-  }
 
   if (config.statics) {
     Object.keys(config.statics).forEach(function (urlPrefix) {
@@ -512,24 +378,15 @@ function configureRoutes(app, config) {
 
   var prefix = config.prefix || '';
 
+  var bodyParser = express.bodyParser();
+
   // TODO: require auth!
-  app.post(prefix + '/upload', uploadFiles);
-  app.post(prefix + '/:id', uploadFile);
+  app.get(prefix + '/convert', convertFile);
+  app.post(prefix + '/upload', bodyParser, uploadFiles);
+  app.post(prefix + '/:id', bodyParser, uploadFile);
   app.put(prefix + '/:id', uploadFileRaw);
   app.del(prefix + '/:id', deleteFile);
   app.get(prefix + '/:id', downloadFile);
-
-  // routes for image files...
-  // TODO: more pretty and graceful urls...
-  app.get(prefix + '/holder/:geometry.:format', downloadHolderImage);
-  app.get(prefix + '/:id/meta.json', downloadImageMeta);
-  app.get(prefix + '/:id/exif.json', downloadImageExif);
-  app.get(prefix + '/:id/:geometry.:format', downloadVariantImage);
-  app.get(prefix + '/:id/converted.:format', downloadConvertedImage);
-  app.get(prefix + '/:id/optimized.:format', downloadOptimizedImage);
-  //app.get(prefix + '/:id/resize_[\d+]x[\d+].:format', downloadResizedImage);
-  //app.get(prefix + '/:id/resize_[\d+]x[\d+]\+[\d+]\+[\d+].:format', downloadCroppedImage);
-  //app.get(prefix + '/:id/thumbnail_[\d+]x[\d+].:format', downloadThumbnailImage);
 
   return app;
 }
