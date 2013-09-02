@@ -3,10 +3,41 @@
 var
   util = require('util'),
   FS = require('q-io/fs'),
+  Q = require('q'),
+  gm = require('gm'),
   converter = require('./converter'),
-  imgutils = require('../imgutils'),
   debug = require('debug')('pictor:converter:exif'),
   DEBUG = debug.enabled;
+
+/**
+ * get image exif data.
+ *
+ * result contains:
+ *    - {string} Make
+ *    - {string} Model
+ *    - {string} Orientation
+ *    - ...
+ *
+ * @param {string} src
+ * @returns {promise} exit data or error
+ */
+function exif(src) {
+  var cmd = gm(src);
+  return Q.ninvoke(cmd, 'identify')
+    .then(function (result) {
+      return result['Profile-EXIF'] || {};
+//    return Object.keys(result).reduce(function (prev, curr) {
+//      if (curr.indexOf('EXIF:') > 0) {
+//        prev[curr] = result[curr];
+//      }
+//      return prev;
+//    }, {});
+    });
+}
+
+//
+//
+//
 
 function ExifConverter(config) {
   ExifConverter.super_.apply(this, arguments);
@@ -24,7 +55,7 @@ ExifConverter.prototype.getExtension = function (opts) {
 };
 
 ExifConverter.prototype.convert = function (opts) {
-  return imgutils.exif(opts.src)
+  return exif(opts.src)
     .then(function (exif) {
       return FS.write(opts.dst, JSON.stringify(exif));
     });

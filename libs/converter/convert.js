@@ -2,10 +2,27 @@
 
 var
   util = require('util'),
+  Q = require('q'),
+  gm = require('gm'),
   converter = require('./converter'),
-  imgutils = require('../imgutils'),
   debug = require('debug')('pictor:converter:convert'),
   DEBUG = debug.enabled;
+
+/**
+ * convert image format.
+ *
+ * @param {string} src
+ * @param {string} dst
+ * @returns {promise} success or not
+ */
+function convert(src, dst) {
+  var cmd = gm(src).noProfile();
+  return Q.ninvoke(cmd, 'write', dst);
+}
+
+//
+//
+//
 
 function ConvertConverter(config) {
   ConvertConverter.super_.apply(this, arguments);
@@ -18,7 +35,7 @@ ConvertConverter.prototype.getVariation = function (opts) {
 };
 
 ConvertConverter.prototype.convert = function (opts) {
-  return imgutils.convert(opts.src, opts.dst);
+  return convert(opts.src, opts.dst);
 };
 
 module.exports = ConvertConverter;

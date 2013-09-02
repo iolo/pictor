@@ -68,10 +68,12 @@ Converter.prototype.getExtension = function (opts) {
 /**
  * convert a file.
  *
- * @param {object} [opts]
- * @param {string|Stream} opts.src
- * @param {string|Stream} [opts.dst]
- * @return {Promise}
+ * `opts` contains:
+ *    - {string|stream} src local path to source file or readable stream
+ *    - {string|stream} dst local path to destination file or writable stream
+ *    - {...*} extra arguments for converter
+ * @param {object} opts
+ * @returns {promise}
  */
 Converter.prototype.convert = function (opts) {
   DEBUG && debug('converter.convert:', opts);
