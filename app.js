@@ -38,6 +38,9 @@ app.get('/', function (req, res) {
   var id = req.param('id') || '123.jpg';
   return res.render('index', {id: id});
 });
+app.get('/demo/upload', function (req, res) {
+  return res.render('demo/upload');
+});
 
 // expose public & static resources
 app.use(express.static(path.join(__dirname, 'public')));
