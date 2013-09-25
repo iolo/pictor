@@ -7,8 +7,8 @@ var
   _ = require('lodash'),
   mime = require('mime'),
   express = require('express'),
-  pictor = require('./pictor'),
-  debug = require('debug')('pictor:routes'),
+  pictor = require('../libs/pictor'),
+  debug = require('debug')('pictor:routes:api'),
   DEBUG = debug.enabled;
 
 var

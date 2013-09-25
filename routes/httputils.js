@@ -7,7 +7,7 @@ var
   Q = require('q'),
   express = require('express'),
   errors = require('./errors'),
-  debug = require('debug')('toybox:common'),
+  debug = require('debug')('toybox:httputils'),
   DEBUG = debug.enabled;
 
 //

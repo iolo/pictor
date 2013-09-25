@@ -8,7 +8,7 @@ var
   storage = require('./storage'),
   converter = require('./converter'),
   imgutils = require('./imgutils'),
-  debug = require('debug')('pictor'),
+  debug = require('debug')('pictor:main'),
   DEBUG = debug.enabled;
 
 var

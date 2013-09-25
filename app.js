@@ -5,7 +5,8 @@ var
   express = require('express'),
   config = require('./config'),
   pictor = require('./libs/pictor'),
-  routes = require('./libs/routes');
+  debug = require('debug')('pictor:app'),
+  DEBUG = debug.enabled;
 
 //
 //
@@ -25,7 +26,7 @@ app.configure('all', function () {
   app.use(express.favicon());
 
   // embedding pictor in your app.
-  app.use(config.pictor.routes.route || '/pictor', routes.createApp(config.pictor.routes));
+  app.use(config.pictor.routes.route || '/pictor', require('./routes/api').createApp(config.pictor.routes));
 
   //routes.configureMiddlewares(app, config.pictor.routes);
 
