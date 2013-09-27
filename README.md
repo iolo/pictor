@@ -9,7 +9,7 @@ The name of pictor comes from [Pictor, a constellation](http://en.wikipedia.org/
 
 ![logo](../master/public/pictor.jpg?raw=true)
 
-introduction
+Introduction
 ------------
 
 Local storages and traffic are *expensive*, especially in cloud envionment.
@@ -31,7 +31,7 @@ pictor basically works as following:
 
 ![diagram](../master/public/docs/pictor.png?raw=true)
 
-getting started
+Getting Started
 ---------------
 
 1. get source from github:
@@ -64,37 +64,66 @@ getting started
 	TBD...
   ```
 
-configuration
--------------
+Configurations
+--------------
 
 configuration files are separated for each envionment(`NODE_ENV` environment variable) in `config` directory.
 
 for more details, see [source code of default configuration](../master/config/defaults.js).
 
-documents
----------
+Generated Documents
+--------------------
 
-* [API documents](http://pictor.iolo.kr/docs/api/)
+* [api documents](http://pictor.iolo.kr/docs/api/)
+* [source code Documents](http://pictor.iolo.kr/docs/dox/)
 
-```
-grunt apidoc
-open public/docs/api/index.html
-```
 
-* [source code documents](http://pictor.iolo.kr/docs/dox/)
-
-```
-grunt apidoc
-open public/docs/api/index.html
-```
-
-advanced topics
+Advanced Topics
 ---------------
 
 * embedding pictor in other [expressjs](http://expressjs.com) app
 * custom storage
 * custom converter
 * TBW...
+
+Internals
+---------
+
+* project directory structure
+
+```
+config/ --- configurations for each environment(server-side)
+libs/ -- nodejs modules(server-side) --> jshint, doxx task
+routes/ -- expressjs modules(server-side) --> jshint, apidoc task
+tests/
+  **/*_test.js -- nodeunit testcases(server-side) --> nodeunit task
+  **/*_test.html -- qunit testcases(client-side) --> qunit task
+app/ -- source of static web resources(client-side) --> concat, uglify, copy, jade task
+  js/ -- javascript source(client-side) --> jshint task
+  ...
+build/
+  app/ --> build output of static web resources(client-side)
+    docs/
+      api/ --> generated documents of apidoc for routes/ --> apidoc task
+      dox/ --> generated documents of doxx for libs/ --> doxx task
+    ...
+app.js -- nodejs launcher without cluster(server-side)
+cluster.js -- nodejs launcher with cluster(server-side)
+```
+
+* to generate api documents from source
+
+```
+grunt apidoc
+open build/app/docs/api/index.html
+```
+
+* to generate source code documents from source
+
+```
+grunt doxx
+open build/app/docs/api/index.html
+```
 
 --
 

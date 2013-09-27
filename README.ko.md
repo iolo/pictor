@@ -10,7 +10,7 @@ pictor의 이름은 [화가의 별자리](http://en.wikipedia.org/wiki/Pictor)�
 ![logo](../master/public/pictor.jpg?raw=true)
 
 소개
----
+----
 
 로컬 저장소와 트래픽은 *비쌉니다*. 클라우드 환경에서는 특히 그렇죠.
 
@@ -32,7 +32,7 @@ pictor는 기본적으로 다음과 같이 동작합니다:
 ![다이어그램](../master/public/docs/pictor.png?raw=true)
 
 시작하기
-------
+-------
 
 1. get source from github:
 
@@ -65,37 +65,64 @@ pictor는 기본적으로 다음과 같이 동작합니다:
   ```
 
 설정
--------------
+----
 
 설정 파일은 `config` 디렉토리 아래에 각 환경(`NODE_ENV` 환경 변수)별로 분리되어 있습니다.
 
 자세한 내용은 [기본 설정의 소스 코드](../master/config/defaults.js)를 참고하세요.
 
-문서
----------
+생성된 문서
+----------
 
 * [API 문서](http://pictor.iolo.kr/docs/api/)
+* [소스 코드 문서](http://pictor.iolo.kr/docs/dox/)
+
+고급 주제
+--------
+
+* pictor를 다른 [expressjs](http://expressjs.com) 앱에 내장하기
+* 커스텀 저장소
+* 커스텀 변환기
+* TBW...
+
+내부
+----
+
+* 프로젝트 디렉토리 구조
+
+```
+config/ --- 환경별 설정(서버측)
+libs/ -- nodejs 모듈(서버측) --> jshint, doxx task
+routes/ -- expressjs 모듈(서버측) --> jshint, apidoc task
+tests/
+  **/*_test.js -- nodeunit 테스트케이스(서버측) --> nodeunit task
+  **/*_test.html -- qunit 테스트케이스(서버측) --> qunit task
+app/ -- 정적 웹 리소스 소스(클라이언트측) --> concat, uglify, copy, jade task
+  js/ -- 자바스크립트 소스(클라이언트 측) --> jshint task
+  ...
+build/
+  app/ --> 정적 웹 리소스의 빌드 결과(클라이언트측)
+    docs/
+      api/ --> apidoc이 routes/를 대상으로 생성한 문서 --> apidoc task
+      dox/ --> doxx가 libs/를 대상으로 생성한 문서 --> doxx task
+    ...
+app.js -- 클러스터를 사용하지 않는 nodejs 실행 모듈(server-side)
+cluster.js -- 클러스터를 사용한 nodejs 실행 모듈(server-side)
+```
+
+* 소스에서 API 문서 생성하기
 
 ```
 grunt apidoc
 open public/docs/api/index.html
 ```
 
-
-* [소스 코드 문서](http://pictor.iolo.kr/docs/dox/)
+* 소스에서 소스 코드 문서 생성하기
 
 ```
 grunt doxx
 open public/docs/dox/index.html
 ```
-
-고급 주제
--------
-
-* pictor를 다른 [expressjs](http://expressjs.com) 앱에 내장하기
-* 커스텀 저장소
-* 커스텀 변환기
-* TBW...
 
 --
 
