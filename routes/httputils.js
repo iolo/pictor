@@ -1,5 +1,9 @@
 'use strict';
 
+/**
+ * @module opentrophy.routes.common
+ */
+
 var
   util = require('util'),
   path = require('path'),
@@ -7,122 +11,8 @@ var
   Q = require('q'),
   express = require('express'),
   errors = require('./errors'),
-  debug = require('debug')('toybox:httputils'),
+  debug = require('debug')('pictor:routes:httputils'),
   DEBUG = debug.enabled;
-
-//
-// custom http errors
-//
-
-/**
- * alias of 401 {@link Unauthorized}.
- *
- * @param {String} [message]
- * @param {*} [cause]
- * @constructor
- */
-function InvalidSession(message, cause) {
-  InvalidSession.super_.call(this, message || 'Invalid Session', cause);
-}
-util.inherits(InvalidSession, errors.Unauthorized);
-InvalidSession.prototype.name = 'InvalidSession';
-
-/**
- * alias of 403 {@link Forbidden}.
- *
- * @param {String} [message]
- * @param {*} [cause]
- * @constructor
- */
-function AccessDenied(message, cause) {
-  AccessDenied.super_.call(this, message || 'Access Denied', cause);
-}
-util.inherits(AccessDenied, errors.Forbidden);
-AccessDenied.prototype.name = 'AccessDenied';
-
-/**
- *
- * @param {string} paramName
- * @constructor
- */
-function ParamRequired(paramName) {
-  ParamRequired.super_.call(this, 'param_required:' + paramName);
-}
-util.inherits(ParamRequired, errors.BadRequest);
-ParamRequired.prototype.name = 'ParamRequired';
-
-/**
- *
- * @param {string} paramName
- * @constructor
- */
-function IntParamRequired(paramName) {
-  IntParamRequired.super_.call(this, 'int_param_required:' + paramName);
-}
-util.inherits(IntParamRequired, errors.BadRequest);
-IntParamRequired.prototype.name = 'IntParamRequired';
-
-/**
- *
- * @param {string} paramName
- * @constructor
- */
-function ParamNotMatch(paramName) {
-  ParamNotMatch.super_.call(this, 'param_not_match: ' + paramName);
-}
-util.inherits(ParamNotMatch, errors.BadRequest);
-ParamNotMatch.prototype.name = 'ParamNotMatch';
-
-//
-//
-//
-
-/**
- *
- * @param {express.request} req
- * @param {string} paramName
- * @returns {String} param value
- * @throws {ParamRequired}
- */
-function requiredParam(req, paramName) {
-  var paramValue = req.param(paramName);
-  if (!paramValue) {
-    throw new ParamRequired(paramName);
-  }
-  return paramValue;
-}
-
-/**
- *
- * @param {express.request} req
- * @param {string} paramName
- * @returns {Number} param value
- * @throws {IntParamRequired}
- */
-function intParam(req, paramName) {
-  var paramValue = parseInt(req.param(paramName), 10);
-  if (isNaN(paramValue)) {
-    throw new IntParamRequired(paramName);
-  }
-  return paramValue;
-}
-
-/**
- * collect params from (express) request into object
- *
- * @param {express.request} req
- * @param {Array.<string>} paramNames
- * @returns {Object.<string,string>}
- */
-function collectParams(req, paramNames) {
-  return paramNames.reduce(function (result, paramName) {
-    var paramValue = req.param(paramName);
-    if (paramValue) {
-      result[paramName] = paramValue.trim();
-    }
-    return result;
-  }, {});
-}
 
 /**
  * collect query params from (express) request into object
@@ -206,6 +96,10 @@ function collectQueryParams(req, paramNames) {
   return result;
 }
 
+function collectDeviceParams(req) {
+  return _.defaults(req.param('device') || {}, {uuid: req.ip, model: req.headers['user-agent']});
+}
+
 // TODO: ...
 function generateCaptcha(res) {
 }
@@ -236,11 +130,11 @@ function pagination(offset, limit, count, range) {
 
 /**
  *
- * @param {express.request} req
- * @param {express.response} res
- * @param {string} view
- * @param {string} next
- * @param {object} [vm] view model
+ * @param {*} req
+ * @param {*} res
+ * @param {string} [view]
+ * @param {string} [next]
+ * @param {*} [vm] view model
  * @returns {*}
  */
 function renderViewOrRedirectToNext(req, res, view, next, vm) {
@@ -252,82 +146,161 @@ function renderViewOrRedirectToNext(req, res, view, next, vm) {
 }
 
 //
-//
+// connect/express extensions/middlewares
 //
 
 /**
- * @callback paramMapperFuncCallback
- * @param {string} paramValue
- * @param {express.request} req
- * @param {express.response} res
- * @return {promise} promise of get mapped object from param value
+ * add some utility methods to http request.
  */
+function extendHttpRequest() {
+  var req = require('http').IncomingMessage.prototype;
 
-/**
- * create express param middlware function that
- * maps param to object and save it into (express response) "locals".
- *
- * @param {string} paramName - param name
- * @param {Function} mapper
- * @param {Array.<string>} [localNames] - required local names
- * @returns {Function} express param middleware
- */
-function paramMapperFunc(paramName, mapper, localNames) {
-  return  function (req, res, next) {
-    if (localNames) {
-      for (var i = 0, len = localNames.length; i < len; i += 1) {
-        var localName = localNames[i];
-        if (!res.locals[localName]) {
-          return next(new ParamRequired(localName));
-        }
+  /**
+   * get string param from http request.
+   *
+   * @param {string} paramName
+   * @param {string} [fallback]
+   * @returns {String} param value
+   * @throws {*} no param acquired and no fallback provided
+   */
+  req.strParam = function (paramName, fallback) {
+    var paramValue = this.param(paramName);
+    if (paramValue !== undefined) {
+      return paramValue;
+    }
+    if (fallback !== undefined) {
+      return fallback;
+    }
+    throw new errors.BadRequest('param_required:' + paramName);
+  };
+
+  /**
+   * get integer param from http request.
+   *
+   * @param {string} paramName
+   * @param {number} [fallback]
+   * @returns {number} param value
+   * @throws {ParamRequired} no param acquired and no fallback provided
+   */
+  req.intParam = function (paramName, fallback) {
+    var paramValue = parseInt(this.param(paramName), 10);
+    if (!isNaN(paramValue)) {
+      return paramValue;
+    }
+    if (fallback !== undefined) {
+      return fallback;
+    }
+    throw new errors.BadRequest('int_param_required:' + paramName);
+  };
+
+  /**
+   * get number(float) param from http request.
+   *
+   * @param {string} paramName
+   * @param {number} [fallback]
+   * @returns {number} param value
+   * @throws {ParamRequired} no param acquired and no fallback provided
+   */
+  req.numberParam = function (paramName, fallback) {
+    var paramValue = parseFloat(this.param(paramName));
+    if (isNaN(paramValue)) {
+      return paramValue;
+    }
+    if (fallback !== undefined) {
+      return fallback;
+    }
+    throw new errors.BadRequest('number_param_required:' + paramName);
+  };
+
+  /**
+   * get bool param from http request.
+   *
+   * @param {string} paramName
+   * @returns {boolean} [fallback]
+   * @returns {boolean} param value
+   * @throws {ParamRequired} no param acquired and no fallback provided
+   */
+  req.boolParam = function (paramName, fallback) {
+    var paramValue = String(this.param(paramName)).toLowerCase();
+    if (/^(1|y|yes|on|t|true)$/.test(paramValue)) {
+      return true;
+    }
+    if (/^(0|n|no|off|f|false)$/.test(paramValue)) {
+      return false;
+    }
+    if (fallback !== undefined) {
+      return fallback;
+    }
+    throw new errors.BadRequest('bool_param_required:' + paramName);
+  };
+
+  /**
+   * collect params from http request.
+   *
+   * @param {Array.<string>} paramNames
+   * @returns {Object.<string,string>}
+   */
+  req.collectParams = function (paramNames) {
+    var self = this;
+    return paramNames.reduce(function (params, paramName) {
+      var paramValue = self.param(paramName);
+      if (paramValue) {
+        params[paramName] = paramValue.trim();
       }
-    }
-    var paramValue = req.param(paramName);
-    if (!paramValue) {
-      return next(new ParamRequired(paramName));
-    }
-    return mapper(paramValue, req, res)
-      .then(function (result) {
-        res.locals[paramName] = result;
-        return next();
-      })
-      .fail(function (err) {
-        DEBUG && debug('map "' + paramName + '" param fail', err);
-        return next(new ParamNotMatch(paramName));
-      })
-      .done();
+      return params;
+    }, {});
   };
 }
 
-//
-//
-//
-
+/**
+ * CORS middleware.
+ *
+ * @param {*} options
+ * @param {string} [options.origin='*']
+ * @param {string} [options.methods]
+ * @param {string} [options.headers]
+ * @param {string} [options.credentials=false]
+ * @param {string} [options.maxAge=24*60*60]
+ * @returns {function} connect/express middleware function
+ * @see https://developer.mozilla.org/en-US/docs/HTTP/Access_control_CORS
+ */
 function cors(options) {
-  options = options || {};
-  var origin = options.origin || '*';
-  var methods = options.methods || 'GET,PUT,POST,DELETE';
-  var headers = options.headers || 'Accept,Authorization,Content-Type,Origin,Referer,User-Agent,X-Requested-With';
-  var credentials = true;
+  options = _.merge(options || {}, {
+    origin: '*',
+    methods: 'GET,PUT,POST,DELETE',
+    headers: 'Accept,Authorization,Content-Type,Origin,Referer,User-Agent,X-Requested-With',
+    credentials: false,
+    maxAge: 24 * 60 * 60
+  });
+  DEBUG && debug('configure http cors middleware', options);
   return function (req, res, next) {
-    if (origin === '*' && req.headers.origin) {
-      res.header('Access-Control-Allow-Origin', req.headers.origin);
-    } else {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
-    res.header('Access-Control-Allow-Methods', methods);
-    res.header('Access-Control-Allow-Headers', headers);
-    res.header('Access-Control-Allow-Credentials', credentials);
-    if ('OPTIONS' === req.method) {
-      // CORS pre-flight request -> no content
-      return res.send(errors.StatusCode.NO_CONTENT);
+    if (req.headers.origin) {
+      res.header('Access-Control-Allow-Origin', options.origin === '*' ? req.headers.origin : options.origin);
+      res.header('Access-Control-Allow-Methods', options.methods);
+      res.header('Access-Control-Allow-Headers', options.headers);
+      res.header('Access-Control-Allow-Credentials', options.credentials);
+      res.header('Access-Control-Max-Age', options.maxAge);
+      if ('OPTIONS' === req.method) {
+        // CORS pre-flight request -> no content
+        return res.send(errors.StatusCode.NO_CONTENT);
+      }
     }
     return next();
   };
 }
 
+/**
+ * logger middleware.
+ *
+ * @param {*} options
+ * @param {*} [options.stream]
+ * @param {string} [options.stream.file]
+ * @returns {function} connect/express middleware function
+ */
+
 function logger(options) {
   options = options || {};
+  DEBUG && debug('configure http logger middleware', options);
   if (options.stream) {
     try {
       var loggerFile = path.resolve(process.cwd(), options.stream.file || options.stream);
@@ -343,8 +316,18 @@ function logger(options) {
   return express.logger(options);
 }
 
+/**
+ * session middleware.
+ *
+ * @param {*} options
+ * @param {*} [options.store]
+ * @param {string} [options.store.module]
+ * @param {*} [options.store.options] store specific options
+ * @returns {function} connect/express middleware function
+ */
 function session(options) {
   options = options || {};
+  DEBUG && debug('configure http session middleware', options);
   if (options.store) {
     try {
       var storeModule = options.store.module;
@@ -358,35 +341,55 @@ function session(options) {
     }
   }
   console.warn('**fallback** use default session middleware');
+  if (!options.secret) { options.secret = 'nosecret'; }
   return express.session(options);
 }
 
 function configureMiddlewares(app, config) {
-  // this should be the first middleware
+
+  extendHttpRequest();
+
+  // NOTE: this should be the first middleware
   app.use(logger(config.logger));
 
   app.use(express.cookieParser());
-  app.use(express.bodyParser());
-  app.use(express.methodOverride());
+  app.use(express.bodyParser({keepExtensions:true}));//uploadDir:config.uploadDir,limit:100mb
+  //app.use(express.methodOverride());
 
   // allow cors request
   app.use(cors(config.cors));
 
-  // this should be prior to passport middlewares
+  // NOTE: this should be prior to passport middlewares
   app.use(session(config.session));
 
   if (config.root) {
     var root = path.resolve(process.cwd(), config.root);
-    DEBUG && debug('static web root:', root);
+    DEBUG && debug('configure http static root:', root);
     app.use(express.favicon(path.join(root, 'favicon.ico')));
     app.use(express.static(root));
   }
+
+  if (config.statics) {
+    Object.keys(config.statics).forEach(function (urlPrefix) {
+      var docRoot = path.resolve(process.cwd(), config.statics[urlPrefix]);
+      DEBUG && debug('configure http static route: ', urlPrefix, '--->', docRoot);
+      app.use(urlPrefix, express.static(docRoot));
+    });
+  }
+
 }
 
 //
 //
 //
 
+/**
+ * express 404 error handler.
+ *
+ * @param {*} options
+ * @param {string} [options.view='errors/404']
+ * @returns {function} express request handler
+ */
 function error404(options) {
   options = options || {};
   var htmlView = options.view || 'errors/404';
@@ -404,6 +407,14 @@ function error404(options) {
   };
 }
 
+/**
+ * express uncaught error handler.
+ *
+ * @param {*} options
+ * @param {string} [options.view='errors/500']
+ * @param {boolean} [options.stack=false]
+ * @returns {function} express error handler
+ */
 function error500(options) {
   options = options || {};
   var htmlView = options.view || 'errors/500';
@@ -411,18 +422,20 @@ function error500(options) {
   return function (err, req, res, next) {
     console.error('uncaught express error:', err);
 
-    var status = err.status || 500;
     var error = {
+      status: err.status || 500,
       code: err.code || 0,
-      message: err.message || err,
-      stack: (err.stack && err.stack.split('\n')) || []
+      message: err.message || String(err)
     };
+    if (options.stack) {
+      error.stack = (err.stack && err.stack.split('\n')) || [];
+    }
 
-    res.status(status);
+    res.status(error.status);
 
     switch (req.accepts('html,json')) {
       case 'html':
-        return res.render(htmlView, {error: util.inspect(error)});
+        return res.render(htmlView, {error: error});
       case 'json':
         return res.json(error);
     }
@@ -431,32 +444,36 @@ function error500(options) {
 }
 
 function configureRoutes(app, config) {
-  app.use(error404(config.errors && config.errors['404']));
-  app.use(error500(config.errors && config.errors['500']));
-  //app.use(express.errorHandler({dumpException:true, showStack:true}));
+  DEBUG && debug('configure error routes', config.errors);
+  if (config.errors) {
+    var config404 = config.errors['404'];
+    if (config404) {
+      app.use(error404(config404));
+    }
+    var config500 = config.errors['500'];
+    if (config500) {
+      app.use(error500(config500));
+    }
+  } else {
+    console.warn('**fallback** use default error route');
+    app.use(express.errorHandler({dumpException: true, showStack: true}));
+  }
 }
 
 module.exports = {
-  InvalidSession: InvalidSession,
-  AccessDenied: AccessDenied,
-  ParamRequired: ParamRequired,
-  IntParamRequired: IntParamRequired,
-  ParamNotMatch: ParamNotMatch,
-  requiredParam: requiredParam,
-  intParam: intParam,
-  collectParams: collectParams,
   collectQueryParams: collectQueryParams,
+  collectDeviceParams: collectDeviceParams,
   generateCaptcha: generateCaptcha,
   validateCaptcha: validateCaptcha,
   pagination: pagination,
   renderViewOrRedirectToNext: renderViewOrRedirectToNext,
-  paramMapperFunc: paramMapperFunc,
-  //
+  extendHttpRequest: extendHttpRequest,
+  // middlewares
   cors: cors,
   logger: logger,
   session: session,
   configureMiddlewares: configureMiddlewares,
-  //
+  // error routes
   error404: error404,
   error500: error500,
   configureRoutes: configureRoutes
