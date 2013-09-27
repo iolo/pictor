@@ -8,54 +8,60 @@ var
   mime = require('mime'),
   express = require('express'),
   pictor = require('../libs/pictor'),
+  ID_NEW = 'new',
+  ID_REGEX = /\w+(\.\w+)?/,
+  DEF_PREFIX = '',
   debug = require('debug')('pictor:routes:api'),
   DEBUG = debug.enabled;
 
 var
   DEF_REDIRECT_STATUS_CODE = false,//or 301,302,307
-  redirectStatusCode;
+  DEF_CONTENT_DISPOSITION = 'inline',//or attachment
+  redirectStatusCode,
+  contentDisposition;
 
 //
 //
 //
 
-function _validateId(id, prefix) {
-  var matches = /([\w]+)(\.[\w]+)?/.exec(id);
-  if (!matches) {
+/**
+ *
+ * @param {string|stream} file
+ * @param {string} [id='new']
+ * @param {string} [prefix='']
+ * @param {string} [type]
+ * @returns {promise} bypass the result of storage.putFile()
+ * @private
+ */
+function _putFile(file, id, prefix, type) {
+  if (!id || id === ID_NEW) {
+    id = _.uniqueId(prefix || DEF_PREFIX);
+    if (type) {
+      id += '.' + mime.extension(type);
+    }
+  } else if (!ID_REGEX.test(id)) {
     throw 'invalid_param_id';
     //throw new errors.BadRequest('invalid_param_id');
   }
-  if (matches[1] === 'new') {
-    id = _.uniqueId(prefix || 'pictor_');
-    if (matches[2]) {
-      id += matches[2]; // .ext
-    }
-  }
-  return id;
+  DEBUG && debug('*** upload file:', id, '--->', file);
+  return pictor.putFile(id, file);
 }
 
-function _getIdParam(id, prefix, type) {
-  if (!id) {
-    throw 'invalid_param_id';
-  }
-  // id is 'new' -> generate new unique id
-  if (id === 'new') {
-    id = _.uniqueId(prefix || 'pictor_');
-  }
-  // id without extension -> guess extension from request content type
-  if (type && id.indexOf('.') === -1) {
-    id += '.' + mime.extension(type);
-  }
-  return id;
-}
-
+/**
+ *
+ * @param {*} res
+ * @param {*} result
+ * @param {string} [result.url]
+ * @param {stream} [result.stream]
+ * @param {string} [result.file]
+ * @param {string} [result.disposition] 'inline', 'attachment'
+ * @param {string} [result.type]
+ * @returns {*}
+ * @private
+ */
 function _sendFileResponse(res, result) {
   if (!result) {
     return res.send(500);
-  }
-  if (result.type) {
-    console.log('*** send type:', result.type);
-    res.type(result.type);
   }
   if (redirectStatusCode) {
     if (result.url) {
@@ -64,6 +70,14 @@ function _sendFileResponse(res, result) {
     } else {
       console.log('*** redirect fail! storage does not provide url!');
     }
+  }
+  if (result.disposition) {
+    console.log('*** send disposition:', result.disposition);
+    res.set('Content-Disposition', result.disposition);
+  }
+  if (result.type) {
+    console.log('*** send type:', result.type);
+    res.type(result.type);
   }
   if (result.stream) {
     console.log('*** send stream');
@@ -83,12 +97,13 @@ function _sendFileResponse(res, result) {
 }
 
 /**
- * @api {post} /pictor/upload upload multiple files with http multipart/upload-data post
+ * @api {post} /pictor/upload upload multiple files with multipart/upload-data
  * @apiName uploadFiles
  * @apiGroup pictor
  *
- * @apiParam {string} [idprefix] used to generate new id if basename of `id` is 'new'
- * @apiParam {array} files encoded with multipart/upload-data. param name wll be used as `id` for the file.
+ * @apiParam {file|array} file one or more file data as a part of multipart/upload-data
+ * @apiParam {string|array} [id='new'] zero or more identifiers for each file(with optional extension to guess mime type)
+ * @apiParam {string|array} [prefix=''] zero or more prefixes for each generated identifiers when id is 'new'
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 200 OK
@@ -111,19 +126,19 @@ function _sendFileResponse(res, result) {
  *    }
  */
 function uploadFiles(req, res) {
-  if (!req.files) {
-    return res.send(400, 'required_param_files');
+  // NOTE: file field name should be 'file'
+  var fileParam = Array.prototype.concat(req.files.file);
+  if (fileParam.length === 0) {
+    return res.send(400, 'required_param_file');
     //throw new errors.BadRequest('required_param_file');
   }
+  var idParam = Array.prototype.concat(req.param('id'));
+  var prefixParam = Array.prototype.concat(req.param('prefix'));
+  // FIXME: express ignore paramter order... need to change api spec.
 
-  var putFilePromises = Object.keys(req.files).map(function (fileParamName) {
-    console.log('***file:', fileParamName, req.files[fileParamName]);
-    var file = req.files[fileParamName];
-    var id = _getIdParam(fileParamName, req.param('idprefix'), file.type);
-    return pictor.putFile(id, file.path);
-  });
-
-  return Q.all(putFilePromises)
+  return Q.all(fileParam.map(function (file, index) {
+      return _putFile(file.path, idParam[index], prefixParam[index], file.headers['content-type']);
+    }))
     .then(function (result) {
       return res.send(200, {result: result});
       //return res.send(201);
@@ -137,13 +152,13 @@ function uploadFiles(req, res) {
 }
 
 /**
- * @api {post} /pictor/:id upload a file.
+ * @api {post} /pictor/:id upload a single file with multipart/form-data
  * @apiName uploadFile
  * @apiGroup pictor
  *
- * @apiParam {string} id identifier with extension to guess mimetype
- * @apiParam {string} [idprefix] used to generate new id if basename of `id` is 'new'
- * @apiParam {*} file encoded with multipart/upload-data
+ * @apiParam {file} file file data as a part of multipart/upload-data
+ * @apiParam {string} [id='new'] identifier for the file(with optional extension to guess mime type)
+ * @apiParam {string} [prefix=''] prefix for generated identifier when id is 'new'
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 200
@@ -161,15 +176,17 @@ function uploadFiles(req, res) {
  *    }
  */
 function uploadFile(req, res) {
+  // NOTE: file field name should be 'file'
   var file = req.files.file;
   if (!file) {
     return res.send(400, 'required_param_file');
     //throw new errors.BadRequest('required_param_file');
   }
-
-  var id = _getIdParam(req.param('id'), req.param('idprefix'), file.type);
-
-  return pictor.putFile(id, file.path)
+  if (_.isArray(file)) {
+    return res.send(400, 'invalid_param_file');
+    //throw new errors.BadRequest('invalid_param_file');
+  }
+  return _putFile(file.path, req.param('id'), req.param('prefix'), file.headers['content-type'])
     .then(function (result) {
       return res.send(200, {result: result});
       //return res.send(201);
@@ -183,13 +200,13 @@ function uploadFile(req, res) {
 }
 
 /**
- * @api {put} /pictor/:id upload a file with raw data.
+ * @api {put} /pictor/:id upload a single file with raw data.
  * @apiName uploadFile
  * @apiGroup pictor
  *
- * @apiParam {string} id identifier(with extension to guess mimetype)
- * @apiParam {string} [idprefix] used to generate new id if basename of `id` is 'new'
- * @apiParam {*} file binary data
+ * @apiParam {file} file file data as raw binary
+ * @apiParam {string} [id='new'] identifier for the file
+ * @apiParam {string} [prefix=''] the prefix for generated identifier(used for when id is 'new')
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 200
@@ -207,27 +224,18 @@ function uploadFile(req, res) {
  *    }
  */
 function uploadFileRaw(req, res) {
-  var id = _getIdParam(req.param('id'), req.param('idprefix'), req.get('content-type'));
-
-  var tempFilePath = '/tmp/' + id;
-
-  fs.createWriteStream(tempFilePath).pipe(req)
-    .on('error', function (err) {
-      return res.send(500, err);
+  // req is stream.Readable!
+  return _putFile(req, req.param('id'), req.param('prefix'), req.get('content-type'))
+    .then(function (result) {
+      return res.send(200, {result: result});
+      //return res.send(201);
+      //return res.send(errors.StatusCode.CREATED);
     })
-    .on('end', function () {
-      return pictor.putFile(id, tempFilePath)
-        .then(function (result) {
-          return res.send(200, {result: result});
-          //return res.send(201);
-          //return res.send(errors.StatusCode.CREATED);
-        })
-        .fail(function (err) {
-          return res.send(500, err);
-          //throw new errors.InternalServerError(undefined, err);
-        })
-        .done();
-    });
+    .fail(function (err) {
+      return res.send(500, err);
+      //throw new errors.InternalServerError(undefined, err);
+    })
+    .done();
 }
 
 /**
@@ -235,10 +243,10 @@ function uploadFileRaw(req, res) {
  * @apiName deleteFile
  * @apiGroup pictor
  *
- * @apiParam {string} id identifier(with extension to guess mimetype)
+ * @apiParam {string} id identifier(with extension to guess mime type)
  *
  * @apiSuccessExample success response:
- *    HTTP/1.1 204 No Content
+ *    HTTP/1.1 202 Accepted
  *
  * @apiSuccessExample error response:
  *    HTTP/1.1 404 Not Found
@@ -248,7 +256,7 @@ function deleteFile(req, res) {
 
   return pictor.deleteFile(id)
     .then(function () {
-      return res.send(204);
+      return res.send(202);
       //return res.send(errors.StatusCode.NO_CONTENT);
     })
     .fail(function (err) {
@@ -263,7 +271,7 @@ function deleteFile(req, res) {
  * @apiName downloadFile
  * @apiGroup pictor
  *
- * @apiParam {string} id identifier(with extension to guess mimetype)
+ * @apiParam {string} id identifier(with extension to guess mime type)
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 200 OK
@@ -299,7 +307,7 @@ function downloadFile(req, res) {
 }
 
 /**
- * @api {get} /pictor/convert convert one or more files
+ * @api {post} /pictor/convert convert one or more files
  * @apiName convertFile
  * @apiGroup pictor
  *
@@ -307,13 +315,21 @@ function downloadFile(req, res) {
  *
  * @apiSuccessExample success response:
  *    HTTP/1.1 200 OK
- *    { url: "http://..." }
+ *    {
+ *      result: [
+ *        {id: "foo", url: "http://...",
+ *        {id: "bar", url: "http://...",
+ *        {id: "baz", url: "http://...",
+ *        ...
+ *      ]
+ *    }
  *
  * @apiSuccessExample error response:
  *    HTTP/1.1 404 Not Found
  */
-function convertFile(req, res) {
+function convertFiles(req, res) {
   // TODO: more robust parser...
+  // TODO: convert multiple files...
   var opts = {
     converter: req.param('converter'),
     src: req.param('src'),
@@ -326,13 +342,46 @@ function convertFile(req, res) {
   };
   return pictor.convertFile(opts)
     .then(function (result) {
+      if (req.method === 'GET') {
+        return _sendFileResponse(res, result);
+      }
       return res.send(result);
-      //return _sendFileResponse(res, result);
     })
     .fail(function (err) {
       return res.send(404, err);
     })
     .done();
+}
+
+/**
+ * @api {get} /pictor/convert convert a single file and download it
+ * @apiName convertAndDownloadFile
+ * @apiGroup pictor
+ *
+ * @apiParam {string} converter 'convert', 'resize', 'crop', 'meta', 'exif', ...
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 200 OK
+ *    image binary...
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 301 Moved Permanently
+ *    Location: http://...
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 302 Found
+ *    Location: http://...
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 307 Temporary Redirect
+ *    Location: http://...
+ *
+ * @apiSuccessExample error response:
+ *    HTTP/1.1 404 Not Found
+ */
+function convertAndDownloadFile(req, res) {
+  // req.method === 'GET'
+  return convertFiles(req, res);
 }
 
 //
@@ -347,21 +396,16 @@ function convertFile(req, res) {
  *    - {object} [statics] pairs of url prefix and document root.
  *
  * @param {express.application} app
- * @param {object} config
+ * @param {*} config
+ * @param {boolean|number} [config.redirect=false] false,301,302,307
+ * @param {string} [config.contentDisposition='inline'] 'inline', 'attachment'
  * @returns {express.application}
  */
 function configureMiddlewares(app, config) {
-  DEBUG && debug('create pictor middlewares...');
+  DEBUG && debug('create pictor middlewares...', config);
 
-  redirectStatusCode = config.redirectStatusCode || DEF_REDIRECT_STATUS_CODE;
-
-  if (config.statics) {
-    Object.keys(config.statics).forEach(function (urlPrefix) {
-      var docRoot = config.statics[urlPrefix];
-      DEBUG && debug('static route: ', urlPrefix, '--->', docRoot);
-      app.use(urlPrefix, express.static(docRoot));
-    });
-  }
+  redirectStatusCode = config.redirect || DEF_REDIRECT_STATUS_CODE;
+  contentDisposition = config.contentDisposition || DEF_CONTENT_DISPOSITION;
 
   return app;
 }
@@ -378,15 +422,18 @@ function configureRoutes(app, config) {
 
   var prefix = config.prefix || '';
 
-  var bodyParser = express.bodyParser();
-
   // TODO: require auth!
-  app.get(prefix + '/convert', convertFile);
-  app.post(prefix + '/upload', bodyParser, uploadFiles);
-  app.post(prefix + '/:id', bodyParser, uploadFile);
+
+  app.post(prefix + '/convert', convertFiles);
+  app.get(prefix + '/convert', convertAndDownloadFile);
+  app.post(prefix + '/upload', uploadFiles);
+  app.put(prefix + '/upload', uploadFileRaw);
+  app.get(prefix + '/download', downloadFile);
+  app.get(prefix + '/delete', deleteFile);
+  app.post(prefix + '/:id', uploadFile);
   app.put(prefix + '/:id', uploadFileRaw);
-  app.del(prefix + '/:id', deleteFile);
   app.get(prefix + '/:id', downloadFile);
+  app.del(prefix + '/:id', deleteFile);
 
   return app;
 }

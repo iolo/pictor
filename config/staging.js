@@ -20,5 +20,10 @@ module.exports = {
       "baseDir": "/pictor/cache",
       "baseUrl": "http://jdongsu.jpg2.kr/pictor/cache"
     }
+  },
+  "api": {
+    "root": "/pictor",
+    "prefix": "",
+    "redirect": 307 // Temporary_Redirect
   }
 };

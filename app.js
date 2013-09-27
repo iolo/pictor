@@ -12,7 +12,7 @@ var
 //
 //
 
-//process.chdir(__dirname);
+process.chdir(__dirname);
 
 pictor.configure(config.pictor);
 
@@ -23,28 +23,27 @@ app.configure('all', function () {
   app.set('view engine', 'jade');
   app.set('case sensitive routing', 'true');
 
-  app.use(express.favicon());
+  require('./routes/httputils').configureMiddlewares(app, config.http);
 
-  // embedding pictor in your app.
-  app.use(config.pictor.routes.route || '/pictor', require('./routes/api').createApp(config.pictor.routes));
+  // pictor as sub app.
+  if(config.api) {
+    app.use(config.api.root || '/pictor', require('./routes/api').createApp(config.api));
+  }
 
-  //routes.configureMiddlewares(app, config.pictor.routes);
+  // embed pictor in your app.
+  //if(config.api.prefix) {
+  //routes.configureMiddlewares(app, config.api);
+  //}
 
   app.use(app.router);
 });
 
-//routes.configureRoutes(app, config.pictor.routes);
+// embed pictor in your app.
+//if(config.api.prefix) {
+//routes.configureRoutes(app, config.api);
+//}
 
-app.get('/', function (req, res) {
-  var id = req.param('id') || '123.jpg';
-  return res.render('index', {id: id});
-});
-app.get('/demo/upload', function (req, res) {
-  return res.render('demo/upload');
-});
-
-// expose public & static resources
-app.use(express.static(path.join(__dirname, 'public')));
+require('./routes/httputils').configureRoutes(app, config.http);
 
 //
 //

@@ -2,12 +2,13 @@
 
 var
   path = require('path'),
+  fs = require('fs'),
+  stream = require('stream'),
   _ = require('lodash'),
   Q = require('q'),
   FS = require('q-io/fs'),
   storage = require('./storage'),
   converter = require('./converter'),
-  imgutils = require('./imgutils'),
   debug = require('debug')('pictor:main'),
   DEBUG = debug.enabled;
 
@@ -117,7 +118,26 @@ function putFile(id, filePath) {
       return true;
     })
     .then(function () {
+      // XXX: handle stream
+      if (filePath instanceof stream.Stream) {
+        var d = Q.defer();
+        var tempFilePath = _.uniqueId('pictor_upload_temp_');
+        fs.createWriteStream(tempFilePath).pipe(filePath)
+          .on('error', function (err) {
+            return d.reject(err);
+          })
+          .on('end', function () {
+            return dataStorage.putFile(id, tempFilePath);
+            // TODO: delete tempFilePath
+          });
+        return d.promise;
+      }
       return dataStorage.putFile(id, filePath);
+    })
+    .then(function (result) {
+      // XXX:
+      result.id = id;
+      return result;
     });
 }
 
@@ -128,7 +148,12 @@ function putFile(id, filePath) {
  * @returns {promise} file, url or stream
  */
 function getFile(id) {
-  return dataStorage.getFile(id);
+  return dataStorage.getFile(id)
+    .then(function (result) {
+      // XXX:
+      result.id = id;
+      return result;
+    });
 }
 
 /**
@@ -158,15 +183,25 @@ function convertFile(opts) {
   var variantId = _getVariantId(opts.src, converter.getVariation(opts), ext);
   return cacheStorage.getFile(variantId)
     .fail(function () {
+      // dst not in cache:
+      // 1. get src from data
       return dataStorage.getFile(opts.src)
         .then(function (src) {
+          // 2. convert src to temp
           opts.src = src.file || src.stream;
           opts.dst = getTempPath(ext);
           return converter.convert(opts);
         })
         .then(function () {
+          // 2. put temp into dst
           return cacheStorage.putFile(variantId, opts.dst);
         });
+    })
+    .then(function (result) {
+      // XXX:
+      result.src = opts.src;
+      result.id = variantId;
+      return result;
     });
 }
 //
@@ -261,7 +296,6 @@ function parseGeometry(geometry) {
  *    - {object} presets
  *    - {object} data
  *    - {object} cache
- *    - {object} imgutils
  *
  * @param {object} config
  */
@@ -292,8 +326,6 @@ function configure(config) {
   } else {
     console.warn('** waning ** no converters configured!');
   }
-
-  imgutils.configure(config.imgutils);
 
   if (!config.data) {
     console.error('** fatal ** no data storage configuration!');

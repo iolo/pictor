@@ -18,5 +18,10 @@ module.exports = {
       "baseDir": "/pictor/cache",
       "baseUrl": "http://s3.amazonaws.com/s3pictor/pictor/cache"
     }
+  },
+  "api": {
+    "root": "/pictor",
+    "prefix": "",
+    "redirect": 301 // Moved_Permanently
   }
 };

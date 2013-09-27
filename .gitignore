@@ -1,7 +1,5 @@
 node_modules
 build
-public/docs/api
-public/docs/dox
 scripts/env.sh
 .DS_Store
 .idea
