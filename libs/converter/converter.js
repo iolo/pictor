@@ -51,6 +51,10 @@ function Converter(config) {
   this.config = config;
 }
 
+Converter.prototype.getParamNames = function () {
+  return [];
+};
+
 Converter.prototype.getVariation = function (opts) {
   return Object.keys(opts).reduce(function(result, key) {
     if (key !== 'src' && key !== 'dst') {

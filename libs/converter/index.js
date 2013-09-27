@@ -4,10 +4,11 @@ var
   converters = {
     'convert': require('./convert'),
     'resize': require('./resize'),
+    'thumbnail': require('./thumbnail'),
     'crop': require('./crop'),
+    'optimize': require('./optimize'),
     'meta': require('./meta'),
     'exif': require('./exif'),
-    'optimize': require('./optimize'),
     'holder': require('./holder')
   };
 

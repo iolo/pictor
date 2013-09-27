@@ -2,31 +2,30 @@
 
 var
   util = require('util'),
+  _ = require('lodash'),
   Q = require('q'),
   gm = require('gm'),
   converter = require('./converter'),
+  DEF_HOLDER_OPTS = {background: '#eee', foreground: '#aaa', font: '/Library/Fonts/Impact.ttf', size: 12},
   debug = require('debug')('pictor:converter:holder'),
   DEBUG = debug.enabled;
 
 /**
  * create a placeholder image.
  *
- * `opts` contains:
- *
- *    - {string} [background='#eee']: rgb hex
- *    - {string} [foreground='#aaa']: rgb hex
- *    - {string} [font='/Library/Fonts/Impact.ttf']
- *    - {string} [text='WIDTHxHEIGHT']
- *    - {number} [size=12]
- *
  * @param {string} dst
  * @param {number} w
  * @param {number} h
- * @param {object} [opts]
+ * @param {*} [opts]
+ * @param {string} [opts.background='#eee']: rgb hex
+ * @param {string} [opts.foreground='#aaa']: rgb hex
+ * @param {string} [opts.font='/Library/Fonts/Impact.ttf']
+ * @param {string} [opts.text='WIDTHxHEIGHT']
+ * @param {number} [opts.size=12]
  * @returns {promise} success or not
  */
 function holder(dst, w, h, opts) {
-  opts = _.defaults(opts || {}, {background: '#eee', foreground: '#aaa', font: '/Library/Fonts/Impact.ttf', size: 12});
+  opts = _.defaults(opts || {}, DEF_HOLDER_OPTS);
   console.log('holder opts:', opts);
   var cmd = gm(w, h, opts.background).stroke().fill(opts.foreground);
   // XXX: graphicsmagick should be build with freetype and/or ghostscript.

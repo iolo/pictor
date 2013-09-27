@@ -42,6 +42,10 @@ function MetaConverter(config) {
 }
 util.inherits(MetaConverter, converter.Converter);
 
+MetaConverter.prototype.getParamNames = function () {
+  return [];
+};
+
 MetaConverter.prototype.getVariation = function (opts) {
   return 'meta';
 };

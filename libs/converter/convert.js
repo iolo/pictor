@@ -30,6 +30,10 @@ function ConvertConverter(config) {
 }
 util.inherits(ConvertConverter, converter.Converter);
 
+ConvertConverter.prototype.getParamNames = function () {
+  return ['format'];
+};
+
 ConvertConverter.prototype.getVariation = function (opts) {
   return 'convert';
 };

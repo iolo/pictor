@@ -42,6 +42,10 @@ function ResizeConverter(config) {
 }
 util.inherits(ResizeConverter, converter.Converter);
 
+ResizeConverter.prototype.getParamNames = function () {
+  return ['w', 'h', 'flags'];
+};
+
 ResizeConverter.prototype.getVariation = function (opts) {
   return 'resize_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.flags || '!');
 };

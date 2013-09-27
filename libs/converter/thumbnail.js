@@ -33,17 +33,22 @@ function ThumbnailConverter(config) {
 }
 util.inherits(ThumbnailConverter, converter.Converter);
 
+ThumbnailConverter.prototype.getParamNames = function () {
+  return ['w', 'h'];
+};
+
 ThumbnailConverter.prototype.getVariation = function (opts) {
-  return 'thumbnail_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.flags || '!');
+  return 'thumbnail_' + (opts.w || '') + 'x' + (opts.h || '');
 };
 
 /**
  * thumbnail an image.
  *
- * `opts` contains:
- *    - {number} w
- *    - {number} h
  * @param {object} opts
+ * @param {string|stream} opts.src
+ * @param {string|stream} opts.dst
+ * @param {number} opts.w
+ * @param {number} opts.h
  * @returns {promise}
  */
 ThumbnailConverter.prototype.convert = function (opts) {

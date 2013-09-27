@@ -36,6 +36,10 @@ function CropConverter(config) {
 }
 util.inherits(CropConverter, converter.Converter);
 
+CropConverter.prototype.getParamNames = function () {
+  return ['w', 'h', 'x', 'y', 'format'];
+};
+
 CropConverter.prototype.getVariation = function (opts) {
   return 'crop_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '');
 };

@@ -45,6 +45,10 @@ function ExifConverter(config) {
 }
 util.inherits(ExifConverter, converter.Converter);
 
+ExifConverter.prototype.getParamNames = function () {
+  return [];
+};
+
 ExifConverter.prototype.getVariation = function (opts) {
   return 'exif';
 };
@@ -57,7 +61,8 @@ ExifConverter.prototype.getExtension = function (opts) {
 ExifConverter.prototype.convert = function (opts) {
   return exif(opts.src)
     .then(function (exif) {
-      return FS.write(opts.dst, JSON.stringify(exif));
+      var result = (typeof exif === 'object') ? JSON.stringify(exif) : '{}';
+      return FS.write(opts.dst, result);
     });
 };
 
