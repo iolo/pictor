@@ -100,7 +100,6 @@ S3Storage.prototype.deleteFile = function (id) {
           DEBUG && debug('s3.deleteMultiple ok', result.statusCode, result.headers);
           return true;
         });
-      return true;
     })
     .fail(storage.wrapError);
 };

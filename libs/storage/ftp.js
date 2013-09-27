@@ -134,7 +134,7 @@ FtpStorage.prototype.deleteFile = function (id) {
       })
       .then(function () {
         return true;
-      })
+      });
   }
 
   var src = this._getPath(id);
