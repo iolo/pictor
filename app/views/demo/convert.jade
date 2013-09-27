@@ -1,0 +1,59 @@
+.panel
+  .panel-heading
+    h3.panel-title convert multiple files
+
+  .panel-body
+    form#convertForm.form-horizontal(action="{{apiUrl}}/convert",method="post",target="responseView")
+      .form-group
+        label.control-label.col-md-3 converter
+        .col-md-9
+          select.form-control(name="converter",ng-model="convert.converter",ng-init="convert.converter='convert'")
+            option(value="convert") convert
+            option(value="resize") resize
+            option(value="thumbnail") thumbnail
+            option(value="crop") crop
+            option(value="optimize") optimize
+            option(value="meta") meta
+            option(value="exif") exif
+            option(value="holder") holder
+      .form-group(ng-show="!!convert.converter.match('convert|resize|thumbnail|crop|optimize|meta|exif')")
+        label.control-label.col-md-3 source id:
+        .col-md-9
+          input.form-control(type="text",name="src",value="foo.jpg",required)
+      .form-group(ng-show="!!convert.converter.match('resize|thumbnail|crop|holder')")
+        label.control-label.col-md-3 width:
+        .col-md-9
+          input.form-control(type="number",name="w",value="300")
+      .form-group(ng-show="!!convert.converter.match('resize|thumbnail|crop|holder')")
+        label.control-label.col-md-3 height:
+        .col-md-9
+          input.form-control(type="number",name="h",value="400")
+      .form-group(ng-show="convert.converter == 'crop'")
+        label.control-label.col-md-3 left:
+        .col-md-9
+          input.form-control(type="number",name="x",value="100")
+      .form-group(ng-show="convert.converter == 'crop'")
+        label.control-label.col-md-3 top:
+        .col-md-9
+          input.form-control(type="number",name="y",value="200")
+      .form-group(ng-show="convert.converter == 'resize'")
+        label.control-label.col-md-3 flags:
+        .col-md-9
+          input.form-control(type="text",name="flags",value="!")
+      .form-group(ng-show="!!convert.converter.match('resize|thumbnail|crop|holder')")
+        label.control-label.col-md-3 format:
+        .col-md-9
+          input.form-control(type="text",name="format",value="png")
+      .form-group
+        .col-md-9.col-md-offset-3
+          button.btn.btn-primary(type="submit") convert
+
+    pre: code.
+      curl -X POST -d "converter=convert&src=foo.jpg&format=png" {{apiUrl}}/convert
+      curl -X POST "{{apiUrl}}/convert?converter=resize&src=foo.jpg&w=300&h=400&flags=!&format=png"
+      curl -X POST "{{apiUrl}}/convert?converter=thumbnail&src=foo.jpg&w=300&h=400&format=png"
+      curl -X POST "{{apiUrl}}/convert?converter=crop&src=foo.jpg&w=300&h=400&x=100&y=200&format=png"
+      curl -X POST "{{apiUrl}}/convert?converter=optimize&src=foo.jpg"
+      curl -X POST "{{apiUrl}}/convert?converter=meta&src=foo.jpg"
+      curl -X POST "{{apiUrl}}/convert?converter=exif&src=foo.jpg"
+      curl -X POST "{{apiUrl}}/convert?converter=holder&w=300&h=400"

@@ -1,0 +1,16 @@
+.panel.panel-info
+  .panel-heading
+    h3.panel-title delete a file
+  .panel-body
+    form#deleteForm.form-horizontal(action="{{apiUrl}}/delete",method="get",target="responseView")
+      .form-group
+        label.control-label.col-md-3 file to delete:
+        .col-md-9
+          input.form-control(type="text",name="id",value="foo.jpg",required)
+      .form-group
+        .col-md-9.col-md-offset-3
+          button.btn.btn-primary(type="submit") delete
+
+    pre: code.
+      curl -X DELETE "{{apiUrl}}/foo.jpg"
+      curl -X GET "{{apiUrl}}/delete?id=foo.jpg"

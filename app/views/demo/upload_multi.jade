@@ -1,0 +1,40 @@
+.panel.panel-info
+  .panel-heading
+    h5.panel-title upload multiple files with multipart/form-data
+  .panel-body
+    form#uploadMultiForm.form-horizontal(action="{{apiUrl}}/upload",method="post",enctype="multipart/form-data",target="responseView")
+      .form-group
+        label.control-label.col-md-3 file[0]:
+        .col-md-9
+          input.form-control(type="file",name="file",required)
+      .form-group
+        label.control-label.col-md-3 id[0]:
+        .col-md-9
+          input.form-control(type="text",name="id",value="new")
+      .form-group
+        label.control-label.col-md-3 prefix[0]:
+        .col-md-9
+          input.form-control(type="text",name="prefix",value="")
+      .form-group
+        label.control-label.col-md-3 file[1]:
+        .col-md-9
+          input.form-control(type="file",name="file")
+      .form-group
+        label.control-label.col-md-3 id[1]:
+        .col-md-9
+          input.form-control(type="text",name="id",value="new")
+      .form-group
+        label.control-label.col-md-3 prefix[1]:
+        .col-md-9
+          input.form-control(type="text",name="prefix",value="")
+      .form-group
+        .col-md-9.col-md-offset-3
+          button.btn.btn-primary(type="submit") upload
+
+    pre: code.
+      curl -X POST -F "file=@foo.jpg" -F "id=foo.jpg" -F "file=@bar.jpg" -F "id=bar.jpg" "{{apiUrl}}/upload"
+      curl -X POST -F "file=@foo.jpg" -F "file=@bar.jpg" "{{apiUrl}}/upload"
+      curl -X POST -F "file=@foo.jpg" -F "file=@bar.jpg" -F "id=new" "{{apiUrl}}/upload"
+      curl -X POST -F "file=@foo.jpg" -F "file=@bar.jpg" -F "id=new" -F "prefix=test" "{{apiUrl}}/upload"
+      curl -X POST -F "file=@foo.jpg" -F "id=new" -F "file=@bar.jpg" -F "id=new" "{{apiUrl}}/upload"
+      curl -X POST -F "file=@foo.jpg" -F "id=new" -F "prefix=test" -F "file=@bar.jpg" -F "id=new" -F "prefix=test" "{{apiUrl}}/upload"

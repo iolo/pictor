@@ -1,0 +1,38 @@
+.page-header
+  h1 Internals
+    small &nbsp;::&nbsp;pictor
+
+h3 project directory structure
+
+pre: code.
+  config/ --- configurations for each environment(server-side)
+  libs/ -- nodejs modules(server-side) --> jshint, doxx task
+  routes/ -- expressjs modules(server-side) --> jshint, apidoc task
+  tests/
+    **/*_test.js -- nodeunit testcases(server-side) --> nodeunit task
+    **/*_test.html -- qunit testcases(client-side) --> qunit task
+  app/ -- source of static web resources(client-side) --> concat, uglify, copy, jade task
+    js/ -- javascript source(client-side) --> jshint task
+    ...
+  build/
+    app/ --> build output of static web resources(client-side)
+      docs/
+        api/ --> generated documents of apidoc for routes/ --> apidoc task
+        dox/ --> generated documents of doxx for libs/ --> doxx task
+      ...
+  app.js -- nodejs launcher without cluster(server-side)
+  cluster.js -- nodejs launcher with cluster(server-side)
+  Gruntfile.js -- grunt build script
+
+h3 to generate api documents from source
+
+pre: code.
+  grunt apidoc
+  open build/app/docs/api/index.html
+
+h3 to generate source code documents from source
+
+pre: code.
+  grunt doxx
+  open build/app/docs/api/index.html
+

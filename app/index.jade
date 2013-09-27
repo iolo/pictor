@@ -1,0 +1,51 @@
+doctype html
+html(ng-app="app")
+  head
+    block vars
+    meta(charset="utf-8")
+    meta(name="viewport",content="width=device-width,initial-scale=1.0")
+    title Pictor
+    link(rel="shortcut icon",href="/favicon.ico",type="image/x-icon")
+    link(rel="icon",href="/favicon.ico",type="image/x-icon")
+    link(rel="stylesheet",href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css")
+    link(rel="stylesheet",href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css")
+    link(rel="stylesheet",href="http://fonts.googleapis.com/css?family=Roboto:300,400,700|Droid+Sans+Mono")
+    link(rel="stylesheet",href="/css/app.css")
+    block head
+    //![if lt IE 9]
+      script(src="//cdnjs.cloudflare.com/ajax/libs/respond.js/1.2.0/respond.min.js")
+  body
+    a(href="https://github.com/iolo/pictor")
+      img(style="position:absolute;top:0;right:0;border:0;z-index:9999;",src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png",alt="Fork me on GitHub")
+
+    #wrap
+      #header.navbar.navbar-fixed-top.navbar-inverse(role="navigation")
+        .navbar-header
+          button.navbar-toggle(data-toggle="collapse",data-target="#nav")
+            span.sr-only Toggle navigation
+            span.icon-bar
+            span.icon-bar
+            span.icon-bar
+          a.navbar-brand(href="#") Pictor
+        #nav.navbar-collapse.collapse
+          ul.nav.navbar-nav
+            li: a(href="#/docs") Documents
+            li: a(href="#/demo") Demo
+
+      #content.container(ng-view)
+
+      #footer.container
+        hr
+        p.text-muted.text-center Copyright &copy; 2013 IoloTheBard Inc. All rights reserved.
+
+      script(src="http://code.jquery.com/jquery-1.10.2.min.js")
+      script(src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js")
+
+      script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular.min.js")
+      script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-route.min.js")
+
+      script(src="js/app.js")
+      script(src="js/controllers.js")
+      script(src="js/directives.js")
+      script(src="js/filters.js")
+      script(src="js/services.js")
