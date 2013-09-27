@@ -1,6 +1,6 @@
 {
   "name": "pictor",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "simple image upload/convert/download server",
   "author": "Dongsu Jang <iolothebard@gmail.com>",
   "repository": {
@@ -12,12 +12,13 @@
     "node": "~0.10"
   },
   "dependencies": {
-    "lodash": "~2.0.0",
+    "lodash": "~2.1.0",
     "q": "~0.9.7",
     "debug": "~0.7.2",
     "express": "~3.4.0",
     "jade": "~0.35.0",
-    "mime": "~1.2.11"
+    "mime": "~1.2.11",
+    "q-io": "~1.10.0"
   },
   "optionalDependencies": {
     "gm": "~1.13.1",
@@ -32,9 +33,14 @@
     "superagent": "~0.15.4",
     "grunt": "~0.4.1",
     "grunt-contrib-clean": "latest",
+    "grunt-contrib-concat": "latest",
     "grunt-contrib-copy": "latest",
+    "grunt-contrib-jade": "latest",
     "grunt-contrib-jshint": "latest",
     "grunt-contrib-nodeunit": "latest",
+    "grunt-contrib-qunit": "latest",
+    "grunt-contrib-uglify": "latest",
+    "grunt-contrib-watch": "latest",
     "grunt-apidoc": "latest",
     "doxx": "~0.7.0"
   },
