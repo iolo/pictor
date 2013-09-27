@@ -1,12 +1,13 @@
 doctype 5
 html
   head
-    title 500 INTERNAL SERVER ERROR
+    title #{error.status} #{error.message}
   body
-    h1 500 INTERNAL SERVER ERROR
+    h1 #{error.status} #{error.message}
 
+    if (typeof error.stack !== 'undefined')
+      pre #{error.stack}
+
+    hr
     p
       a(href="/") Take me home!
-
-    if (typeof error !== 'undefined')
-      pre #{error}
