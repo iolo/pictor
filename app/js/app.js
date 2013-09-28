@@ -13,8 +13,8 @@
       .when('/docs/how_pictor_works', {templateUrl: viewsDir + '/docs/how_pictor_works.html'})
       .when('/docs/configurations', {templateUrl: viewsDir + '/docs/configurations.html'})
       .when('/docs/internals', {templateUrl: viewsDir + '/docs/internals.html'})
-      .when('/demo', {redirectTo: '/demo/upload'})
-      .when('/demo/:method', {templateUrl: viewsDir + '/demo/index.html', controller: 'demoCtrl'})
+      .when('/console', {redirectTo: '/console/upload'})
+      .when('/console/:method', {templateUrl: viewsDir + '/console/index.html', controller: 'consoleCtrl'})
       .otherwise({redirectTo: '/'});
   }]);
 

@@ -1,6 +1,8 @@
 .panel.panel-info
   .panel-heading
     h5.panel-title upload multiple files with multipart/form-data
+      .label.label-danger BUGGY!!!
+
   .panel-body
     form#uploadMultiForm.form-horizontal(action="{{apiUrl}}/upload",method="post",enctype="multipart/form-data",target="responseView")
       .form-group

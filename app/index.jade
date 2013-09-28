@@ -18,6 +18,7 @@ html(ng-app="app")
     a(href="https://github.com/iolo/pictor")
       img(style="position:absolute;top:0;right:0;border:0;z-index:9999;",src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png",alt="Fork me on GitHub")
 
+
     #wrap
       #header.navbar.navbar-fixed-top.navbar-inverse(role="navigation")
         .navbar-header
@@ -26,26 +27,31 @@ html(ng-app="app")
             span.icon-bar
             span.icon-bar
             span.icon-bar
-          a.navbar-brand(href="#") Pictor
+          a.navbar-brand(href="/") Pictor
         #nav.navbar-collapse.collapse
           ul.nav.navbar-nav
-            li: a(href="#/docs") Documents
-            li: a(href="#/demo") Demo
+            li: a(href="/#/docs") Documents
+            li: a(href="/#/console") Console
+            li.dropdown
+              a.dropdown-toggle(href="#",data-toggle="dropdown") Demos
+                b.caret
+              ul.dropdown-menu
+                li: a(href="/demo/cropper") Image Resize &amp; Crop Demo
 
       #content.container(ng-view)
 
-      #footer.container
-        hr
-        p.text-muted.text-center Copyright &copy; 2013 IoloTheBard Inc. All rights reserved.
+    #footer.container
+      hr
+      p.text-muted.text-center Copyright &copy; 2013 IoloTheBard Inc. All rights reserved.
 
-      script(src="http://code.jquery.com/jquery-1.10.2.min.js")
-      script(src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js")
+    script(src="http://code.jquery.com/jquery-1.10.2.min.js")
+    script(src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js")
 
-      script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular.min.js")
-      script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-route.min.js")
+    script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular.min.js")
+    script(src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0-rc.2/angular-route.min.js")
 
-      script(src="js/app.js")
-      script(src="js/controllers.js")
-      script(src="js/directives.js")
-      script(src="js/filters.js")
-      script(src="js/services.js")
+    script(src="js/app.js")
+    script(src="js/controllers.js")
+    script(src="js/directives.js")
+    script(src="js/filters.js")
+    script(src="js/services.js")

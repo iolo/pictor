@@ -1,6 +1,8 @@
 .panel.panel-info
   .panel-heading
     h5.panel-title upload a single file with raw data
+      .label.label-danger BUGGY!!!
+
   .panel-body
     form#uploadRawForm.form-horizontal(action="{{apiUrl}}/{{uploadRaw.id}}",method="put",target="responseView")
       .form-group
