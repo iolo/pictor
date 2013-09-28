@@ -15,13 +15,13 @@ var
 var
   tempDir = '/tmp/pictor/temp',
   presets = {
-    xxs: {w: 16},
-    xs: {w: 24},
-    s: {w: 32},
-    m: {w: 48},
-    l: {w: 64},
-    xl: {w: 128},
-    xxl: {w: 256}
+    xxs: {converter: 'resize', w: 16},
+    xs: {converter: 'resize', w: 24},
+    s: {converter: 'resize', w: 32},
+    m: {converter: 'resize', w: 48},
+    l: {converter: 'resize', w: 64},
+    xl: {converter: 'resize', w: 128},
+    xxl: {converter: 'resize', w: 256}
   },
   converters = {},
   dataStorage,
@@ -112,6 +112,7 @@ function getTempPath(ext) {
  * @returns {promise}
  */
 function putFile(id, filePath) {
+  // XXX: delete files with prefix(or delete directory)
   return cacheStorage.deleteFile(_getVariantId(id))
     .fail(function () {
       //if(err instanceof NotFoundError) { return true; } else throw err;
@@ -137,6 +138,8 @@ function putFile(id, filePath) {
     .then(function (result) {
       // XXX:
       result.id = id;
+      // delete result.file
+      // delete result.stream
       return result;
     });
 }
@@ -152,6 +155,8 @@ function getFile(id) {
     .then(function (result) {
       // XXX:
       result.id = id;
+      // delete result.file
+      // delete result.stream
       return result;
     });
 }
@@ -163,6 +168,7 @@ function getFile(id) {
  * @returns {promise} success or not
  */
 function deleteFile(id) {
+  // XXX: delete files with prefix(or delete directory)
   return cacheStorage.deleteFile(_getVariantId(id))
     .fail(function () {
       //if(err instanceof NotFoundError) { return true; } else throw err;
@@ -174,13 +180,25 @@ function deleteFile(id) {
 }
 
 function convertFile(opts) {
+  if (opts.preset) {
+    opts = _.extend(opts, presets[opts.preset]); // manual params override preset
+    if (opts) {
+      throw 'invalid_param_preset';
+    }
+    DEBUG && debug('convert using preset', opts);
+  }
+
   var converter = converters[opts.converter || 'convert'];
   if (!converter) {
-    throw 'param not match';
+    throw 'invalid_param_converter';
   }
-  console.log('convertFile:', opts);
+
   var ext = converter.getExtension(opts);
-  var variantId = _getVariantId(opts.src, converter.getVariation(opts), ext);
+  var variation = converter.getVariation(opts);
+  var variantId = _getVariantId(opts.src || opts.converter, variation, ext);
+
+  DEBUG && debug('convert ', opts.src + '--->', variantId);
+
   return cacheStorage.getFile(variantId)
     .fail(function () {
       // dst not in cache:
@@ -198,12 +216,29 @@ function convertFile(opts) {
         });
     })
     .then(function (result) {
-      // XXX:
-      result.src = opts.src;
-      result.id = variantId;
+      result.id = variation + '.' + ext;
+      // delete result.file
+      // delete result.stream
       return result;
     });
 }
+
+/**
+ * get a variant file.
+ *
+ * @param {string} id
+ * @param {string} variant
+ * @returns {promise} file, url or stream
+ */
+function getVariantFile(id, variant) {
+  return cacheStorage.getFile(_getVariantId(id, variant))
+    .then(function (result) {
+      // XXX:
+      result.id = id;
+      return result;
+    });
+}
+
 //
 // extra operations for image files
 //
@@ -230,18 +265,18 @@ function _getVariantId(id, variation, ext) {
 }
 
 /**
-* parse common geometry string.
-*
-* result contains:
-*    - {number} w
-*    - {number} h
-*    - {number} x
-*    - {number} y
-*    - {string} flags
-*
-* @param {string} geometry
-* @returns {object} parsed geometry
-*/
+ * parse common geometry string.
+ *
+ * result contains:
+ *    - {number} w
+ *    - {number} h
+ *    - {number} x
+ *    - {number} y
+ *    - {string} flags
+ *
+ * @param {string} geometry
+ * @returns {object} parsed geometry
+ */
 function parseGeometry(geometry) {
   var result = {};
   if (!geometry) {
@@ -348,16 +383,8 @@ module.exports = {
   deleteFile: deleteFile,
   getFile: getFile,
   convertFile: convertFile,
+  getVariantFile: getVariantFile,
   getPreset: getPreset,
   parseGeometry: parseGeometry,
-//  getVariantImageFile: getVariantImageFile,
-//  getResizedImageFile: getResizedImageFile,
-//  getCroppedImageFile: getCroppedImageFile,
-//  getThumbnailImageFile: getThumbnailImageFile,
-//  getConvertedImageFile: getConvertedImageFile,
-//  getOptimizedImageFile: getOptimizedImageFile,
-//  getImageMetaFile: getImageMetaFile,
-//  getImageExifFile: getImageExifFile,
-//  getHolderImageFile: getHolderImageFile,
   configure: configure
 };

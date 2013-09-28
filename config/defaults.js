@@ -65,6 +65,7 @@ module.exports = {
       "resize": {},
       "thumbnail": {},
       "crop": {},
+      "resizecrop": {},
       "optimize": {},
       "meta": {},
       "exif": {},

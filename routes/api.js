@@ -333,6 +333,8 @@ function convertFiles(req, res) {
   var opts = {
     converter: req.param('converter'),
     src: req.param('src'),
+    nw: req.param('nw'),
+    nh: req.param('nh'),
     w: req.param('w'),
     h: req.param('h'),
     flags: req.param('flags'),
@@ -382,6 +384,47 @@ function convertFiles(req, res) {
 function convertAndDownloadFile(req, res) {
   // req.method === 'GET'
   return convertFiles(req, res);
+}
+
+/**
+ * @api {get} /pictor/:id/:variant download a variant file.
+ * @apiName downloadVariantFile
+ * @apiGroup pictor
+ *
+ * @apiParam {string} id source identifier(with extension to guess mime type)
+ * @apiParam {string} variant variant identifier with extension
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 200 OK
+ *    image binary...
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 301 Moved Permanently
+ *    Location: http://...
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 302 Found
+ *    Location: http://...
+ *
+ * @apiSuccessExample success response:
+ *    HTTP/1.1 307 Temporary Redirect
+ *    Location: http://...
+ *
+ * @apiSuccessExample error response:
+ *    HTTP/1.1 404 Not Found
+ */
+function downloadVariantFile(req, res) {
+  var id = req.param('id');
+  var variant = req.param('variant');
+  return pictor.getVariantFile(id, variant)
+    .then(function (result) {
+      return _sendFileResponse(res, result);
+    })
+    .fail(function (err) {
+      return res.send(404, err);
+      //throw new errors.NotFound(undefined, err);
+    })
+    .done();
 }
 
 //
@@ -434,6 +477,7 @@ function configureRoutes(app, config) {
   app.put(prefix + '/:id', uploadFileRaw);
   app.get(prefix + '/:id', downloadFile);
   app.del(prefix + '/:id', deleteFile);
+  app.get(prefix + '/:id/:variant', downloadVariantFile);
 
   return app;
 }
