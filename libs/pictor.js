@@ -7,6 +7,10 @@ var
   _ = require('lodash'),
   Q = require('q'),
   FS = require('q-io/fs'),
+  mime = require('mime'),
+  ID_NEW = 'new',
+  ID_REGEX = /\w+(\.\w+)?/,// /[^a-zA-Z0-9가-힣-_.]/
+  DEF_PREFIX = '',
   storage = require('./storage'),
   converter = require('./converter'),
   debug = require('debug')('pictor:main'),
@@ -27,76 +31,47 @@ var
   dataStorage,
   cacheStorage;
 
-//var presets = { // see http://trend21c.tistory.com/m/1521
-//  IPHONE: [57, 57], //아이폰	57 x 57
-//  IPHONE_2X: [114, 114], //아이폰(레티나)	114 x 114
-//  IPAD: [72, 72], //아이패드	72 x 72
-//  IPAD_2X: [144, 144], //아이패드(레티나)	144 x 144
-//  APPSTORE: [512, 512], //앱스토어	1024 x 1024
-//  APPSTORE_2X: [1024, 1024],
-//  IPHONE_SMALL: [29, 29], //스팟라이트, 아이패드 세팅	29 x 29
-//  IPHONE_SMALL_2X: [58, 58], //스팟라이트(레티나), 아이패드 세팅(레티나)	58 x 58
-//  IPAD_SMALL: [50, 50], //아이패드 스팟라이트	50 x 50
-//  IPAD_SMALL_2x: [100, 100], //아이패드 스팟라이트(레티나)	100 x 100
-//  IPHONE_SSHOT: [320, 480],
-//  IPHONE_SSHOT_2X: [640, 960],
-//  IPHONE_SSHOT_5: [640, 1136],
-//  IPAD_SSHOT_P: [768, 1004],
-//  IPAD_SSHOT_L: [1024, 748],
-//  IPAD_SSHOT_2X_P: [1536, 2008],
-//  IPAD_SSHOT_2X_L: [2048, 1496],
-//  LDPI: [36, 36], // android ldpi 36x36
-//  MDPI: [48, 48], // android mdpi 48x48
-//  HDPI: [72, 72], // android hdpi 72x72
-//  XHDPI: [96, 96], // android xhdpi 96x96
-//  XXHDPI: [144, 144], //
-//  GOOGLE_PLAY: [512, 512],
-//  FB_MINI: [16, 16], // facebook primary	16 x 16
-//  FB_PROFILE: [75, 75], // facebook primary	75 x 75
-//  FB_LO: [64, 64], // facebook low resolution	64 x 64
-//  FB_MD: [96, 96], // facebook meduim resolution	96 x 96
-//  FB_HI: [128, 128], // facebook high resolution	128 x 128
-//  FB_OG: [200, 200], // facebook opengraph	200 x 200
-//  FB_COVER: [851, 315],
-//  FB_TL_ICON: [111, 74],
-//  FB_TL_PROFILE: [180, 180],
-//  FB_TL_PROFILE_SMALL: [32, 32],
-//  TW_COVER: [1252 , 626],
-//  TW_ICON_LARGEST: [500, 500],
-//  TW_ICON_LARGE: [73, 73],
-//  TW_ICON: [48, 48],
-//  TW_ICON_SMALL: [31, 31]
-//};
+function _getTempPath(ext) {
+  return path.join(tempDir, _.uniqueId('pictor_') + '.' + (ext || 'bin'));
+}
+
+/**
+ * generate variant id based on source id.
+ *
+ * @param {string} id source id
+ * @param {string} [variation]
+ * @param {string} [ext]
+ * @returns {string}
+ * @private
+ */
+function _getVariantId(id, variation, ext) {
+  var variantId = id + '.d';
+  if (variation) {
+    variantId += '/' + variation;
+  }
+  if (ext) {
+    variantId += '.' + ext;
+  }
+  return variantId;
+}
+
+
+//
+//
 //
 
-var DEF_EXTENSION = '.bin';
-var DEF_MIME_TYPE = 'application/octet-stream';
-
-var IMAGE_EXTENSIONS = {
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/pjpeg': 'jpg',
-  'image/gif': 'gif'
-};
-
-var IMAGE_MIME_TYPES = {
-  'png': 'image/png',
-  'jpg': 'image/jpeg',
-  'jpeg': 'image/jpeg',
-  'gif': 'image/gif'
-};
-
-function getExtension(mimeType) {
-  return IMAGE_EXTENSIONS[mimeType] || DEF_EXTENSION;
-}
-
-function getMimeType(ext) {
-  return IMAGE_MIME_TYPES[ext] || DEF_MIME_TYPE;
-}
-
-function getTempPath(ext) {
-  return path.join(tempDir, _.uniqueId('pictor_') + '.' + (ext || DEF_EXTENSION));
-}
+/**
+ * @class PictorFile
+ * @property {string} id identifier
+ * @property {string} source source identifier(only if this file is variant)
+ * @property {string} url redirect url
+ * @property {stream} stream stream object
+ * @property {string} file local file path
+ * @property {string} type mime type
+ * @property {string} disposition 'inline', 'attachment'
+ */
+function PictorFile() {
+} // DUMMY!
 
 //
 // CRUD operations for common files
@@ -107,11 +82,23 @@ function getTempPath(ext) {
  *
  * delete the old file and all its variants.
  *
- * @param {string} id
- * @param {string} filePath
- * @returns {promise}
+ * @param {string|stream} file
+ * @param {string} [id='new'] generate unique id.
+ * @param {string} [prefix=''] prefix for generated id
+ * @param {string} [type] mime type for generated id
+ * @returns {promise.<PictorFile>}
  */
-function putFile(id, filePath) {
+function putFile(file, id, prefix, type) {
+  if (!id || id === ID_NEW) {
+    id = _.uniqueId(prefix || DEF_PREFIX);
+    if (type) {
+      id += '.' + mime.extension(type);
+    }
+  } else if (!ID_REGEX.test(id)) {
+    throw 'invalid_param_id';
+  }
+  DEBUG && debug('put file:', id, '--->', file);
+
   // XXX: delete files with prefix(or delete directory)
   return cacheStorage.deleteFile(_getVariantId(id))
     .fail(function () {
@@ -120,10 +107,10 @@ function putFile(id, filePath) {
     })
     .then(function () {
       // XXX: handle stream
-      if (filePath instanceof stream.Stream) {
+      if (file instanceof stream.Stream) {
         var d = Q.defer();
-        var tempFilePath = _.uniqueId('pictor_upload_temp_');
-        fs.createWriteStream(tempFilePath).pipe(filePath)
+        var tempFilePath = _getTempPath();
+        fs.createWriteStream(tempFilePath).pipe(file)
           .on('error', function (err) {
             return d.reject(err);
           })
@@ -133,7 +120,7 @@ function putFile(id, filePath) {
           });
         return d.promise;
       }
-      return dataStorage.putFile(id, filePath);
+      return dataStorage.putFile(id, file);
     })
     .then(function (result) {
       // XXX:
@@ -145,12 +132,22 @@ function putFile(id, filePath) {
 }
 
 /**
- * get a file.
+ * get a file or its variant.
  *
  * @param {string} id
- * @returns {promise} file, url or stream
+ * @param {string} [variant]
+ * @returns {promise.<PictorFile>}
  */
-function getFile(id) {
+function getFile(id, variant) {
+  if (variant) {
+    return cacheStorage.getFile(_getVariantId(id, variant))
+      .then(function (result) {
+        // XXX:
+        result.id = variant;
+        result.source = id;
+        return result;
+      });
+  }
   return dataStorage.getFile(id)
     .then(function (result) {
       // XXX:
@@ -179,6 +176,12 @@ function deleteFile(id) {
     });
 }
 
+/**
+ * convert a file.
+ *
+ * @param {*} opts
+ * @returns {promise.<PictorFile>}
+ */
 function convertFile(opts) {
   if (opts.preset) {
     opts = _.extend(opts, presets[opts.preset]); // manual params override preset
@@ -207,7 +210,7 @@ function convertFile(opts) {
         .then(function (src) {
           // 2. convert src to temp
           opts.src = src.file || src.stream;
-          opts.dst = getTempPath(ext);
+          opts.dst = _getTempPath(ext);
           return converter.convert(opts);
         })
         .then(function () {
@@ -217,105 +220,11 @@ function convertFile(opts) {
     })
     .then(function (result) {
       result.id = variation + '.' + ext;
+      result.source = opts.src;
       // delete result.file
       // delete result.stream
       return result;
     });
-}
-
-/**
- * get a variant file.
- *
- * @param {string} id
- * @param {string} variant
- * @returns {promise} file, url or stream
- */
-function getVariantFile(id, variant) {
-  return cacheStorage.getFile(_getVariantId(id, variant))
-    .then(function (result) {
-      // XXX:
-      result.id = id;
-      return result;
-    });
-}
-
-//
-// extra operations for image files
-//
-
-function getPreset(name) {
-  return presets[name];
-}
-
-function _sanitizeId(id) {
-  return id ? String(id).replace(/[^a-zA-Z0-9가-힣-_.]/g, '_') : '';
-  //return id ? String(id).replace(/[^\w\.]/g, '_') : '';
-  //return encodeURIComponent(id);
-}
-
-function _getVariantId(id, variation, ext) {
-  var variantId = id + '.d';
-  if (variation) {
-    variantId += '/' + variation;
-  }
-  if (ext) {
-    variantId += '.' + ext;
-  }
-  return variantId;
-}
-
-/**
- * parse common geometry string.
- *
- * result contains:
- *    - {number} w
- *    - {number} h
- *    - {number} x
- *    - {number} y
- *    - {string} flags
- *
- * @param {string} geometry
- * @returns {object} parsed geometry
- */
-function parseGeometry(geometry) {
-  var result = {};
-  if (!geometry) {
-    return result;
-  }
-  //..............12.....3.4......5..6......7.......8....9.0
-  var matches = /^((\d+)?(x(\d+))?(\+(\d+)\+(\d+))?)(\w*)(@(\d)x)?$/.exec(geometry);
-  if (!matches) {
-    throw new Error('invalid_param_geometry');
-  }
-  if (matches[1]) {
-    result.w = parseInt(matches[2], 10);
-    result.h = parseInt(matches[4], 10);
-    if (isNaN(result.w) && isNaN(result.h)) {
-      throw new Error('invalid_param_geometry_size');
-    }
-    if (matches[5]) {
-      result.x = parseInt(matches[6], 10);
-      result.y = parseInt(matches[7], 10);
-    } else {
-      result.flags = matches[8];
-    }
-  } else {
-    result = getPreset(matches[8]);
-    if (!result) {
-      throw new Error('invalid_param_geometry_preset');
-    }
-  }
-  if (matches[10]) {
-    var scale = parseInt(matches[10], 10);
-    if (scale < 2 || scale > 9) {
-      throw new Error('invalid_param_geometry_scale');
-    }
-    result.w *= scale;
-    result.h *= scale;
-    result.x *= scale;
-    result.y *= scale;
-  }
-  return result;
 }
 
 //
@@ -376,15 +285,9 @@ function configure(config) {
 }
 
 module.exports = {
-  getExtension: getExtension,
-  getMimeType: getMimeType,
-  getTempPath: getTempPath,
   putFile: putFile,
   deleteFile: deleteFile,
   getFile: getFile,
   convertFile: convertFile,
-  getVariantFile: getVariantFile,
-  getPreset: getPreset,
-  parseGeometry: parseGeometry,
   configure: configure
 };

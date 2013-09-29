@@ -8,6 +8,11 @@ var
   debug = require('debug')('pictor:converter:convert'),
   DEBUG = debug.enabled;
 
+// TODO: support custom effects such as vignette, vintage, softfocus, colorize
+// http://www.fmwconcepts.com/imagemagick/
+// http://jqmagick.imagemagick.org/
+// https://github.com/paulasmuth/
+
 /**
  * convert image format.
  *

@@ -1,334 +1,400 @@
 'use strict';
 
 var
-  fs = require('fs'),
+  util = require('util'),
   http = require('http'),
   Q = require('q'),
   _ = require('lodash'),
-  mime = require('mime'),
   express = require('express'),
   pictor = require('../libs/pictor'),
-  ID_NEW = 'new',
-  ID_REGEX = /\w+(\.\w+)?/,
-  DEF_PREFIX = '',
   debug = require('debug')('pictor:routes:api'),
   DEBUG = debug.enabled;
 
 var
   DEF_REDIRECT_STATUS_CODE = false,//or 301,302,307
-  DEF_CONTENT_DISPOSITION = 'inline',//or attachment
-  redirectStatusCode,
-  contentDisposition;
+  redirectStatusCode;
 
 //
 //
 //
 
 /**
+ * @apiDefineSuccessStructure file
  *
- * @param {string|stream} file
- * @param {string} [id='new']
- * @param {string} [prefix='']
- * @param {string} [type]
- * @returns {promise} bypass the result of storage.putFile()
- * @private
+ * @apiSuccessExample 200 ok
+ *    HTTP/1.1 200 OK
+ *    file binary...
+ *
+ * @apiSuccessExample 301 move permanently
+ *    HTTP/1.1 301 Moved Permanently
+ *    Location: http://...
+ *
+ * @apiSuccessExample 302 found
+ *    HTTP/1.1 302 Found
+ *    Location: http://...
+ *
+ * @apiSuccessExample 307 temporary redirect
+ *    HTTP/1.1 307 Temporary Redirect
+ *    Location: http://...
  */
-function _putFile(file, id, prefix, type) {
-  if (!id || id === ID_NEW) {
-    id = _.uniqueId(prefix || DEF_PREFIX);
-    if (type) {
-      id += '.' + mime.extension(type);
-    }
-  } else if (!ID_REGEX.test(id)) {
-    throw 'invalid_param_id';
-    //throw new errors.BadRequest('invalid_param_id');
-  }
-  DEBUG && debug('*** upload file:', id, '--->', file);
-  return pictor.putFile(id, file);
-}
 
 /**
+ * @apiDefineSuccessStructure result
  *
+ * @apiSuccess {string} id file identifier
+ * @apiSuccess {string} [source] source file identifier(variant file only)
+ * @apiSuccess {string} [url] public http url(only if storage provides)
+ * @apiSuccess {string} [file] local file path(debug mode only)
+ * @apiSuccessExample 200 ok
+ *    HTTP/1.1 200 OK
+ *    Content-Type: application/json
+ *    {id: "foo", url: "http://...", ...}
+ *
+ * @apiSuccessExample 200 ok(array)
+ *    HTTP/1.1 200 OK
+ *    Content-Type: application/json
+ *    [
+ *      {id: "foo", url: "http://...", ...},
+ *      {id: "bar", url: "http://...", ...},
+ *      ...
+ *    ]
+ *
+ * @apiSuccessExample 200 ok(for jsonp)
+ *    HTTP/1.1 200 OK
+ *    Content-Type: application/javascript
+ *    callback({id: "foo", url: "http://...", ...})
+ *
+ * @apiSuccessExample 200 ok(for iframe)
+ *    HTTP/1.1 200 OK
+ *    Content-Type: text/html
+ *    &lt;textarea&gt;{id: "foo", url: "http://...",  ...}&lt;/textarea&gt;
+ */
+
+/**
+ * @apiDefineErrorStructure error
+ *
+ * @apiError {*} error
+ * @apiError {number} error.status status code
+ * @apiError {string} error.message error message
+ * @apiError {number} [error.code] pictor specific error code(only if error.status is 500)
+ * @apiError {*} [error.cause] (debug mode only)
+ * @apiErrorExample bad request
+ *    HTTP/1.1 400 Bad Request
+ *    Content-Type: application/json
+ *    {
+ *      error: {
+ *        status: 400,
+ *        message: "required_param_file"
+ *      }
+ *    }
+ * @apiErrorExample 404 not found
+ *    HTTP/1.1 404 Not Found
+ *    Content-Type: application/json
+ *    {
+ *      error: {
+ *        status: 404,
+ *        message: "file_not_found"
+ *      }
+ *    }
+ * @apiErrorExample 500 internal server error
+ *    HTTP/1.1 500 internal server error
+ *    Content-Type: application/json
+ *    {
+ *      error: {
+ *        status: 500,
+ *        message: "internal_server_error",
+ *        code: 90100
+ *      }
+ *    }
+ * @apiSuccessExample 500 internal server error(for jsonp)
+ *    HTTP/1.1 500 internal server error
+ *    Content-Type: application/javascript
+ *    callback({error:{status: 500, ...})
+ * @apiSuccessExample 500 internal server error(for iframe)
+ *    HTTP/1.1 500 internal server error
+ *    Content-Type: text/html
+ *    &lt;textarea&gt;{error:{status: 500, ...}&lt;/textarea&gt;
+ */
+
+//
+//
+//
+
+/**
+ * send error response.
+ *
+ * @param {*} req
  * @param {*} res
- * @param {*} result
- * @param {string} [result.url]
- * @param {stream} [result.stream]
- * @param {string} [result.file]
- * @param {string} [result.disposition] 'inline', 'attachment'
- * @param {string} [result.type]
+ * @param {*} err
+ * @param {number} [err.status]
+ * @param {string} [err.message]
+ * @param {number} [err.code]
+ * @param {*} [err.cause]
  * @returns {*}
  * @private
  */
-function _sendFileResponse(res, result) {
-  if (!result) {
-    return res.send(500);
-  }
-  if (redirectStatusCode) {
-    if (result.url) {
-      DEBUG && debug('*** redirect:', redirectStatusCode, result.url);
-      return res.redirect(redirectStatusCode, result.url);
-    } else {
-      DEBUG && debug('*** redirect fail! storage does not provide url!');
+function _sendError(req, res, err) {
+  DEBUG && debug('*** send error', err);
+
+  // TODO: cleanup error response...
+  var status = (err && err.status) || 500;
+  var error = {
+    error: {
+      status: status,
+      message: (err && err.message) || 'internal server error',
+      code: (err && err.code) || 0,
+      cause: err
     }
+  };
+
+  if (!!req.param('iframe')) { // support iframe upload
+    res.type('html');
+    return res.send(status, '<textarea>' + JSON.stringify(error) + '</textarea>');
   }
-  if (result.disposition) {
-    res.set('Content-Disposition', result.disposition);
-  }
-  if (result.type) {
-    res.type(result.type);
-  }
-  if (result.stream) {
-    DEBUG && debug('*** send stream');
-    return result.stream.pipe(res);
-  }
-  if (result.file) {
-    DEBUG && debug('*** send file:', result.file);
-    return res.sendfile(result.file);
-  }
-  if (result.url) {
-    DEBUG && debug('*** manual proxy:', result.url);
-    return http.get(result.url, function (response) {
-      return response.pipe(res);
-    });
-  }
-  return res.send(result.status, result);
+
+  return res.jsonp(status, error);
 }
 
 /**
- * @api {post} /pictor/upload upload multiple files with multipart/upload-data
- * @apiName uploadFiles
+ * send success response.
+ *
+ * result is one of followings:
+ * - 200 ok with file binary(download)
+ * - 301,302,307 redirect(download)
+ * - 200 ok with json contains id, url, ...
+ * - 200 ok with jsonp contains id, url, ...(when request param 'callback' is set)
+ * - 200 ok with html contains id, url, ...(when request param 'iframe' is set)
+ * - 204 no content
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {PictorFile|array.<PictorFile>|number} result
+ * @param {boolean} [download=false] send binary data in various way: redirect, file, stream and proxy.
+ * @returns {*}
+ * @private
+ */
+function _sendResult(req, res, result, download) {
+  if (_.isNumber(result)) {
+    return res.send(result);
+  }
+
+  if (download) {
+    if (!_.isObject(result)) {
+      return _sendError(req, res); // internal server error
+    }
+
+    if (redirectStatusCode) { // redirect is enabled by configuration
+      if (result.url) {
+        DEBUG && debug('*** redirect:', redirectStatusCode, result.url);
+        return res.redirect(redirectStatusCode, result.url);
+      } else {
+        DEBUG && debug('*** redirect fail! storage does not provide url!');
+      }
+    }
+    if (result.disposition) {
+      res.set('Content-Disposition', result.disposition);
+    }
+    if (result.type) {
+      res.type(result.type);
+    }
+    if (result.stream) {
+      DEBUG && debug('*** send stream');
+      return result.stream.pipe(res);
+    }
+    if (result.file) {
+      DEBUG && debug('*** send file:', result.file);
+      return res.sendfile(result.file);
+    }
+    // redirect is disabled by configuration,
+    // neither file nor stream is available...
+    // try manual proxy...
+    if (result.url) {
+      DEBUG && debug('*** manual proxy:', result.url);
+      return http.get(result.url, function (response) {
+        return response.pipe(res);
+      });
+    }
+    // no way to download!!! error??
+  }
+
+  DEBUG && debug('*** send result', result);
+
+  if (!_.isObject(result) && !_.isArray(result)) {
+    return _sendError(req, res); // internal server error
+  }
+
+  // TODO: cleanup success response...
+  if (!!req.param('iframe')) { // support iframe upload
+    res.type('html');
+    return res.send('<textarea>' + JSON.stringify(result) + '</textarea>');
+  }
+  return res.jsonp(result);
+}
+
+//
+//
+//
+
+/**
+ * @api {post} /pictor/upload upload multiple files
+ * @apiName uploadMulti
  * @apiGroup pictor
+ * @apiDescription upload multiple files with multipart/upload-data
  *
  * @apiParam {file|array} file one or more file data as a part of multipart/upload-data
  * @apiParam {string|array} [id='new'] zero or more identifiers for each file(with optional extension to guess mime type)
  * @apiParam {string|array} [prefix=''] zero or more prefixes for each generated identifiers when id is 'new'
+ * @apiParam {boolean} [iframe=false] wrap with 'textarea' and send as text/html
  *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200 OK
- *    {
- *      result: [
- *        {id: "foo", url: "http://...",
- *        {id: "bar", url: "http://...",
- *        {id: "baz", url: "http://...",
- *        ...
- *      ]
- *    }
- *
- * @apiErrorExample error response:
- *    HTTP/1.1 400 Bad Request
- *    {
- *      error: {
- *        status: 400,
- *        message: "required_param_files"
- *      }
- *    }
+ * @apiSuccessStructure result
+ * @apiErrorStructure error
  */
 function uploadFiles(req, res) {
   // NOTE: file field name should be 'file'
   var fileParam = Array.prototype.concat(req.files.file);
   if (fileParam.length === 0) {
-    return res.send(400, 'required_param_file');
-    //throw new errors.BadRequest('required_param_file');
+    return _sendError(req, res, {status: 400, message: 'required_param_file'});
   }
   var idParam = Array.prototype.concat(req.param('id'));
   var prefixParam = Array.prototype.concat(req.param('prefix'));
   // FIXME: express ignore paramter order... need to change api spec.
 
   return Q.all(fileParam.map(function (file, index) {
-      return _putFile(file.path, idParam[index], prefixParam[index], file.headers['content-type']);
+      return pictor.putFile(file.path, idParam[index], prefixParam[index], file.headers['content-type']);
     }))
     .then(function (result) {
-      return res.send(200, {result: result});
-      //return res.send(201);
-      //return res.send(errors.StatusCode.CREATED);
+      return _sendResult(req, res, result);
     })
     .fail(function (err) {
-      return res.send(500, err);
-      //throw new errors.InternalServerError(undefined, err);
+      return _sendError(req, res, err);
     })
     .done();
 }
 
 /**
- * @api {post} /pictor/:id upload a single file with multipart/form-data
- * @apiName uploadFile
+ * @api {post} /pictor/:id upload a file
+ * @apiName upload
  * @apiGroup pictor
+ * @apiDescription upload a single file with multipart/form-data
  *
  * @apiParam {file} file file data as a part of multipart/upload-data
  * @apiParam {string} [id='new'] identifier for the file(with optional extension to guess mime type)
  * @apiParam {string} [prefix=''] prefix for generated identifier when id is 'new'
  *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200
- *    {
- *      result: {id: "foo", url: "http://..."}
- *    }
- *
- * @apiErrorExample error response:
- *    HTTP/1.1 400 Bad Request
- *    {
- *      error: {
- *        status: 400,
- *        message: "required_param_file"
- *      }
- *    }
+ * @apiSuccessStructure result
+ * @apiErrorStructure error
  */
 function uploadFile(req, res) {
   // NOTE: file field name should be 'file'
   var file = req.files.file;
   if (!file) {
-    return res.send(400, 'required_param_file');
-    //throw new errors.BadRequest('required_param_file');
+    return _sendError(req, res, {status: 400, message: 'required_param_file'});
   }
-  if (_.isArray(file)) {
-    return res.send(400, 'invalid_param_file');
-    //throw new errors.BadRequest('invalid_param_file');
+  if (!file.size) {
+    return _sendError(req, res, {status: 400, message: 'invalid_param_file'});
   }
-  return _putFile(file.path, req.param('id'), req.param('prefix'), file.headers['content-type'])
+
+  return pictor.putFile(file.path, req.param('id'), req.param('prefix'), file.headers['content-type'])
     .then(function (result) {
-      return res.send(200, {result: result});
-      //return res.send(201);
-      //return res.send(errors.StatusCode.CREATED);
+      return _sendResult(req, res, result);
     })
     .fail(function (err) {
-      return res.send(500, err);
-      //throw new errors.InternalServerError(undefined, err);
+      return _sendError(req, res, err);
     })
     .done();
 }
 
 /**
- * @api {put} /pictor/:id upload a single file with raw data.
- * @apiName uploadFile
+ * @api {put} /pictor/:id upload a file with raw data
+ * @apiName uploadRaw
  * @apiGroup pictor
+ * @apiDescription upload a single file with raw data.
  *
  * @apiParam {file} file file data as raw binary
  * @apiParam {string} [id='new'] identifier for the file
  * @apiParam {string} [prefix=''] the prefix for generated identifier(used for when id is 'new')
  *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200
- *    {
- *      result: {id: "foo", url: "http://..."}
- *    }
- *
- * @apiErrorExample error response:
- *    HTTP/1.1 400 Bad Request
- *    {
- *      error: {
- *        status: 400,
- *        message: "required_param_file"
- *      }
- *    }
+ * @apiSuccessStructure result
+ * @apiErrorStructure error
  */
 function uploadFileRaw(req, res) {
   // req is stream.Readable!
-  return _putFile(req, req.param('id'), req.param('prefix'), req.get('content-type'))
+  return pictor.putFile(req, req.param('id'), req.param('prefix'), req.get('content-type'))
     .then(function (result) {
-      return res.send(200, {result: result});
-      //return res.send(201);
-      //return res.send(errors.StatusCode.CREATED);
+      return _sendResult(req, res, result);
     })
     .fail(function (err) {
-      return res.send(500, err);
-      //throw new errors.InternalServerError(undefined, err);
+      return _sendError(req, res, err);
     })
     .done();
 }
 
 /**
- * @api {delete} /pictor/:id delete the file and its variants.
- * @apiName deleteFile
+ * @api {delete} /pictor/:id delete a file
+ * @apiName delete
  * @apiGroup pictor
+ * @apiDescription delete the file and its variants.
  *
  * @apiParam {string} id identifier(with extension to guess mime type)
  *
- * @apiSuccessExample success response:
- *    HTTP/1.1 202 Accepted
- *
- * @apiSuccessExample error response:
- *    HTTP/1.1 404 Not Found
+ * @apiSuccessStructure result
+ * @apiErrorStructure error
  */
 function deleteFile(req, res) {
   var id = req.param('id');
 
   return pictor.deleteFile(id)
     .then(function () {
-      return res.send(202);
-      //return res.send(errors.StatusCode.NO_CONTENT);
+      return _sendResult(req, res, 202);
     })
     .fail(function (err) {
-      return res.send(500, err);
-      //throw new errors.InternalServerError(undefined, err);
+      return _sendError(req, res, err);
     })
     .done();
 }
 
 /**
- * @api {get} /pictor/:id download the file.
- * @apiName downloadFile
+ * @api {get} /pictor/:id download a file
+ * @apiName download
  * @apiGroup pictor
+ * @apiDescription download a file.
  *
  * @apiParam {string} id identifier(with extension to guess mime type)
  *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200 OK
- *    image binary...
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 301 Moved Permanently
- *    Location: http://...
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 302 Found
- *    Location: http://...
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 307 Temporary Redirect
- *    Location: http://...
- *
- * @apiSuccessExample error response:
- *    HTTP/1.1 404 Not Found
+ * @apiSuccessStructure file
+ * @apiErrorStructure error
  */
 function downloadFile(req, res) {
   var id = req.param('id');
 
   return pictor.getFile(id)
     .then(function (result) {
-      return _sendFileResponse(res, result);
+      return _sendResult(req, res, result, true);
     })
     .fail(function (err) {
-      return res.send(404, err);
-      //throw new errors.NotFound(undefined, err);
+      return _sendError(req, res, err);
     })
     .done();
 }
 
 /**
- * @api {post} /pictor/convert convert one or more files
- * @apiName convertFile
+ * @api {post} /pictor/convert convert a file
+ * @apiName convert
  * @apiGroup pictor
+ * @apiDescription convert a file
  *
- * @apiParam {string} converter 'convert', 'resize', 'crop', 'meta', 'exif', ...
+ * @apiParam {string} [preset] 'xs', 's', 'm', 'l', 'xl', 'xxl', ...
+ * @apiParam {string} [converter] 'convert', 'resize', 'crop', 'meta', 'exif', ...
+ * @apiParam {*} [params] various converter specific params
  *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200 OK
- *    {
- *      result: [
- *        {id: "foo", url: "http://...",
- *        {id: "bar", url: "http://...",
- *        {id: "baz", url: "http://...",
- *        ...
- *      ]
- *    }
- *
- * @apiSuccessExample error response:
- *    HTTP/1.1 404 Not Found
+ * @apiSuccessStructure result
+ * @apiErrorStructure error
  */
 function convertFiles(req, res) {
   // TODO: more robust parser...
   // TODO: convert multiple files...
   var opts = {
+    preset: req.param('preset'),
     converter: req.param('converter'),
     src: req.param('src'),
     nw: req.param('nw'),
@@ -342,42 +408,26 @@ function convertFiles(req, res) {
   };
   return pictor.convertFile(opts)
     .then(function (result) {
-      if (req.method === 'GET') {
-        return _sendFileResponse(res, result);
-      }
-      return res.send(result);
+      return _sendResult(req, res, result, req.method === 'GET');
     })
     .fail(function (err) {
-      return res.send(404, err);
+      return _sendError(req, res, err);
     })
     .done();
 }
 
 /**
- * @api {get} /pictor/convert convert a single file and download it
- * @apiName convertAndDownloadFile
+ * @api {get} /pictor/convert convert a file and download
+ * @apiName convertAndDownload
  * @apiGroup pictor
+ * @apiDescription convert a single file and download it
  *
- * @apiParam {string} converter 'convert', 'resize', 'crop', 'meta', 'exif', ...
+ * @apiParam {string} [preset] 'xs', 's', 'm', 'l', 'xl', 'xxl', ...
+ * @apiParam {string} [converter] 'convert', 'resize', 'crop', 'meta', 'exif', ...
+ * @apiParam {*} [params] various converter specific params
  *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200 OK
- *    image binary...
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 301 Moved Permanently
- *    Location: http://...
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 302 Found
- *    Location: http://...
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 307 Temporary Redirect
- *    Location: http://...
- *
- * @apiSuccessExample error response:
- *    HTTP/1.1 404 Not Found
+ * @apiSuccessStructure file
+ * @apiErrorStructure error
  */
 function convertAndDownloadFile(req, res) {
   // req.method === 'GET'
@@ -385,42 +435,27 @@ function convertAndDownloadFile(req, res) {
 }
 
 /**
- * @api {get} /pictor/:id/:variant download a variant file.
- * @apiName downloadVariantFile
+ * @api {get} /pictor/:id/:variant download a variant
+ * @apiName downloadVariant
  * @apiGroup pictor
+ * @apiDescription download a variant file.
  *
  * @apiParam {string} id source identifier(with extension to guess mime type)
  * @apiParam {string} variant variant identifier with extension
  *
- * @apiSuccessExample success response:
- *    HTTP/1.1 200 OK
- *    image binary...
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 301 Moved Permanently
- *    Location: http://...
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 302 Found
- *    Location: http://...
- *
- * @apiSuccessExample success response:
- *    HTTP/1.1 307 Temporary Redirect
- *    Location: http://...
- *
- * @apiSuccessExample error response:
- *    HTTP/1.1 404 Not Found
+ * @apiSuccessStructure file
+ * @apiErrorStructure error
  */
 function downloadVariantFile(req, res) {
   var id = req.param('id');
   var variant = req.param('variant');
-  return pictor.getVariantFile(id, variant)
+
+  return pictor.getFile(id, variant)
     .then(function (result) {
-      return _sendFileResponse(res, result);
+      return _sendResult(req, res, result, true);
     })
     .fail(function (err) {
-      return res.send(404, err);
-      //throw new errors.NotFound(undefined, err);
+      return _sendError(req, res, err);
     })
     .done();
 }
@@ -432,21 +467,15 @@ function downloadVariantFile(req, res) {
 /**
  *  configure middlewares for the express app.
  *
- * `config` contains:
- *    - {boolean|number} [redirectStatusCode=false]: 301, 302 or 307 to use redirect.
- *    - {object} [statics] pairs of url prefix and document root.
- *
  * @param {express.application} app
  * @param {*} config
  * @param {boolean|number} [config.redirect=false] false,301,302,307
- * @param {string} [config.contentDisposition='inline'] 'inline', 'attachment'
  * @returns {express.application}
  */
 function configureMiddlewares(app, config) {
   DEBUG && debug('create pictor middlewares...', config);
 
   redirectStatusCode = config.redirect || DEF_REDIRECT_STATUS_CODE;
-  contentDisposition = config.contentDisposition || DEF_CONTENT_DISPOSITION;
 
   return app;
 }
