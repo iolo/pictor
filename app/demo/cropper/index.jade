@@ -41,10 +41,22 @@ html
           .panel-heading
             h3.panel-title cropper demo
           .panel-body
-            .form-group
-              label(for="sourceIdEdit") source id:
-              input#sourceIdEdit.form-control(type="text", value="foo.jpg")
-            button.btn.btn-primary#openCropperBtn(type="button") open cropper
+            form#uploadForm.form-horizontal(action="/pictor/new",method="post",enctype="multipart/form-data",target="uploadFrame")
+              input(type="hidden",name="iframe",value="true")
+              .form-group
+                label.control-label.col-md-2 file:
+                .col-md-8: input.form-control(type="file",name="file",required)
+                .col-md-2: button.btn.btn-primary.btn-block(type="submit") upload
+
+            iframe#uploadFrame(style="display:none;")
+            p upload request:
+            pre: code#uploadResultText
+
+            form.form-horizontal
+              .form-group
+                label.control-label.col-md-2 source id:
+                .col-md-8: input#sourceIdEdit.form-control(type="text",value="foo.jpg",required)
+                .col-md-2: button#openCropperBtn.btn.btn-primary.btn-block(type="button") open cropper
 
         #resultView.panel.panel-success
           .panel-heading
@@ -53,10 +65,12 @@ html
             h5 use&nbsp;
               a(href="/docs/api/pictor.convertAndDownload") convertAndDownload
               | &nbsp;API:
+
             p convertAndDownload request(url):
-              pre: code#convertAndDownloadRequestText
+            pre: code#convertAndDownloadRequestText
+
             p convertAndDownload response(image):
-              p: img#convertAndDownloadResponseImg(alt="...")
+            p: img#convertAndDownloadResponseImg(alt="...")
 
             h5 or, use&nbsp;
               a(href="/docs/api/pictor.convert") convert
@@ -65,14 +79,18 @@ html
               a(href="/docs/api/pictor.downloadVariant") downloadVariant
               | &nbsp; API:
               .label.label-danger BUGGY!
+
             p convert request:
-              pre: code#convertRequestText
+            pre: code#convertRequestText
+
             p convert response:
-              pre: code#convertResponseText
+            pre: code#convertResponseText
+
             p downloadVariant request(url):
-              pre: code#downloadVariantRequestText
+            pre: code#downloadVariantRequestText
+
             p downloadVariant response(image):
-              p: img#downloadVariantResponseImg(alt="...")
+            p: img#downloadVariantResponseImg(alt="...")
 
         #cropperDialog.modal.fade
           .modal-dialog(style="width:360px;")

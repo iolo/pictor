@@ -1,5 +1,16 @@
-(function($) {
-  $('#openCropperBtn').click(function openCropperDialog() {
+(function ($) {
+  $('#uploadFrame').load(function () {
+    var textarea = $('#uploadFrame').contents().find('textarea');
+    if (textarea) {
+      var result = JSON.parse(textarea.html());
+      $('#uploadResultText').html(JSON.stringify(result));
+      if (result && !result.error) {
+        $('#sourceIdEdit').val(result.id);
+      }
+    }
+  });
+
+  $('#openCropperBtn').click(function () {
     var src = $('#sourceIdEdit').val();
 
     var cropper = $('.cropper').cropper();
@@ -15,7 +26,7 @@
       $('#convertAndDownloadRequestText').html(convertAndDownloadRequestUrl);
       $('#convertAndDownloadResponseImg').attr('src', convertAndDownloadRequestUrl);
 
-      var convertReq = {method:'post', url:'/pictor/convert', type:'json', data: data};
+      var convertReq = {method: 'post', url: '/pictor/convert', type: 'json', data: data};
       $('#convertRequestText').html(JSON.stringify(convertReq));
 
       $.ajax(convertReq).then(function (data, status, xhr) {
@@ -27,4 +38,5 @@
       });
     });
   });
+
 }(jQuery));
