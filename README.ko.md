@@ -23,7 +23,7 @@ pictor는 이런 환경에 맞춰 설계되었습니다.
 
 pictor는 기본적으로 다음과 같이 동작합니다:
 
-- *업로드* 는 pictor가 처리합니다. 가능하다면 클라우드/원격 스토리지가 처리할 수도 있습니다.
+- *업로드*는 pictor가 처리합니다. 가능하다면 클라우드/원격 스토리지가 처리할 수도 있습니다.
 - *변환*은 pictor가 처리합니다.
 - *다운로드*는 가능하다면 클라우드/원격 스토리지가 처리합니다. 원한다면 pictor가 처리할 수도 있습니다.
 - 모든 파일은 클라우드/원격 저장소에 보관됩니다. 물론 로컬 저장소도 사용할 수 있습니다.
@@ -33,6 +33,18 @@ pictor는 기본적으로 다음과 같이 동작합니다:
 
 시작하기
 -------
+
+1. install prerequisites
+
+  for mac osx:
+  ```
+  brew install graphicsmagick
+  ```
+  for debian/ubuntu linux:
+  ```
+  apt-get install graphicsmagick
+  ```
+  or else see http://graphicsmagick.org
 
 1. get source from github:
 
@@ -51,11 +63,17 @@ pictor는 기본적으로 다음과 같이 동작합니다:
   ```
   node app.js
   ```
-  
+
+  or startup with cluster:
+
+  ```
+  node cluster.js
+  ```
+
 1. test run in browser
 
   ```
-  open http://localhost:3000
+  open http://localhost:3001
   ```
   
 1. test run in console
@@ -88,11 +106,27 @@ pictor는 기본적으로 다음과 같이 동작합니다:
 내부
 ----
 
+* to show debug logs
+
+set `DEBUG` environment variable to `*` or `pictor:*` and run pictor.
+
+see http://github.com/visionmedia/debug
+
+* external dependencies for converters
+  * convert/resize/thumbnail/crop/resizecrop/meta/exif/holder: [graphicsmagick](http://graphicsmagick.org)(or [imagemagick](http://imagemagick.org)))
+  * optimize jpeg: [jpegtran](http://jpegclub.org/jpegtran/) (already included via [jpegtran-bin nodejs module](https://github.com/yeoman/node-jpegtran-bin))
+  * optimize png: [optipng](http://optipng.sourceforge.net) (already included via [optipng-bin nodejs moudle](https://github.com/yeoman/node-optipng-bin))
+  * optimize gif: [gifsicle](http://www.lcdf.org/gifsicle/) (already included via [gifsicle nodejs module](https://github.com/yeoman/node-gifsicle))
+
 * 프로젝트 디렉토리 구조
 
 ```
 config/ --- 환경별 설정(서버측)
 libs/ -- nodejs 모듈(서버측) --> jshint, doxx task
+  converter/ -- converters
+  storage/ -- storage providers
+  pictor.js -- the main module
+  ...
 routes/ -- expressjs 모듈(서버측) --> jshint, apidoc task
 tests/
   **/*_test.js -- nodeunit 테스트케이스(서버측) --> nodeunit task

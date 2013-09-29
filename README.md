@@ -34,6 +34,18 @@ pictor basically works as following:
 Getting Started
 ---------------
 
+1. install prerequisites
+
+  for mac osx:
+  ```
+  brew install graphicsmagick
+  ```
+  for debian/ubuntu linux:
+  ```
+  apt-get install graphicsmagick
+  ```
+  or else see http://graphicsmagick.org
+
 1. get source from github:
 
   ```
@@ -51,11 +63,17 @@ Getting Started
   ```
   node app.js
   ```
-  
+
+  or startup with cluster:
+
+  ```
+  node cluster.js
+  ```
+
 1. test run in browser
 
   ```
-  open http://localhost:3000
+  open http://localhost:3001
   ```
   
 1. test run in console
@@ -89,11 +107,27 @@ Advanced Topics
 Internals
 ---------
 
+* to show debug logs
+
+set `DEBUG` environment variable to `*` or `pictor:*` and run pictor.
+
+see http://github.com/visionmedia/debug
+
+* external dependencies for converters
+  * convert/resize/thumbnail/crop/resizecrop/meta/exif/holder: [graphicsmagick](http://graphicsmagick.org)(or [imagemagick](http://imagemagick.org)))
+  * optimize jpeg: [jpegtran](http://jpegclub.org/jpegtran/) (already included via [jpegtran-bin nodejs module](https://github.com/yeoman/node-jpegtran-bin))
+  * optimize png: [optipng](http://optipng.sourceforge.net) (already included via [optipng-bin nodejs moudle](https://github.com/yeoman/node-optipng-bin))
+  * optimize gif: [gifsicle](http://www.lcdf.org/gifsicle/) (already included via [gifsicle nodejs module](https://github.com/yeoman/node-gifsicle))
+
 * project directory structure
 
 ```
 config/ --- configurations for each environment(server-side)
 libs/ -- nodejs modules(server-side) --> jshint, doxx task
+  converter/ -- converters
+  storage/ -- storage providers
+  pictor.js -- the main module
+  ...
 routes/ -- expressjs modules(server-side) --> jshint, apidoc task
 tests/
   **/*_test.js -- nodeunit testcases(server-side) --> nodeunit task
