@@ -20,7 +20,7 @@
 
   module.run(['$rootScope', function (root) {
     root.viewsDir = viewsDir;
-    root.apiUrl = 'http://localhost:3001/pictor';
+    root.apiUrl = location.protocol + '//' + location.host + '/pictor';
   }]);
 
 }(angular.module('app', ['app.controllers', 'app.filters', 'app.directives', 'app.services', 'ngRoute'])));
