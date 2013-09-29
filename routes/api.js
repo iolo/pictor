@@ -121,11 +121,25 @@ var
 //
 
 /**
+ * wrap result with 'textearea' tag and send as 'text/html'.
+ *
+ * @param {*} res
+ * @param {number} status
+ * @param {*} result
+ * @returns {*}
+ * @private
+ */
+function _sendResponseIframe(res, status, result) {
+  res.type('html');
+  return res.send('<textarea data-type="application/json" data-status="' + status + '">' + JSON.stringify(result) + '</textarea>');
+}
+
+/**
  * send error response.
  *
  * @param {*} req
  * @param {*} res
- * @param {*} err
+ * @param {*} [err]
  * @param {number} [err.status]
  * @param {string} [err.message]
  * @param {number} [err.code]
@@ -147,9 +161,8 @@ function _sendError(req, res, err) {
     }
   };
 
-  if (!!req.param('iframe')) { // support iframe upload
-    res.type('html');
-    return res.send(status, '<textarea>' + JSON.stringify(error) + '</textarea>');
+  if (!!req.param('iframe')) {
+    return _sendResponseIframe(res, status, error);
   }
 
   return res.jsonp(status, error);
@@ -164,6 +177,8 @@ function _sendError(req, res, err) {
  * - 200 ok with json contains id, url, ...
  * - 200 ok with jsonp contains id, url, ...(when request param 'callback' is set)
  * - 200 ok with html contains id, url, ...(when request param 'iframe' is set)
+ * - 201 created
+ * - 202 accepted
  * - 204 no content
  *
  * @param {*} req
@@ -174,6 +189,7 @@ function _sendError(req, res, err) {
  * @private
  */
 function _sendResult(req, res, result, download) {
+  // status without result body: 201, 202, 204
   if (_.isNumber(result)) {
     return res.send(result);
   }
@@ -215,6 +231,7 @@ function _sendResult(req, res, result, download) {
       });
     }
     // no way to download!!! error??
+    return _sendError(req, res); // internal server error
   }
 
   DEBUG && debug('*** send result', result);
@@ -223,11 +240,10 @@ function _sendResult(req, res, result, download) {
     return _sendError(req, res); // internal server error
   }
 
-  // TODO: cleanup success response...
-  if (!!req.param('iframe')) { // support iframe upload
-    res.type('html');
-    return res.send('<textarea>' + JSON.stringify(result) + '</textarea>');
+  if (!!req.param('iframe')) {
+    return _sendResponseIframe(res, 200, result);
   }
+
   return res.jsonp(result);
 }
 
