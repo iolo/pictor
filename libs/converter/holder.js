@@ -26,7 +26,7 @@ var
  */
 function holder(dst, w, h, opts) {
   opts = _.defaults(opts || {}, DEF_HOLDER_OPTS);
-  console.log('holder opts:', opts);
+  DEBUG && debug('holder opts:', opts);
   var cmd = gm(w, h, opts.background).stroke().fill(opts.foreground);
   // XXX: graphicsmagick should be build with freetype and/or ghostscript.
   //var size = Math.max(opts.size, Math.floor(Math.min(w, h) / 8));

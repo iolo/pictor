@@ -50,7 +50,7 @@ LocalStorage.prototype.getFile = function (id) {
   var url = this._getUrl(id);
   return FS.stat(src)
     .then(function (result) {
-      console.log('local.getFile:', src, result);
+      DEBUG && debug('local.getFile:', src, result);
       if (!result.isFile()) {
         return storage.wrapError('not regular file: ' + src, 500, result);
         //throw new storage.StorageError('not regular file: ' + src, 500, result);

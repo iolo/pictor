@@ -65,30 +65,28 @@ function _sendFileResponse(res, result) {
   }
   if (redirectStatusCode) {
     if (result.url) {
-      console.log('*** redirect:', redirectStatusCode, result.url);
+      DEBUG && debug('*** redirect:', redirectStatusCode, result.url);
       return res.redirect(redirectStatusCode, result.url);
     } else {
-      console.log('*** redirect fail! storage does not provide url!');
+      DEBUG && debug('*** redirect fail! storage does not provide url!');
     }
   }
   if (result.disposition) {
-    console.log('*** send disposition:', result.disposition);
     res.set('Content-Disposition', result.disposition);
   }
   if (result.type) {
-    console.log('*** send type:', result.type);
     res.type(result.type);
   }
   if (result.stream) {
-    console.log('*** send stream');
+    DEBUG && debug('*** send stream');
     return result.stream.pipe(res);
   }
   if (result.file) {
-    console.log('*** send file:', result.file);
+    DEBUG && debug('*** send file:', result.file);
     return res.sendfile(result.file);
   }
   if (result.url) {
-    console.log('*** manual proxy:', result.url);
+    DEBUG && debug('*** manual proxy:', result.url);
     return http.get(result.url, function (response) {
       return response.pipe(res);
     });

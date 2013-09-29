@@ -40,14 +40,14 @@ FtpStorage.prototype._withFtpClient = function (callback) {
   var d = Q.defer();
   var ftpClient = new ftp();
   ftpClient.on('ready', function () {
-    console.log('*** ftp ready!');
+    DEBUG && debug('*** ftp ready!');
     callback(ftpClient)
       .then(function (result) {
-        console.log('*** ftp worker then:', typeof(result));
+        DEBUG && debug('*** ftp worker then:', typeof(result));
         return d.resolve(result);
       })
       .fail(function (err) {
-        console.log('*** ftp worker fail:', err);
+        DEBUG && debug('*** ftp worker fail:', err);
         return d.reject(err);
       })
       .done();
@@ -57,15 +57,15 @@ FtpStorage.prototype._withFtpClient = function (callback) {
     }, 1000);
   });
   ftpClient.on('error', function (err) {
-    console.log('*** ftp error!', err);
+    DEBUG && debug('*** ftp error!', err);
     //return d.reject(err);
   });
   ftpClient.on('close', function (hadErr) {
-    console.log('*** ftp close!', hadErr);
+    DEBUG && debug('*** ftp close!', hadErr);
     //return (hadErr) ? d.reject(hadErr) : d.resolve();
   });
   ftpClient.on('end', function () {
-    console.log('*** ftp end!');
+    DEBUG && debug('*** ftp end!');
     //return d.reject(true);
   });
   ftpClient.connect(this.ftpClientOpts);
