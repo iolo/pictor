@@ -2,6 +2,35 @@
   h1 Internals
     small &nbsp;::&nbsp;pictor
 
+h3 to show debug logs
+
+p set `DEBUG` environment variable to `*` or `pictor:*` and run pictor.
+
+p see http://github.com/visionmedia/debug
+
+h3 external dependencies for converters
+
+ul
+  li convert/resize/thumbnail/crop/resizecrop/meta/exif/holder:
+    a(href="http://graphicsmagick.org") graphicsmagick
+    | or
+    a(href="http://imagemagick.org") imagemagick
+  li optimize jpeg:
+    a(href="http://jpegclub.org/jpegtran/") jpegtran
+    | (already included via
+    a(href="https://github.com/yeoman/node-jpegtran-bin") jpegtran-bin nodejs module
+    | )
+  li optimize png:
+    a(href="http://optipng.sourceforge.net") optipng
+    | (already included via
+    a(href="https://github.com/yeoman/node-optipng-bin") optipng-bin nodejs module
+    | )
+  li optimize gif:
+    a(href="http://www.lcdf.org/gifsicle/") gifsicle
+    | already included via
+    a(href="https://github.com/yeoman/node-gifsicle") gifsicle nodejs module
+    | )
+
 h3 project directory structure
 
 pre: code.
