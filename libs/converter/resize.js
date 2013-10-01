@@ -56,12 +56,12 @@ ResizeConverter.prototype.getVariation = function (opts) {
  * `opts` contains:
  *    - {number} w
  *    - {number} h
- *    - {string} [flags='!']
+ *    - {string} flags
  * @param {object} opts
  * @returns {promise}
  */
 ResizeConverter.prototype.convert = function (opts) {
-  return resize(opts.src, opts.dst, opts.w, opts.h, opts.flags || '!');
+  return resize(opts.src, opts.dst, opts.w, opts.h, opts.flags);
 };
 
 module.exports = ResizeConverter;
