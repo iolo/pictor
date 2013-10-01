@@ -6,6 +6,7 @@ var
   Q = require('q'),
   _ = require('lodash'),
   express = require('express'),
+  mime = require('mime'),
   pictor = require('../libs/pictor'),
   debug = require('debug')('pictor:routes:api'),
   DEBUG = debug.enabled;
@@ -13,6 +14,54 @@ var
 var
   DEF_REDIRECT_STATUS_CODE = false,//or 301,302,307
   redirectStatusCode;
+
+var
+  ID_NEW = 'new',
+  ID_REGEX = /^[\w-]+(\.[\w-]+)?/,// /[^a-zA-Z0-9가-힣-_.]/
+  DEF_PREFIX = '',
+  DEF_SUFFIX = '';
+
+
+/**
+ * generate unique identifier.
+ *
+ * @param prefix
+ * @param suffix
+ * @returns {string}
+ * @private
+ */
+function _generateUniqueId(prefix, suffix) {
+  return [
+    prefix || '',
+    Date.now().toString(36),
+    '-',
+    (Math.random() * 0x100000000 + 1).toString(36),
+    '-',
+    process.pid,
+    suffix || ''
+  ].join('');
+}
+
+/**
+ * generate new file and unique file identifier.
+ *
+ * @param {string} [id='new'] identifier for the file
+ * @param {string} [prefix=''] prefix for generated identifier(only if id is 'new')
+ * @param {string} [type=''] mime type to determine file extension for for generated identifier(only if id is 'new')
+ * @returns {string}
+ */
+function _getFileId(id, prefix, type) {
+  if (!id) {
+    throw 'required_param_id';
+  }
+  if (id === ID_NEW) {
+    return _generateUniqueId(prefix || DEF_PREFIX, type ? '.' + mime.extension(type) : DEF_SUFFIX);
+  }
+  if (ID_REGEX.test(id)) {
+    return id;
+  }
+  throw 'invalid_param_id';
+}
 
 //
 //
@@ -41,8 +90,8 @@ var
 /**
  * @apiDefineSuccessStructure result
  *
- * @apiSuccess {string} id file identifier
- * @apiSuccess {string} [source] source file identifier(variant file only)
+ * @apiSuccess {string} id file identifier(source file identifier for variant file)
+ * @apiSuccess {string} [variant] variant file identifier(variant file only)
  * @apiSuccess {string} [url] public http url(only if storage provides)
  * @apiSuccess {string} [file] local file path(debug mode only)
  * @apiSuccessExample 200 ok
@@ -77,7 +126,8 @@ var
  * @apiError {number} error.status status code
  * @apiError {string} error.message error message
  * @apiError {number} [error.code] pictor specific error code(only if error.status is 500)
- * @apiError {*} [error.cause] (debug mode only)
+ * @apiError {*} [error.cause] internal error object(debug mode only)
+ * @apiError {*} [error.stack] stack trace(debug mode only)
  * @apiErrorExample bad request
  *    HTTP/1.1 400 Bad Request
  *    Content-Type: application/json
@@ -157,7 +207,8 @@ function _sendError(req, res, err) {
       status: status,
       message: (err && err.message) || 'internal server error',
       code: (err && err.code) || 0,
-      cause: err
+      cause: err,
+      stack: error.stack = (err && err.stack && err.stack.split('\n')) || []
     }
   };
 
@@ -276,7 +327,10 @@ function uploadFiles(req, res) {
   // FIXME: express ignore paramter order... need to change api spec.
 
   return Q.all(fileParam.map(function (file, index) {
-      return pictor.putFile(file.path, idParam[index], prefixParam[index], file.headers['content-type']);
+      var id = idParam[index];
+      var prefix = prefixParam[index];
+      var type = file.headers['content-type'];
+      return pictor.putFile(_getFileId(id, prefix, type), file.path);
     }))
     .then(function (result) {
       return _sendResult(req, res, result);
@@ -310,7 +364,10 @@ function uploadFile(req, res) {
     return _sendError(req, res, {status: 400, message: 'invalid_param_file'});
   }
 
-  return pictor.putFile(file.path, req.param('id'), req.param('prefix'), file.headers['content-type'])
+  var id = req.param('id');
+  var prefix = req.param('prefix');
+  var type = file.headers['content-type'];
+  return pictor.putFile(_getFileId(id, prefix, type), file.path)
     .then(function (result) {
       return _sendResult(req, res, result);
     })
@@ -334,8 +391,11 @@ function uploadFile(req, res) {
  * @apiErrorStructure error
  */
 function uploadFileRaw(req, res) {
+  var id = req.param('id');
+  var prefix = req.param('prefix');
+  var type = req.get('content-type');
   // req is stream.Readable!
-  return pictor.putFile(req, req.param('id'), req.param('prefix'), req.get('content-type'))
+  return pictor.putFile(_getFileId(id, prefix, type), req)
     .then(function (result) {
       return _sendResult(req, res, result);
     })
@@ -399,29 +459,21 @@ function downloadFile(req, res) {
  * @apiGroup pictor
  * @apiDescription convert a file
  *
- * @apiParam {string} [preset] 'xs', 's', 'm', 'l', 'xl', 'xxl', ...
- * @apiParam {string} [converter] 'convert', 'resize', 'crop', 'meta', 'exif', ...
- * @apiParam {*} [params] various converter specific params
+ * @apiParam {string} [converter] 'convert', 'resize', 'crop', 'resizecrop', 'meta', 'exif', 'holder', 'preset', ...
+ * @apiParam {*} [*] various converter specific params
  *
  * @apiSuccessStructure result
  * @apiErrorStructure error
  */
-function convertFiles(req, res) {
-  // TODO: more robust parser...
+function convertFile(req, res) {
   // TODO: convert multiple files...
-  var opts = {
-    preset: req.param('preset'),
-    converter: req.param('converter'),
-    src: req.param('src'),
-    nw: req.param('nw'),
-    nh: req.param('nh'),
-    w: req.param('w'),
-    h: req.param('h'),
-    flags: req.param('flags'),
-    x: req.param('x'),
-    y: req.param('y'),
-    format: req.param('format')
-  };
+
+  // XXX: is this secure??
+  // i don't know which params are required for the converter
+  // so, i'll pass all params available here...
+  var opts = _.extend({}, req.params, req.query, req.body);
+  DEBUG && debug('convertFile: opts=', opts);
+
   return pictor.convertFile(opts)
     .then(function (result) {
       return _sendResult(req, res, result, req.method === 'GET');
@@ -433,21 +485,20 @@ function convertFiles(req, res) {
 }
 
 /**
- * @api {get} /pictor/convert convert a file and download
+ * @api {get} /pictor/convert convert and download a file
  * @apiName convertAndDownload
  * @apiGroup pictor
  * @apiDescription convert a single file and download it
  *
- * @apiParam {string} [preset] 'xs', 's', 'm', 'l', 'xl', 'xxl', ...
- * @apiParam {string} [converter] 'convert', 'resize', 'crop', 'meta', 'exif', ...
- * @apiParam {*} [params] various converter specific params
+ * @apiParam {string} [converter] 'convert', 'resize', 'crop', 'resizecrop', 'meta', 'exif', 'holder', 'preset', ...
+ * @apiParam {*} [*] various converter specific params
  *
  * @apiSuccessStructure file
  * @apiErrorStructure error
  */
 function convertAndDownloadFile(req, res) {
   // req.method === 'GET'
-  return convertFiles(req, res);
+  return convertFile(req, res);
 }
 
 /**
@@ -456,8 +507,8 @@ function convertAndDownloadFile(req, res) {
  * @apiGroup pictor
  * @apiDescription download a variant file.
  *
- * @apiParam {string} id source identifier(with extension to guess mime type)
- * @apiParam {string} variant variant identifier with extension
+ * @apiParam {string} id source identifier
+ * @apiParam {string} variant variant identifier
  *
  * @apiSuccessStructure file
  * @apiErrorStructure error
@@ -466,7 +517,7 @@ function downloadVariantFile(req, res) {
   var id = req.param('id');
   var variant = req.param('variant');
 
-  return pictor.getFile(id, variant)
+  return pictor.getVariantFile(id, variant)
     .then(function (result) {
       return _sendResult(req, res, result, true);
     })
@@ -510,8 +561,12 @@ function configureRoutes(app, config) {
 
   // TODO: require auth!
 
-  app.post(prefix + '/convert', convertFiles);
+  app.post(prefix + '/convert', convertFile);
+  app.post(prefix + '/convert/:converter', convertFile);
+  app.post(prefix + '/convert/:converter/:id.format?', convertFile);
   app.get(prefix + '/convert', convertAndDownloadFile);
+  app.get(prefix + '/convert/:converter', convertAndDownloadFile);
+  app.get(prefix + '/convert/:converter/:id.format?', convertAndDownloadFile);
   app.post(prefix + '/upload', uploadFiles);
   app.put(prefix + '/upload', uploadFileRaw);
   app.get(prefix + '/download', downloadFile);

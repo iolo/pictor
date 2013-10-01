@@ -7,10 +7,6 @@ var
   _ = require('lodash'),
   Q = require('q'),
   FS = require('q-io/fs'),
-  mime = require('mime'),
-  ID_NEW = 'new',
-  ID_REGEX = /\w+(\.\w+)?/,// /[^a-zA-Z0-9가-힣-_.]/
-  DEF_PREFIX = '',
   storage = require('./storage'),
   converter = require('./converter'),
   debug = require('debug')('pictor:main'),
@@ -19,20 +15,28 @@ var
 var
   tempDir = '/tmp/pictor/temp',
   presets = {
-    xxs: {converter: 'resize', w: 16},
-    xs: {converter: 'resize', w: 24},
-    s: {converter: 'resize', w: 32},
-    m: {converter: 'resize', w: 48},
-    l: {converter: 'resize', w: 64},
-    xl: {converter: 'resize', w: 128},
-    xxl: {converter: 'resize', w: 256}
+    xxs: {converter: 'thumbnail', w: 16},
+    xs: {converter: 'thumbnail', w: 24},
+    s: {converter: 'thumbnail', w: 32},
+    m: {converter: 'thumbnail', w: 48},
+    l: {converter: 'thumbnail', w: 64},
+    xl: {converter: 'thumbnail', w: 128},
+    xxl: {converter: 'thumbnail', w: 256}
   },
   converters = {},
   dataStorage,
   cacheStorage;
 
-function _getTempPath(ext) {
-  return path.join(tempDir, _.uniqueId('pictor_') + '.' + (ext || 'bin'));
+function _getTempPath(prefix, suffix) {
+  return path.join(tempDir, [
+    prefix || '',
+    Date.now().toString(36),
+    '-',
+    (Math.random() * 0x100000000 + 1).toString(36),
+    '-',
+    process.pid,
+    suffix || ''
+  ].join(''));
 }
 
 /**
@@ -55,6 +59,19 @@ function _getVariantId(id, variation, ext) {
   return variantId;
 }
 
+/**
+ * delete all variants from cache storage.
+ *
+ * @param {string} id
+ * @returns {promise} success or not
+ * @private
+ */
+function _deleteVariantFiles(id) {
+  // XXX: storage providers handle this? or not???
+  // ex. cacheStorage.deleteVariantsFiles(id);
+  // delete files with prefix(or delete directory)
+  return cacheStorage.deleteFile(_getVariantId(id));
+}
 
 //
 //
@@ -82,25 +99,16 @@ function PictorFile() {
  *
  * delete the old file and all its variants.
  *
- * @param {string|stream} file
- * @param {string} [id='new'] generate unique id.
- * @param {string} [prefix=''] prefix for generated id
- * @param {string} [type] mime type for generated id
+ * NOTE: this always overwrites existing file.
+ *
+ * @param {string} id file identifier
+ * @param {string|stream} file local file path or readable stream
  * @returns {promise.<PictorFile>}
  */
-function putFile(file, id, prefix, type) {
-  if (!id || id === ID_NEW) {
-    id = _.uniqueId(prefix || DEF_PREFIX);
-    if (type) {
-      id += '.' + mime.extension(type);
-    }
-  } else if (!ID_REGEX.test(id)) {
-    throw 'invalid_param_id';
-  }
+function putFile(id, file) {
   DEBUG && debug('put file:', id, '--->', file);
 
-  // XXX: delete files with prefix(or delete directory)
-  return cacheStorage.deleteFile(_getVariantId(id))
+  return _deleteVariantFiles(id)
     .fail(function () {
       //if(err instanceof NotFoundError) { return true; } else throw err;
       return true;
@@ -109,7 +117,7 @@ function putFile(file, id, prefix, type) {
       // XXX: handle stream
       if (file instanceof stream.Stream) {
         var d = Q.defer();
-        var tempFilePath = _getTempPath();
+        var tempFilePath = _getTempPath(null, id);
         fs.createWriteStream(tempFilePath).pipe(file)
           .on('error', function (err) {
             return d.reject(err);
@@ -132,22 +140,12 @@ function putFile(file, id, prefix, type) {
 }
 
 /**
- * get a file or its variant.
+ * get a file.
  *
  * @param {string} id
- * @param {string} [variant]
  * @returns {promise.<PictorFile>}
  */
-function getFile(id, variant) {
-  if (variant) {
-    return cacheStorage.getFile(_getVariantId(id, variant))
-      .then(function (result) {
-        // XXX:
-        result.id = variant;
-        result.source = id;
-        return result;
-      });
-  }
+function getFile(id) {
   return dataStorage.getFile(id)
     .then(function (result) {
       // XXX:
@@ -165,8 +163,7 @@ function getFile(id, variant) {
  * @returns {promise} success or not
  */
 function deleteFile(id) {
-  // XXX: delete files with prefix(or delete directory)
-  return cacheStorage.deleteFile(_getVariantId(id))
+  return _deleteVariantFiles(id)
     .fail(function () {
       //if(err instanceof NotFoundError) { return true; } else throw err;
       return true;
@@ -179,50 +176,107 @@ function deleteFile(id) {
 /**
  * convert a file.
  *
- * @param {*} opts
+ * @param {*} opts various converter specific params
  * @returns {promise.<PictorFile>}
  */
 function convertFile(opts) {
-  if (opts.preset) {
-    opts = _.extend(opts, presets[opts.preset]); // manual params override preset
-    if (opts) {
+  // XXX: need cleanup! this is the most puzzling code in pictor :S
+
+  // 'preset' converter is special one!
+  if (opts.converter === 'preset') {
+    if (!opts.preset) {
+      throw 'required_param_preset';
+    }
+    var preset = presets[opts.preset];
+    if (!preset) {
       throw 'invalid_param_preset';
     }
-    DEBUG && debug('convert using preset', opts);
+    // overrides preset with specified params
+    opts = _.extend(opts, preset);
+    DEBUG && debug('*** convert - preset', opts.preset, preset, '--->', opts);
   }
 
-  var converter = converters[opts.converter || 'convert'];
+  var converter = converters[opts.converter];
   if (!converter) {
     throw 'invalid_param_converter';
   }
 
-  var ext = converter.getExtension(opts);
-  var variation = converter.getVariation(opts);
-  var variantId = _getVariantId(opts.src || opts.converter, variation, ext);
+  opts = converter.prepare(opts);
+  opts.src = opts.id; // getExtension refer opts.src to determine default ext.
+  opts.format = converter.getExtension(opts);
+  opts.variant = converter.getVariation(opts) + '.' + opts.format;
 
-  DEBUG && debug('convert ', opts.src + '--->', variantId);
+  var variantId = _getVariantId(opts.id || opts.converter, opts.variant);
 
+  DEBUG && debug('*** convert - prepare', opts, '--->', variantId);
+
+  // get variant from cache storage
   return cacheStorage.getFile(variantId)
     .fail(function () {
-      // dst not in cache:
-      // 1. get src from data
-      return dataStorage.getFile(opts.src)
-        .then(function (src) {
-          // 2. convert src to temp
-          opts.src = src.file || src.stream;
-          opts.dst = _getTempPath(ext);
+      // variant not in cache storage
+      DEBUG && debug('*** convert - variant not in cache', variantId);
+
+      // TODO: better way to handle various input/ouput of converter?
+      // 0..n input -> 1..m output
+
+      // prepare temp file for output
+      DEBUG && debug('*** convert - prepare dst', opts.dst);
+      opts.dst = _getTempPath(null, opts.variant);
+
+      // prepare for input
+      return Q.resolve(opts)
+        .then(function (opts) {
+          // 2.3 no input required(holder converter)
+          DEBUG && debug('*** convert - no src');
+          if (!opts.id) {
+            opts.src = null;
+            return opts;
+          }
+          // input required(most converters) -> get source from data storage
+          DEBUG && debug('*** convert - get src', opts.id);
+          return dataStorage.getFile(opts.id)
+            .then(function (src) {
+              opts.src = src.file || src.stream;
+              // prepare temp file for output
+              DEBUG && debug('*** convert - prepare dst', opts.dst);
+              return opts;
+            });
+        })
+        .then(function (opts) {
+          // convert source to temp file
+          DEBUG && debug('*** convert - converting...', opts);
           return converter.convert(opts);
         })
         .then(function () {
-          // 2. put temp into dst
+          // put temp file into cache storage
+          DEBUG && debug('*** convert - save dst into cache', variantId);
           return cacheStorage.putFile(variantId, opts.dst);
+          // TODO: delete tempFilePath
         });
     })
     .then(function (result) {
-      result.id = variation + '.' + ext;
-      result.source = opts.src;
+      // variant in cache storage
+      DEBUG && debug('*** convert - variant in cache', result);
+      result.id = opts.id;
+      result.variant = opts.variant;
       // delete result.file
       // delete result.stream
+      return result;
+    });
+}
+
+/**
+ * get a variant file.
+ *
+ * @param {string} id
+ * @param {string} variant
+ * @returns {promise.<PictorFile>}
+ */
+function getVariantFile(id, variant) {
+  return cacheStorage.getFile(_getVariantId(id, variant))
+    .then(function (result) {
+      result.id = id;
+      result.variant = variant;
       return result;
     });
 }
@@ -289,5 +343,6 @@ module.exports = {
   deleteFile: deleteFile,
   getFile: getFile,
   convertFile: convertFile,
+  getVariantFile: getVariantFile,
   configure: configure
 };
