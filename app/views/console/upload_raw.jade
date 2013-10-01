@@ -1,10 +1,11 @@
 .panel.panel-info
   .panel-heading
+    a.btn.btn-info.btn-xs.pull-right(href="/docs/api/#api-pictor-uploadRaw") api document
     h5.panel-title upload a single file with raw data
       .label.label-danger BUGGY!!!
 
   .panel-body
-    form#uploadRawForm.form-horizontal(action="{{apiUrl}}/{{uploadRaw.id}}",method="put",target="responseView")
+    form#uploadRawForm.form-horizontal(action="{{apiUrl}}/{{upload.id}}",method="put",target="responseView")
       .form-group
         label.control-label.col-md-3 file:
         .col-md-9
@@ -12,17 +13,18 @@
       .form-group
         label.control-label.col-md-3 id:
         .col-md-9
-          input.form-control(type="text",name="id",required,ng-model="uploadRaw.id",ng-init="uploadRaw.id = 'foo.jpg'")
+          input.form-control(type="text",name="id",required,ng-model="upload.id",ng-init="upload.id = 'foo.jpg'")
       .form-group
         label.control-label.col-md-3 prefix:
         .col-md-9
-          input.form-control(type="text",name="prefix",value="",ng-disabled="uploadRaw.id != 'new'")
+          input.form-control(type="text",name="prefix",ng-model="upload.prefix")
       .form-group
         .col-md-9.col-md-offset-3
           button.btn.btn-primary(type="submit",disabled) upload
 
-    pre: code.
-      curl -X PUT -d @foo.jpg {{apiUrl}}/foo.jpg
-      curl -X PUT -d @foo.jpg {{apiUrl}}/upload?id=foo.jpg
-      curl -X PUT -d @foo.jpg {{apiUrl}}/upload?id=new
-      curl -X PUT -d @foo.jpg {{apiUrl}}/upload?id=new&prefix=test
+    pre(ng-show="!!upload.id && !upload.prefix"): code.
+      curl -X PUT -d @foo.jpg {{apiUrl}}/{{upload.id}}
+      curl -X PUT -d @foo.jpg {{apiUrl}}/upload?id={{upload.id}}
+    pre(ng-show="!!upload.prefix"): code.
+      curl -X PUT -d @foo.jpg {{apiUrl}}/{{upload.id}}?prefix={{upload.prefix}}
+      curl -X PUT -d @foo.jpg {{apiUrl}}/upload?id={{upload.id}}&prefix={{upload.prefix}}

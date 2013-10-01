@@ -1,5 +1,6 @@
 .panel.panel-info
   .panel-heading
+    a.btn.btn-info.btn-xs.pull-right(href="/docs/api/#api-pictor-uploadMulti") api document
     h5.panel-title upload multiple files with multipart/form-data
       .label.label-danger BUGGY!!!
 
@@ -7,36 +8,27 @@
     form#uploadMultiForm.form-horizontal(action="{{apiUrl}}/upload",method="post",enctype="multipart/form-data",target="responseView")
       .form-group
         label.control-label.col-md-3 file[0]:
-        .col-md-9
-          input.form-control(type="file",name="file",required)
+        .col-md-9: input.form-control(type="file",name="file",required)
       .form-group
         label.control-label.col-md-3 id[0]:
-        .col-md-9
-          input.form-control(type="text",name="id",value="new")
+        .col-md-9: input.form-control(type="text",name="id",ng-model="upload.id0",ng-init="upload.id0 = 'foo.jpg'")
       .form-group
         label.control-label.col-md-3 prefix[0]:
-        .col-md-9
-          input.form-control(type="text",name="prefix",value="")
+        .col-md-9: input.form-control(type="text",name="prefix",ng-model="upload.prefix0")
       .form-group
         label.control-label.col-md-3 file[1]:
-        .col-md-9
-          input.form-control(type="file",name="file")
+        .col-md-9: input.form-control(type="file",name="file")
       .form-group
         label.control-label.col-md-3 id[1]:
-        .col-md-9
-          input.form-control(type="text",name="id",value="new")
+        .col-md-9: input.form-control(type="text",name="id",ng-model="upload.id1",ng-init="upload.id1 = 'new'")
       .form-group
         label.control-label.col-md-3 prefix[1]:
-        .col-md-9
-          input.form-control(type="text",name="prefix",value="")
+        .col-md-9: input.form-control(type="text",name="prefix",ng-model="upload.prefix1")
       .form-group
         .col-md-9.col-md-offset-3
           button.btn.btn-primary(type="submit") upload
 
-    pre: code.
-      curl -X POST -F "file=@foo.jpg" -F "id=foo.jpg" -F "file=@bar.jpg" -F "id=bar.jpg" "{{apiUrl}}/upload"
-      curl -X POST -F "file=@foo.jpg" -F "file=@bar.jpg" "{{apiUrl}}/upload"
-      curl -X POST -F "file=@foo.jpg" -F "file=@bar.jpg" -F "id=new" "{{apiUrl}}/upload"
-      curl -X POST -F "file=@foo.jpg" -F "file=@bar.jpg" -F "id=new" -F "prefix=test" "{{apiUrl}}/upload"
-      curl -X POST -F "file=@foo.jpg" -F "id=new" -F "file=@bar.jpg" -F "id=new" "{{apiUrl}}/upload"
-      curl -X POST -F "file=@foo.jpg" -F "id=new" -F "prefix=test" -F "file=@bar.jpg" -F "id=new" -F "prefix=test" "{{apiUrl}}/upload"
+    pre(ng-show="!!upload.id0 && !!upload.id1 && !upload.prefix0 && !upload.prefix1"): code.
+      curl -X POST -F "file=@foo.jpg" -F "id={{upload.id0}}" -F "file=@bar.jpg" -F "id={{upload.id1}}" "{{apiUrl}}/upload"
+    pre(ng-show="!!upload.prefix0 && !!upload.prefix1") code.
+      curl -X POST -F "file=@foo.jpg" -F "id={{upload.id0}}" -F "prefix={{upload.prefix0}}" -F "file=@bar.jpg" -F "id={{upload.id1}}" -F "prefix={{upload.prefix1}}" "{{apiUrl}}/upload"

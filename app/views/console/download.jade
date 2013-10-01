@@ -1,16 +1,17 @@
 .panel.panel-info
   .panel-heading
+    a.btn.btn-info.btn-xs.pull-right(href="/docs/api/#api-pictor-download") api document
     h3.panel-title download a file
+
   .panel-body
     form#downloadForm.form-horizontal(action="{{apiUrl}}/download",method="get",target="responseView")
       .form-group
-        label.control-label.col-md-3 file to download:
-        .col-md-9
-          input.form-control(type="text",name="id",value="foo.jpg",required)
+        label.control-label.col-md-3 id:
+        .col-md-9: input.form-control(type="text",name="id",required,ng-model="download.id",ng-init="download.id = 'foo.jpg'")
       .form-group
         .col-md-9.col-md-offset-3
           button.btn.btn-primary(type="submit") download
 
-    pre: code.
-      curl -X GET {{apiUrl}}/foo.jpg
-      curl -X GET {{apiUrl}}/download?id=foo.jpg
+    pre(ng-show="!!download.id"): code.
+      curl -X GET {{apiUrl}}/{{download.id}}
+      curl -X GET {{apiUrl}}/download?id={{download.id}}
