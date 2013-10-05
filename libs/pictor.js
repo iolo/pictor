@@ -201,7 +201,6 @@ function convertFile(opts) {
     throw 'invalid_param_converter';
   }
 
-  opts = converter.prepare(opts);
   opts.src = opts.id; // getExtension refer opts.src to determine default ext.
   opts.format = converter.getExtension(opts);
   opts.variant = converter.getVariation(opts) + '.' + opts.format;

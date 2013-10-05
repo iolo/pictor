@@ -35,9 +35,7 @@ function _generateUniqueId(prefix, suffix) {
     prefix || '',
     Date.now().toString(36),
     '-',
-    (Math.random() * 0x100000000 + 1).toString(36),
-    '-',
-    process.pid,
+    (Math.random() * 0x100000000).toString(36),
     suffix || ''
   ].join('');
 }

@@ -24,7 +24,7 @@ var
  */
 function resizeCrop(src, dst, nw, nh, w, h, x, y) {
   DEBUG && debug('resizeCrop', src, '-->', dst, nw, nh, w, h, x, y);
-  var cmd = gm(src).noProfile().resize(nw||'',nh||'','!').crop(w || '', h || '', x || 0, y || 0);
+  var cmd = gm(src).noProfile().resize(nw||'',nh||'').crop(w || '', h || '', x || 0, y || 0);
   return Q.ninvoke(cmd, 'write', dst);
 }
 

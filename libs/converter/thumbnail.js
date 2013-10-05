@@ -20,8 +20,8 @@ var
 function thumbnail(src, dst, w, h) {
   DEBUG && debug('thumbnail', src, '-->', dst, w, h);
   //var cmd = gm(src).noProfile().thumbnail(w || '', h || '');
-  var w = w || h || '';
-  var h = h || w || '';
+  w = w || h || '';
+  h = h || w || '';
   // see http://www.imagemagick.org/Usage/resize/#fill
   var cmd = gm(src).noProfile().resize(w, h, '^').gravity('Center').extent(w, h);
   return Q.ninvoke(cmd, 'write', dst);
