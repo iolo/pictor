@@ -10,6 +10,7 @@ html
     link(rel="stylesheet",href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css")
     link(rel="stylesheet",href="http://fonts.googleapis.com/css?family=Roboto:300,400,700|Droid+Sans+Mono")
     link(rel="stylesheet",href="/css/app.css")
+    link(rel="stylesheet",href="slider.css")
     link(rel="stylesheet",href="cropper.css")
     //![if lt IE 9]
       script(src="//cdnjs.cloudflare.com/ajax/libs/respond.js/1.2.0/respond.min.js")
@@ -49,7 +50,7 @@ html
                 .col-md-2: button.btn.btn-primary.btn-block(type="submit") upload
 
             iframe#uploadFrame(style="display:none;")
-            p upload request:
+            p upload request(multipart post):
             pre: code#uploadResultText
 
             form.form-horizontal
@@ -66,7 +67,7 @@ html
               a(href="/docs/api/#api-pictor-convertAndDownload") convertAndDownload
               | &nbsp;API:
 
-            p convertAndDownload request(url):
+            p convertAndDownload request(get url):
             pre: code#convertAndDownloadRequestText
 
             p convertAndDownload response(image):
@@ -80,13 +81,13 @@ html
               | &nbsp; API:
               .label.label-danger BUGGY!
 
-            p convert request:
+            p convert request(post):
             pre: code#convertRequestText
 
             p convert response:
             pre: code#convertResponseText
 
-            p downloadVariant request(url):
+            p downloadVariant request(get url):
             pre: code#downloadVariantRequestText
 
             p downloadVariant response(image):
@@ -99,19 +100,7 @@ html
                 button.close(type="button",data-dismiss="modal",aria-hidden="true") &times;
                 h4.modal-title cropper
               .modal-body
-                #cropper.cropper
-                  .cropper-mask
-                    img.cropper-image(alt="...")
-                    .cropper-top
-                    .cropper-left
-                    .cropper-crop
-                    .cropper-right
-                    .cropper-bottom
-                  .slider
-                    button.slider-decr -
-                    button.slider-incr +
-                    .slider-bar
-                    button.slider-knob &nbsp;
+                #cropper.cropper(style="width:300px;height:300px;")
               .modal-footer.text-right
                 button.btn.btn-default(type="button",data-dismiss="modal") cancel
                 button#cropper_okBtn.btn.btn-primary(type="button",data-dismiss="modal") save changes
@@ -123,5 +112,6 @@ html
     script(src="http://code.jquery.com/jquery-1.10.2.min.js")
     script(src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js")
 
+    script(src="slider.js")
     script(src="cropper.js")
     script(src="index.js")

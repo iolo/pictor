@@ -11,16 +11,18 @@
   });
 
   $('#openCropperBtn').click(function () {
-    var src = $('#sourceIdEdit').val();
+    var id = $('#sourceIdEdit').val();
 
-    var cropper = $('.cropper').cropper();
+    // XXX: with bootstrap dialog, I can't get valid height until it was shown.
     $('#cropperDialog')
-      .on('shown.bs.modal', function () {
-        cropper.setImage('/pictor/' + src);
+      .on('shown.bs.modal', function() {
+        $('#cropper').cropper('destroy').cropper({w: 100, h: 100, src:'/pictor/' + id});
       })
       .modal('show');
+
     $('#cropper_okBtn').click(function (event) {
-      var data = $.extend({src: src}, cropper.getParams());
+      // NOTE: get resize size(nw, nh) and crop box(x, y, w, h)
+      var data = $.extend({id: id, converter: 'resizecrop'}, $('#cropper').val());
 
       var convertAndDownloadRequestUrl = '/pictor/convert?' + $.param(data);
       $('#convertAndDownloadRequestText').html(convertAndDownloadRequestUrl);
@@ -32,7 +34,7 @@
       $.ajax(convertReq).then(function (data, status, xhr) {
         $('#convertResponseText').html(JSON.stringify(data));
 
-        var downloadVariantRequestUrl = '/pictor/' + src + '/' + data.id;
+        var downloadVariantRequestUrl = '/pictor/' + data.id + '/' + data.variant;
         $('#downloadVariantRequestText').html(downloadVariantRequestUrl);
         $('#downloadVariantResponseImg').attr('src', downloadVariantRequestUrl);
       });
