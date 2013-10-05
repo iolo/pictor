@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <title>cropper test page</title>
+  <link rel="stylesheet" href="slider.css">
+  <link rel="stylesheet" href="cropper.css">
+</head>
+<body>
+
+<h1>cropper1</h1>
+
+<div id="cropper1" class="cropper" style="width:300px;height:300px;"></div>
+<div id="cropper1_value"></div>
+
+<h1>cropper2</h1>
+
+<div id="cropper2" class="cropper" style="width:300px;height:300px;"
+     data-w="128" data-h="128" data-src="../../img/how_pictor_works.png"></div>
+<div id="cropper2_value"></div>
+
+<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="slider.js"></script>
+<script src="cropper.js"></script>
+<script>
+  $(function () {
+    $('#cropper1')
+      .on('crop', function (event, value) {
+        $('#cropper1_value').html(JSON.stringify(value));
+      })
+      .cropper({w: 64, h: 64, src: '../../img/pictor.jpg'});
+    $('#cropper2')
+      .on('crop', function (event, value) {
+        $('#cropper2_value').html(JSON.stringify(value));
+      })
+      .cropper();
+  })
+</script>
+</body>
+</html>
