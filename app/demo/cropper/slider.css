@@ -1,0 +1,53 @@
+/* slider */
+
+.slider {
+  position: relative;
+}
+
+.slider > .slider-bar {
+  position: relative;
+  width: auto;
+  height: 1em;
+  margin: 0 1em 0 1em; /* decr on left(1em), incr on right(1em) */
+  background: #ccc;
+  cursor: pointer;
+}
+
+.slider > .slider-bar > .slider-knob,
+.slider > .slider-decr,
+.slider > .slider-incr {
+  position: absolute;
+  top: 0;
+  width: 1em;
+  height: 1em;
+  margin: 0;
+  padding: 0;
+  line-height: 1em;
+  text-align: center;
+  vertical-align: middle;
+  border: 0 none;
+}
+
+.slider > .slider-bar > .slider-knob {
+  left: 0;
+  background: red;
+  border-radius: 50%;
+  cursor: move;
+}
+
+.slider > .slider-decr {
+  left: 0;
+  background: gold;
+  border-top-left-radius: 50%;
+  border-bottom-left-radius: 50%;
+  cursor: pointer;
+}
+
+.slider > .slider-incr {
+  right: 0;
+  background: gold;
+  border-top-right-radius: 50%;
+  border-bottom-right-radius: 50%;
+  cursor: pointer;
+}
+
