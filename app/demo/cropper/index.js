@@ -33,10 +33,6 @@
 
       $.ajax(convertReq).then(function (data, status, xhr) {
         $('#convertResponseText').html(JSON.stringify(data));
-
-        var downloadVariantRequestUrl = '/pictor/' + data.id + '/' + data.variant;
-        $('#downloadVariantRequestText').html(downloadVariantRequestUrl);
-        $('#downloadVariantResponseImg').attr('src', downloadVariantRequestUrl);
       });
     });
   });

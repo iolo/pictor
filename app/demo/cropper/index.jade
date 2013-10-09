@@ -65,7 +65,11 @@ html
           .panel-body
             h5 use&nbsp;
               a(href="/docs/api/#api-pictor-convertAndDownload") convertAndDownload
+              | &nbsp;or&nbsp;
+              a(href="/docs/api/#api-pictor-convert") convert
               | &nbsp;API:
+
+            p for same convert request, pictor use the previous converted file in cache.
 
             p convertAndDownload request(get url):
             pre: code#convertAndDownloadRequestText
@@ -73,25 +77,11 @@ html
             p convertAndDownload response(image):
             p: img#convertAndDownloadResponseImg(alt="...")
 
-            h5 or, use&nbsp;
-              a(href="/docs/api/#api-pictor-convert") convert
-              | &nbsp;API to get a variant id(immutable and more human readable),
-              | &nbsp;and use it later with&nbsp;
-              a(href="/docs/api/#api-pictor-downloadVariant") downloadVariant
-              | &nbsp; API:
-              .label.label-danger BUGGY!
-
             p convert request(post):
             pre: code#convertRequestText
 
             p convert response:
             pre: code#convertResponseText
-
-            p downloadVariant request(get url):
-            pre: code#downloadVariantRequestText
-
-            p downloadVariant response(image):
-            p: img#downloadVariantResponseImg(alt="...")
 
         #cropperDialog.modal.fade
           .modal-dialog(style="width:360px;")

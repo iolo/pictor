@@ -88,8 +88,7 @@ function _getFileId(id, prefix, type) {
 /**
  * @apiDefineSuccessStructure result
  *
- * @apiSuccess {string} id file identifier(source file identifier for variant file)
- * @apiSuccess {string} [variant] variant file identifier(variant file only)
+ * @apiSuccess {string} id file identifier
  * @apiSuccess {string} [url] public http url(only if storage provides)
  * @apiSuccess {string} [file] local file path(debug mode only)
  * @apiSuccessExample 200 ok
@@ -499,32 +498,6 @@ function convertAndDownloadFile(req, res) {
   return convertFile(req, res);
 }
 
-/**
- * @api {get} /pictor/:id/:variant download a variant
- * @apiName downloadVariant
- * @apiGroup pictor
- * @apiDescription download a variant file.
- *
- * @apiParam {string} id source identifier
- * @apiParam {string} variant variant identifier
- *
- * @apiSuccessStructure file
- * @apiErrorStructure error
- */
-function downloadVariantFile(req, res) {
-  var id = req.param('id');
-  var variant = req.param('variant');
-
-  return pictor.getVariantFile(id, variant)
-    .then(function (result) {
-      return _sendResult(req, res, result, true);
-    })
-    .fail(function (err) {
-      return _sendError(req, res, err);
-    })
-    .done();
-}
-
 //
 //
 //
@@ -560,11 +533,9 @@ function configureRoutes(app, config) {
   // TODO: require auth!
 
   app.post(prefix + '/convert', convertFile);
-  app.post(prefix + '/convert/:converter', convertFile);
-  app.post(prefix + '/convert/:converter/:id.format?', convertFile);
   app.get(prefix + '/convert', convertAndDownloadFile);
-  app.get(prefix + '/convert/:converter', convertAndDownloadFile);
-  app.get(prefix + '/convert/:converter/:id.format?', convertAndDownloadFile);
+  app.post(prefix + '/:id/:converter.format?', convertFile);
+  app.get(prefix + '/:id/:converter.format?', convertAndDownloadFile);
   app.post(prefix + '/upload', uploadFiles);
   app.put(prefix + '/upload', uploadFileRaw);
   app.get(prefix + '/download', downloadFile);
@@ -573,7 +544,6 @@ function configureRoutes(app, config) {
   app.put(prefix + '/:id', uploadFileRaw);
   app.get(prefix + '/:id', downloadFile);
   app.del(prefix + '/:id', deleteFile);
-  app.get(prefix + '/:id/:variant', downloadVariantFile);
 
   return app;
 }
