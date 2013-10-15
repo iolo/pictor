@@ -49,6 +49,10 @@ HolderConverter.prototype.getVariation = function (opts) {
   return 'holder_' + (opts.w || '') + 'x' + (opts.h || '');
 };
 
+HolderConverter.prototype.getExtension = function (opts) {
+  return opts.format || 'jpeg';
+};
+
 HolderConverter.prototype.convert = function (opts) {
   return holder(opts.dst, opts.w, opts.h);
 };
