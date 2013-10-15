@@ -113,7 +113,7 @@ function _getFileId(id, prefix, type) {
  * @apiSuccessExample 200 ok(for iframe)
  *    HTTP/1.1 200 OK
  *    Content-Type: text/html
- *    &lt;textarea&gt;{id: "foo", url: "http://...",  ...}&lt;/textarea&gt;
+ *    <textarea>{id: "foo", url: "http://...",  ...}</textarea>
  */
 
 /**
@@ -160,7 +160,7 @@ function _getFileId(id, prefix, type) {
  * @apiSuccessExample 500 internal server error(for iframe)
  *    HTTP/1.1 500 internal server error
  *    Content-Type: text/html
- *    &lt;textarea&gt;{error:{status: 500, ...}&lt;/textarea&gt;
+ *    <textarea>{error:{status: 500, ...}</textarea>;
  */
 
 //
@@ -217,71 +217,20 @@ function _sendError(req, res, err) {
 }
 
 /**
- * send success response.
+ * send success response with result data(json).
  *
  * result is one of followings:
- * - 200 ok with file binary(download)
- * - 301,302,307 redirect(download)
  * - 200 ok with json contains id, url, ...
  * - 200 ok with jsonp contains id, url, ...(when request param 'callback' is set)
  * - 200 ok with html contains id, url, ...(when request param 'iframe' is set)
- * - 201 created
- * - 202 accepted
- * - 204 no content
  *
  * @param {*} req
  * @param {*} res
  * @param {PictorFile|array.<PictorFile>|number} result
- * @param {boolean} [download=false] send binary data in various way: redirect, file, stream and proxy.
  * @returns {*}
  * @private
  */
-function _sendResult(req, res, result, download) {
-  // status without result body: 201, 202, 204
-  if (_.isNumber(result)) {
-    return res.send(result);
-  }
-
-  if (download) {
-    if (!_.isObject(result)) {
-      return _sendError(req, res); // internal server error
-    }
-
-    if (redirectStatusCode) { // redirect is enabled by configuration
-      if (result.url) {
-        DEBUG && debug('*** redirect:', redirectStatusCode, result.url);
-        return res.redirect(redirectStatusCode, result.url);
-      } else {
-        DEBUG && debug('*** redirect fail! storage does not provide url!');
-      }
-    }
-    if (result.disposition) {
-      res.set('Content-Disposition', result.disposition);
-    }
-    if (result.type) {
-      res.type(result.type);
-    }
-    if (result.stream) {
-      DEBUG && debug('*** send stream');
-      return result.stream.pipe(res);
-    }
-    if (result.file) {
-      DEBUG && debug('*** send file:', result.file);
-      return res.sendfile(result.file);
-    }
-    // redirect is disabled by configuration,
-    // neither file nor stream is available...
-    // try manual proxy...
-    if (result.url) {
-      DEBUG && debug('*** manual proxy:', result.url);
-      return http.get(result.url, function (response) {
-        return response.pipe(res);
-      });
-    }
-    // no way to download!!! error??
-    return _sendError(req, res); // internal server error
-  }
-
+function _sendResult(req, res, result) {
   DEBUG && debug('*** send result', result);
 
   if (!_.isObject(result) && !_.isArray(result)) {
@@ -293,6 +242,82 @@ function _sendResult(req, res, result, download) {
   }
 
   return res.jsonp(result);
+}
+
+/**
+ * send success response with file binary or redirect.
+ *
+ * result is one of followings:
+ * - 200 ok with file binary(download)
+ * - 301,302,307 redirect(download)
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {PictorFile|array.<PictorFile>|number} result
+ * @returns {*}
+ * @private
+ */
+function _sendFile(req, res, result) {
+  if (!_.isObject(result)) {
+    return _sendError(req, res); // internal server error
+  }
+
+  if (redirectStatusCode) { // redirect is enabled by configuration
+    if (result.url) {
+      DEBUG && debug('*** redirect:', redirectStatusCode, result.url);
+      return res.redirect(redirectStatusCode, result.url);
+    } else {
+      DEBUG && debug('*** redirect fail! storage does not provide url!');
+    }
+  }
+  if (result.type) {
+    res.type(result.type);
+  }
+  var disposition = req.param('disposition');
+  if (disposition) {
+    var filename = req.param('filename');
+    if (filename) {
+      disposition += ';' + filename;
+    }
+    res.set('Content-Disposition', disposition); // (inline|attachment)[; filename=...]
+  }
+  if (result.stream) {
+    DEBUG && debug('*** send stream');
+    return result.stream.pipe(res);
+  }
+  if (result.file) {
+    DEBUG && debug('*** send file:', result.file);
+    return res.sendfile(result.file);
+  }
+  // redirect is disabled by configuration,
+  // neither file nor stream is available...
+  // try manual proxy...
+  if (result.url) {
+    DEBUG && debug('*** manual proxy:', result.url);
+    return http.get(result.url, function (response) {
+      return response.pipe(res);
+    });
+  }
+  // no way to download!!! error??
+  return _sendError(req, res); // internal server error
+}
+
+/**
+ * send success response without content
+ *
+ * result is one of followings:
+ * - 201 created
+ * - 202 accepted
+ * - 204 no content
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {number} status
+ * @returns {*}
+ * @private
+ */
+function _sendStatus(req, res, status) {
+  return res.send(result);
 }
 
 //
@@ -418,7 +443,7 @@ function deleteFile(req, res) {
 
   return pictor.deleteFile(id)
     .then(function () {
-      return _sendResult(req, res, 202);
+      return _sendStatus(req, res, 202);
     })
     .fail(function (err) {
       return _sendError(req, res, err);
@@ -442,7 +467,7 @@ function downloadFile(req, res) {
 
   return pictor.getFile(id)
     .then(function (result) {
-      return _sendResult(req, res, result, true);
+      return _sendFile(req, res, result);
     })
     .fail(function (err) {
       return _sendError(req, res, err);
@@ -456,7 +481,7 @@ function downloadFile(req, res) {
  * @apiGroup pictor
  * @apiDescription convert a file
  *
- * @apiParam {string} [converter] 'convert', 'resize', 'crop', 'resizecrop', 'meta', 'exif', 'holder', 'preset', ...
+ * @apiParam {string} [converter='preset'] 'preset', 'convert', 'resize', 'crop', 'resizecrop', 'meta', 'exif', 'holder', ...
  * @apiParam {*} [*] various converter specific params
  *
  * @apiSuccessStructure result
@@ -473,7 +498,10 @@ function convertFile(req, res) {
 
   return pictor.convertFile(opts)
     .then(function (result) {
-      return _sendResult(req, res, result, req.method === 'GET');
+      if (req.method === 'GET') {
+        return _sendFile(req, res, result);
+      }
+      return _sendResult(req, res, result);
     })
     .fail(function (err) {
       return _sendError(req, res, err);
@@ -534,8 +562,6 @@ function configureRoutes(app, config) {
 
   app.post(prefix + '/convert', convertFile);
   app.get(prefix + '/convert', convertAndDownloadFile);
-  app.post(prefix + '/:id/:converter.format?', convertFile);
-  app.get(prefix + '/:id/:converter.format?', convertAndDownloadFile);
   app.post(prefix + '/upload', uploadFiles);
   app.put(prefix + '/upload', uploadFileRaw);
   app.get(prefix + '/download', downloadFile);
@@ -544,6 +570,12 @@ function configureRoutes(app, config) {
   app.put(prefix + '/:id', uploadFileRaw);
   app.get(prefix + '/:id', downloadFile);
   app.del(prefix + '/:id', deleteFile);
+
+  // convenient api alias
+  app.post(prefix + '/convert/:converter.format?', convertFile);
+  app.get(prefix + '/convert/:converter.format?', convertAndDownloadFile);
+  app.post(prefix + '/:id/:converter.format?', convertFile);
+  app.get(prefix + '/:id/:converter.format?', convertAndDownloadFile);
 
   return app;
 }
