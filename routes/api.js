@@ -303,6 +303,37 @@ function _sendFile(req, res, result) {
 }
 
 /**
+ * send response with file binary or redirect if fallback provided, otherwise send error.
+ *
+ * @param {*} req
+ * @param {*} res
+ * @param {*} err original error
+ * @returns {*}
+ * @private
+ */
+function _sendFallbackOrError(req, res, err) {
+  var fallback = req.param('fallback');
+  if (fallback) {
+    DEBUG && debug('***ignore*** download fallback:', fallback);
+    // fallback to url
+    if (fallback && /^https?:\/\//.test(fallback)) {
+      return {url: fallback};
+    }
+    // fallback to file id
+    return pictor.getFile(fallback)
+      .then(function (result) {
+        return _sendFile(req, res, result);
+      })
+      .fail(function (fallbackErr) {
+        DEBUG && debug('***ignore*** failed to download fallback:', fallbackErr);
+        return _sendError(req, res, err);
+      })
+      .done();
+  }
+  return _sendError(req, res, err);
+}
+
+/**
  * send success response without content
  *
  * result is one of followings:
@@ -317,7 +348,22 @@ function _sendFile(req, res, result) {
  * @private
  */
 function _sendStatus(req, res, status) {
-  return res.send(result);
+  return res.send(status);
+}
+
+/**
+ * get all params for convert apis.
+ *
+ * XXX: is this secure??
+ * i don't know which params are required for the converter
+ * so, i'll pass all params available here...
+ *
+ * @param {*} req
+ * @returns {*}
+ * @private
+ */
+function _getConvertParams(req) {
+  return _.extend({}, req.params, req.query, req.body);
 }
 
 //
@@ -458,6 +504,7 @@ function deleteFile(req, res) {
  * @apiDescription download a file.
  *
  * @apiParam {string} id identifier(with extension to guess mime type)
+ * @apiParam {string} [fallback] fallback file identifier or url served instead of error.
  *
  * @apiSuccessStructure file
  * @apiErrorStructure error
@@ -470,7 +517,7 @@ function downloadFile(req, res) {
       return _sendFile(req, res, result);
     })
     .fail(function (err) {
-      return _sendError(req, res, err);
+      return _sendFallbackOrError(req, res, err);
     })
     .done();
 }
@@ -482,6 +529,7 @@ function downloadFile(req, res) {
  * @apiDescription convert a file
  *
  * @apiParam {string} [converter='preset'] 'preset', 'convert', 'resize', 'crop', 'resizecrop', 'meta', 'exif', 'holder', ...
+ * @apiParam {string} [fallback] fallback file identifier or url served instead of error.
  * @apiParam {*} [*] various converter specific params
  *
  * @apiSuccessStructure result
@@ -490,17 +538,11 @@ function downloadFile(req, res) {
 function convertFile(req, res) {
   // TODO: convert multiple files...
 
-  // XXX: is this secure??
-  // i don't know which params are required for the converter
-  // so, i'll pass all params available here...
-  var opts = _.extend({}, req.params, req.query, req.body);
+  var opts = _getConvertParams(req);
   DEBUG && debug('convertFile: opts=', opts);
 
   return pictor.convertFile(opts)
     .then(function (result) {
-      if (req.method === 'GET') {
-        return _sendFile(req, res, result);
-      }
       return _sendResult(req, res, result);
     })
     .fail(function (err) {
@@ -516,14 +558,24 @@ function convertFile(req, res) {
  * @apiDescription convert a single file and download it
  *
  * @apiParam {string} [converter] 'convert', 'resize', 'crop', 'resizecrop', 'meta', 'exif', 'holder', 'preset', ...
+ * @apiParam {string} [fallback] fallback file identifier or url served instead of error.
  * @apiParam {*} [*] various converter specific params
  *
  * @apiSuccessStructure file
  * @apiErrorStructure error
  */
 function convertAndDownloadFile(req, res) {
-  // req.method === 'GET'
-  return convertFile(req, res);
+  var opts = _getConvertParams(req);
+  DEBUG && debug('convertAndDownloadFile: opts=', opts);
+
+  return pictor.convertFile(opts)
+    .then(function (result) {
+      return _sendFile(req, res, result);
+    })
+    .fail(function (err) {
+      return _sendFallbackOrError(req, res, err);
+    })
+    .done();
 }
 
 //
