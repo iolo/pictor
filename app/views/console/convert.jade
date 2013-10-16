@@ -32,6 +32,13 @@
             option(value="l") l
             option(value="xl") xl
             option(value="xxl") xxl
+            option(value="xxs@2x") xxs@2x
+            option(value="xs@2x") xs@2x
+            option(value="s@2x") s@2x
+            option(value="m@2x") m@2x
+            option(value="l@2x") l@2x
+            option(value="xl@2x") xl@2x
+            option(value="xxl@2x") xxl@2x
       .form-group(ng-show="!!convert.converter.match('convert|resize|thumbnail|crop|optimize|meta|exif|preset')")
         label.control-label.col-md-3 id:
         .col-md-9: input.form-control(type="text",name="id",ng-model="convert.id",ng-init="convert.id = 'foo.jpg'")

@@ -3,7 +3,7 @@
 
   var viewsDir = 'views';
   //var locale = (navigator.userLanguage || navigator.language);
-  //if (/^(ko)/.test(locale) { viewsDir += locale.substring(0, 2); }
+  //if (/^(ko)/.test(locale) { viewsDir = 'views.ko'; }
 
   module.config(['$routeProvider', function (routes) {
     routes
