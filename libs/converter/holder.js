@@ -42,8 +42,8 @@ function holder(dst, w, h, opts) {
 //
 
 function HolderConverter(config) {
+  _.defaults(config, DEF_CONFIG);
   HolderConverter.super_.apply(this, arguments);
-  this.config = _.merge(this.config || {}, DEF_CONFIG);
   DEBUG && debug('create holder converter: ', this.config);
 }
 util.inherits(HolderConverter, converter.Converter);
