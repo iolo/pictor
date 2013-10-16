@@ -47,7 +47,7 @@ ResizeConverter.prototype.getParamNames = function () {
 };
 
 ResizeConverter.prototype.getVariation = function (opts) {
-  return 'resize_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.flags || '!');
+  return 'resize_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.flags || '');
 };
 
 /**
