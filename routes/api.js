@@ -113,7 +113,7 @@ function _getFileId(id, prefix, type) {
  * @apiSuccessExample 200 ok(for iframe)
  *    HTTP/1.1 200 OK
  *    Content-Type: text/html
- *    <textarea>{id: "foo", url: "http://...",  ...}</textarea>
+ *    &lt;textarea&gt;{id: "foo", url: "http://...",  ...}&lt;/textarea&gt;
  */
 
 /**
@@ -160,7 +160,7 @@ function _getFileId(id, prefix, type) {
  * @apiSuccessExample 500 internal server error(for iframe)
  *    HTTP/1.1 500 internal server error
  *    Content-Type: text/html
- *    <textarea>{error:{status: 500, ...}</textarea>;
+ *    &lt;textarea&gt;{error:{status: 500, ...}&lt;/textarea&gt;
  */
 
 //
@@ -523,14 +523,32 @@ function downloadFile(req, res) {
 }
 
 /**
+ * @apiDefineStructure convertRequest
+ *
+ * @apiParam {string} [converter='preset'] 'preset', 'convert', 'resize', 'thumbnail', 'crop', 'resizecrop', 'meta', 'exif', 'holder', ...
+ * @apiParam {string} [id] input file identifier. required except 'holder' converter.
+ * @apiParam {string} [format] output file format. if not specified, use source file format or converter default format.
+ * @apiParam {number} [preset] preset name. used 'preset' converter only
+ * @apiParam {number} [w] width in pixels. used for 'resize', 'thumbnail', 'crop', holder' converters.
+ * @apiParam {number} [h] height in pixels. used for 'resize', 'thumbnail', 'crop', holder' converters.
+ * @apiParam {number} [x] distance in pixel from the left edge. used for 'crop' converter only.
+ * @apiParam {number} [y] distance in pixels from the top edge. used for 'crop' converter only.
+ * @apiParam {string} [flags] resize flags. used for 'resize' converter only.
+ * @apiParam {number} [rw] resize width before crop. used for 'resizecrop' converter only
+ * @apiParam {number} [rh] resize height before crop. used for 'resizecrop' converter only.
+ * @apiParam {*} [*] and various converter specific params...
+ */
+
+/**
  * @api {post} /pictor/convert convert a file
  * @apiName convert
- * @apiGroup pictor
- * @apiDescription convert a file
+ * @apiGroup pictor_convert
+ * @apiDescription convert a file and keep the result in cache for later use.
  *
- * @apiParam {string} [converter='preset'] 'preset', 'convert', 'resize', 'crop', 'resizecrop', 'meta', 'exif', 'holder', ...
- * @apiParam {string} [fallback] fallback file identifier or url served instead of error.
- * @apiParam {*} [*] various converter specific params
+ * @apiStructure convertRequest
+ *
+ * @apiExample resize 'foo.jpg' to 400x300 of png with curl:
+ *    curl -X POST -d "converter=resize&id=foo.jpg&format=png&w=400&h=300" http://localhost:3001/pictor/convert
  *
  * @apiSuccessStructure result
  * @apiErrorStructure error
@@ -554,12 +572,15 @@ function convertFile(req, res) {
 /**
  * @api {get} /pictor/convert convert and download a file
  * @apiName convertAndDownload
- * @apiGroup pictor
- * @apiDescription convert a single file and download it
+ * @apiGroup pictor_convert
+ * @apiDescription convert a file and keep the result in cache for later use and download it.
  *
- * @apiParam {string} [converter] 'convert', 'resize', 'crop', 'resizecrop', 'meta', 'exif', 'holder', 'preset', ...
+ * @apiStructure convertRequest
+ *
  * @apiParam {string} [fallback] fallback file identifier or url served instead of error.
- * @apiParam {*} [*] various converter specific params
+ *
+ * @apiExample resize 'foo.jpg' to 100x100 of png and download it with curl:
+ *    curl -X GET -o output.png http://localhost:3001/pictor/convert?converter=resize&id=foo.jpg&format=png&w=100&h=100&fallback=http://link.to/some/image.png
  *
  * @apiSuccessStructure file
  * @apiErrorStructure error
@@ -623,11 +644,139 @@ function configureRoutes(app, config) {
   app.get(prefix + '/:id', downloadFile);
   app.del(prefix + '/:id', deleteFile);
 
-  // convenient api alias
-  app.post(prefix + '/convert/:converter.format?', convertFile);
-  app.get(prefix + '/convert/:converter.format?', convertAndDownloadFile);
-  app.post(prefix + '/:id/:converter.format?', convertFile);
-  app.get(prefix + '/:id/:converter.format?', convertAndDownloadFile);
+  //
+  // convenient aliases of convertAndDownload api using specific converters
+  // XXX: this code depends on implementation of built-in converters.
+  //
+
+  /**
+   * @api {get} /pictor/holder/{width}x{height}.{format} download holder image.
+   * @apiName downloadHolderImage
+   * @apiGroup pictor_images
+   * @apiDescription convenient alias of convertAndDownload api.
+   *
+   * @apiParam {number} w width in pixels
+   * @apiParam {number} h height in pixels
+   * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+   *
+   * @apiExample create 400x300 holder of png and download it with curl:
+   *    curl -X GET -o output.png http://localhost:3001/pictor/holder/400x300.png
+   *
+   * @apiSuccessStructure file
+   * @apiErrorStructure error
+   */
+  app.get(new RegExp(prefix + '/holder/(\\d+)x(\\d+)(.(\\w_))?'), function (req, res) {
+    req.query.converter = 'holder';
+    req.query.w = req.params[0];
+    req.query.h = req.params[1];
+    req.query.format = req.params[3];
+    return convertAndDownloadFile(req, res);
+  });
+
+  /**
+   * @api {get} /pictor/resize/{id}/{width}x{height}{flags}.{format} download resize image.
+   * @apiName downloadResizeImage
+   * @apiGroup pictor_images
+   * @apiDescription convenient alias of convertAndDownload api using 'resize' converter.
+   *
+   * @apiParam {number} w width in pixels
+   * @apiParam {number} h height in pixels
+   * @apiParam {string} [flags] resizing flags. '!' for force. '%' for percent. '^' for fill area, '<' for enlarge, '>' shrink, '@' for pixels
+   * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+   *
+   * @apiExample resize foo.jpg to 400x300(ignore aspect ratio) of png and download it with curl:
+   *    curl -X GET -o output.png http://localhost:3001/pictor/resize/foo.jpg/400x300!.png
+   *
+   * @apiSuccessStructure file
+   * @apiErrorStructure error
+   */
+  app.get(new RegExp(prefix + '/resize/([\\w.]+)/(\\d+)x(\\d+)([!%^<>@]?)(.(\\w+))?'), function (req, res) {
+    req.query.converter = 'resize';
+    req.query.id = req.params[0];
+    req.query.w = req.params[1];
+    req.query.h = req.params[2];
+    req.query.flags = req.params[3];
+    req.query.format = req.params[5];
+    return convertAndDownloadFile(req, res);
+  });
+
+  /**
+   * @api {get} /pictor/thumbnail/{id}/{w}x{h}.{format} download thumbnail image.
+   * @apiName downloadThumbnailImage
+   * @apiGroup pictor_images
+   * @apiDescription convenient alias of convertAndDownload api using 'thumbnail' converter.
+   *
+   * @apiParam {number} w width in pixels
+   * @apiParam {number} h height in pixels
+   * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+   *
+   * @apiExample thumbnail foo.jpg to 400x300 of png and download it with curl:
+   *    curl -X GET -o output.png http://localhost:3001/pictor/thumbnail/foo.jpg/400x300.png
+   *
+   * @apiSuccessStructure file
+   * @apiErrorStructure error
+   */
+  app.get(new RegExp(prefix + '/thumbnail/([\\w.]+)/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
+    req.query.converter = 'thumbnail';
+    req.query.id = req.params[0];
+    req.query.w = req.params[1];
+    req.query.h = req.params[2];
+    req.query.format = req.params[4];
+    return convertAndDownloadFile(req, res);
+  });
+
+  /**
+   * @api {get} /pictor/crop/{id}/{w}x{h}+{x}+{y}.{format} download crop image.
+   * @apiName downloadCropImage
+   * @apiGroup pictor_images
+   * @apiDescription convenient alias of convertAndDownload api using 'crop' converter.
+   *
+   * @apiParam {number} w width in pixels
+   * @apiParam {number} h height in pixels
+   * @apiParam {number} x distance in pixel from the left edge
+   * @apiParam {number} y distance in pixels from the top edge
+   * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+   *
+   * @apiExample crop foo.jpg to rectangle(400x300+200+100) of png and download it with curl:
+   *    curl -X GET -o output.png http://localhost:3001/pictor/crop/foo.jpg/400x300+200+100.png
+   *
+   * @apiSuccessStructure file
+   * @apiErrorStructure error
+   */
+  app.get(new RegExp(prefix + '/crop/([\\w.]+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)(.(\\w+))?'), function (req, res) {
+    req.query.converter = 'crop';
+    req.query.id = req.params[0];
+    req.query.w = req.params[1];
+    req.query.h = req.params[2];
+    req.query.x = req.params[3];
+    req.query.y = req.params[4];
+    req.query.format = req.params[6];
+    return convertAndDownloadFile(req, res);
+  });
+
+  /**
+   * @api {get} /pictor/preset/{id}/{preset}.{format} download preset image.
+   * @apiName downloadPresetImage
+   * @apiGroup pictor_images
+   * @apiDescription convenient alias of convertAndDownload api using 'preset' converter.
+   *
+   * @apiParam {string} id source file identifier
+   * @apiParam {string} preset preset name. 'xxs', 'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxs@2x', 'xs@2x', 's@2x', 'm@2x', 'l@2x', 'xl@2x', 'xxl@2x', ...
+   * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+   *
+   * @apiExample preset to xxl@2x(thumbnail to 512x512) of png and download it with curl:
+   *    curl -X GET -o output.png http://localhost:3001/pictor/preset/foo.jpg/xxl@2x.png
+   *
+   * @apiSuccessStructure file
+   * @apiErrorStructure error
+   */
+  app.get(new RegExp(prefix + '/preset/([\\w.]+)/([\\w@]+)(.(\\w+))?'), function (req, res) {
+    req.query.converter = 'preset';
+    req.query.id = req.params[0];
+    req.query.preset = req.params[1];
+    req.query.format = req.params[3];
+    return convertAndDownloadFile(req, res);
+  });
 
   return app;
 }
