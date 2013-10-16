@@ -6,7 +6,7 @@ var
   Q = require('q'),
   gm = require('gm'),
   converter = require('./converter'),
-  DEF_HOLDER_OPTS = {background: '#eee', foreground: '#aaa', font: '/Library/Fonts/Impact.ttf', size: 12},
+  DEF_CONFIG = {format: 'jpeg', background: '#eee', foreground: '#aaa', font: '', size: 12, gravity: 'center'},
   debug = require('debug')('pictor:converter:holder'),
   DEBUG = debug.enabled;
 
@@ -19,19 +19,21 @@ var
  * @param {*} [opts]
  * @param {string} [opts.background='#eee']: rgb hex
  * @param {string} [opts.foreground='#aaa']: rgb hex
- * @param {string} [opts.font='/Library/Fonts/Impact.ttf']
+ * @param {string} [opts.font='']
  * @param {string} [opts.text='WIDTHxHEIGHT']
  * @param {number} [opts.size=12]
+ * @param {string} [opts.gravity='center']
  * @returns {promise} success or not
  */
 function holder(dst, w, h, opts) {
-  opts = _.defaults(opts || {}, DEF_HOLDER_OPTS);
   DEBUG && debug('holder opts:', opts);
   var cmd = gm(w, h, opts.background).stroke().fill(opts.foreground);
   // XXX: graphicsmagick should be build with freetype and/or ghostscript.
-  //var size = Math.max(opts.size, Math.floor(Math.min(w, h) / 8));
-  //var text = opts.text || (w + 'x' + h);
-  //cmd.font(opts.font, size).drawText(0, 0, text, 'center');
+  if (opts.font) {
+    var size = Math.max(opts.size, Math.floor(Math.min(w, h) / 8));
+    var text = opts.text || (w + 'x' + h);
+    cmd.font(opts.font, size).drawText(0, 0, text, opts.gravity);
+  }
   return Q.ninvoke(cmd, 'write', dst);
 }
 
@@ -41,7 +43,8 @@ function holder(dst, w, h, opts) {
 
 function HolderConverter(config) {
   HolderConverter.super_.apply(this, arguments);
-  DEBUG && debug('create holder converter: ', config);
+  this.config = _.merge(this.config || {}, DEF_CONFIG);
+  DEBUG && debug('create holder converter: ', this.config);
 }
 util.inherits(HolderConverter, converter.Converter);
 
@@ -50,11 +53,11 @@ HolderConverter.prototype.getVariation = function (opts) {
 };
 
 HolderConverter.prototype.getExtension = function (opts) {
-  return opts.format || 'jpeg';
+  return opts.format || this.config.format;
 };
 
 HolderConverter.prototype.convert = function (opts) {
-  return holder(opts.dst, opts.w, opts.h);
+  return holder(opts.dst, opts.w, opts.h, this.config);
 };
 
 module.exports = HolderConverter;
