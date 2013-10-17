@@ -23,4 +23,10 @@
     root.apiUrl = location.protocol + '//' + location.host + '/pictor';
   }]);
 
+  module.run(['$rootScope', '$location', function (root, loc) {
+    root.$on('$routeChangeSuccess', function() {
+      ga('send', 'pageview', loc.path());
+    });
+  }]);
+
 }(angular.module('app', ['app.controllers', 'app.filters', 'app.directives', 'app.services', 'ngRoute'])));
