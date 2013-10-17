@@ -17,7 +17,7 @@ var
 
 var
   ID_NEW = 'new',
-  ID_REGEX = /^[\w-]+(\.[\w-]+)?/,// /[^a-zA-Z0-9가-힣-_.]/
+  ID_REGEX = /^[\w\-]+(\.\w+)?/,// /[^a-zA-Z0-9가-힣-_.]/
   DEF_PREFIX = '',
   DEF_SUFFIX = '';
 
@@ -205,7 +205,7 @@ function _sendError(req, res, err) {
       message: (err && err.message) || 'internal server error',
       code: (err && err.code) || 0,
       cause: err,
-      stack: error.stack = (err && err.stack && err.stack.split('\n')) || []
+      stack: (err && err.stack && err.stack.split('\n')) || []
     }
   };
 
@@ -665,7 +665,7 @@ function configureRoutes(app, config) {
    * @apiSuccessStructure file
    * @apiErrorStructure error
    */
-  app.get(new RegExp(prefix + '/holder/(\\d+)x(\\d+)(.(\\w_))?'), function (req, res) {
+  app.get(new RegExp(prefix + '/holder/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
     req.query.converter = 'holder';
     req.query.w = req.params[0];
     req.query.h = req.params[1];
@@ -690,7 +690,7 @@ function configureRoutes(app, config) {
    * @apiSuccessStructure file
    * @apiErrorStructure error
    */
-  app.get(new RegExp(prefix + '/resize/([\\w.]+)/(\\d+)x(\\d+)([!%^<>@]?)(.(\\w+))?'), function (req, res) {
+  app.get(new RegExp(prefix + '/resize/([\\w\\-\\.]+)/(\\d+)x(\\d+)([!%^<>@]?)(.(\\w+))?'), function (req, res) {
     req.query.converter = 'resize';
     req.query.id = req.params[0];
     req.query.w = req.params[1];
@@ -716,7 +716,7 @@ function configureRoutes(app, config) {
    * @apiSuccessStructure file
    * @apiErrorStructure error
    */
-  app.get(new RegExp(prefix + '/thumbnail/([\\w.]+)/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
+  app.get(new RegExp(prefix + '/thumbnail/([\\w\\-\\.]+)/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
     req.query.converter = 'thumbnail';
     req.query.id = req.params[0];
     req.query.w = req.params[1];
@@ -743,7 +743,7 @@ function configureRoutes(app, config) {
    * @apiSuccessStructure file
    * @apiErrorStructure error
    */
-  app.get(new RegExp(prefix + '/crop/([\\w.]+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)(.(\\w+))?'), function (req, res) {
+  app.get(new RegExp(prefix + '/crop/([\\w\\-\\.]+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)(.(\\w+))?'), function (req, res) {
     req.query.converter = 'crop';
     req.query.id = req.params[0];
     req.query.w = req.params[1];
@@ -770,7 +770,7 @@ function configureRoutes(app, config) {
    * @apiSuccessStructure file
    * @apiErrorStructure error
    */
-  app.get(new RegExp(prefix + '/preset/([\\w.]+)/([\\w@]+)(.(\\w+))?'), function (req, res) {
+  app.get(new RegExp(prefix + '/preset/([\\w\\-\\.]+)/([\\w@]+)(.(\\w+))?'), function (req, res) {
     req.query.converter = 'preset';
     req.query.id = req.params[0];
     req.query.preset = req.params[1];
