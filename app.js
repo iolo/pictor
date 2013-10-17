@@ -80,11 +80,11 @@ function start(callback, port, host) {
   return httpServer;
 }
 
-function stop() {
+function stop(callback) {
   if (httpServer) {
     console.log('stop http server');
     try {
-      httpServer.close();
+      httpServer.close(callback);
     } catch (e) {
     }
     httpServer = null;
