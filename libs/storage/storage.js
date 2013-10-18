@@ -98,7 +98,7 @@ Storage.prototype._getUrl = function (id) {
  */
 Storage.prototype.putFile = function (id, src) {
   DEBUG && debug('storage.putFile:', src, '--->', id);
-  return Q.reject(new Error('abstract method'));
+  return Q.reject(new StorageError(501, 'not implemented'));
 };
 
 /**
@@ -116,7 +116,7 @@ Storage.prototype.putFile = function (id, src) {
  */
 Storage.prototype.getFile = function (id) {
   DEBUG && debug('storage.getFile:', id);
-  return Q.reject(new Error('abstract method'));
+  return Q.reject(new StorageError(501, 'not implemented'));
 };
 
 /**
@@ -127,8 +127,18 @@ Storage.prototype.getFile = function (id) {
  */
 Storage.prototype.deleteFile = function (id) {
   DEBUG && debug('storage.deleteFile:', id);
-  return Q.reject(new Error('abstract method'));
+  return Q.reject(new StorageError(501, 'not implemented'));
 };
+
+Storage.prototype.renameFile = function (id, targetId) {
+  DEBUG && debug('storage.renameFile:', id, targetId);
+  return Q.reject(new StorageError(501, 'not implemented'));
+};
+
+Storage.prototype.listFiles = function (criteria) {
+  DEBUG && debug('storage.listFiles:', criteria);
+  return Q.reject(new StorageError(501, 'not implemented'));
+}
 
 //
 //

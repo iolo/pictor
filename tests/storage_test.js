@@ -91,6 +91,32 @@ module.exports = {
       })
       .done(test.done);
   },
+  test_renameFile: function (test) {
+    var s = new storage.Storage();
+    s.renameFile()
+      .then(function (result) {
+        console.log('renameFile ok', result);
+        test.fail();
+      })
+      .fail(function (err) {
+        console.log('renameFile err', err);
+        test.ok(err);
+      })
+      .done(test.done);
+  },
+  test_listFiles: function (test) {
+    var s = new storage.Storage();
+    s.listFiles()
+      .then(function (result) {
+        console.log('listFiles ok', result);
+        test.fail();
+      })
+      .fail(function (err) {
+        console.log('listFiles err', err);
+        test.ok(err);
+      })
+      .done(test.done);
+  },
   test_wrapError: function (test) {
     storage.wrapError('some error')
       .then(function () {

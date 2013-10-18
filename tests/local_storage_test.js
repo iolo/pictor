@@ -73,7 +73,7 @@ module.exports = {
       .fail(function (err) {
         console.log('getFile_notexist err', err);
         test.ok(err);
-        test.ok(err.status, 404);
+        test.equal(err.status, 404);
       })
       .done(test.done);
   },
@@ -98,7 +98,32 @@ module.exports = {
       .fail(function (err) {
         console.log('deleteFile_notexist err', err);
         test.ok(err);
-        test.ok(err.status, 404);
+        test.equal(err.status, 404);
+      })
+      .done(test.done);
+  },
+  test_renameFile: function (test) {
+    s.renameFile(exist_id, notexist_id)
+      .then(function (result) {
+        console.log('renameFile ok', result);
+        test.ok(result);
+      })
+      .fail(function (err) {
+        console.log('renameFile err', err);
+        test.ifError(err);
+      })
+      .done(test.done);
+  },
+  test_listFiles: function (test) {
+    s.listFiles({})
+      .then(function (result) {
+        console.log('listFiles ok', result);
+        test.ok(result);
+        test.equal(result.length, 1);
+      })
+      .fail(function (err) {
+        console.log('listFiles err', err);
+        test.ifError(err);
       })
       .done(test.done);
   }

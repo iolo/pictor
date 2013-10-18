@@ -181,6 +181,40 @@ function deleteFile(id) {
 }
 
 /**
+ * EXPERIMENTAL: rename a file.
+ *
+ * NOTE: all variants of the file is deleted.
+ *
+ * @param {string} id
+ * @param {string} targetId
+ * @returns {Promise} success or not
+ */
+function renameFile(id, targetId) {
+  return _deleteVariantFiles(id)
+    .fail(function () {
+      //if(err instanceof NotFoundError) { return true; } else throw err;
+      return true;
+    })
+    .then(function () {
+      return dataStorage.renameFile(id, targetId);
+    });
+}
+
+/**
+ * EXPERIMENTAL: list files match the given criteria.
+ *
+ * @param {*} [criteria]
+ * @param {string} [criteria.prefix]
+ * @param {string} [criteria.format]
+ * @param {number} [criteria.skip]
+ * @param {number} [criteria.limit]
+ * @returns {Promise.<Array.<PictorFile>>} matched files
+ */
+function listFiles(criteria) {
+  return dataStorage.listFiles(criteria);
+}
+
+/**
  * convert a file.
  *
  * @param {*} opts various converter specific params
@@ -348,6 +382,8 @@ module.exports = {
   putFile: putFile,
   deleteFile: deleteFile,
   getFile: getFile,
+  renameFile: renameFile,
+  listFiles: listFiles,
   convertFile: convertFile,
   getVariantFile: getVariantFile,
   configure: configure

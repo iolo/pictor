@@ -8,6 +8,7 @@ var
   express = require('express'),
   mime = require('mime'),
   pictor = require('../libs/pictor'),
+  errors = require('./errors'),
   debug = require('debug')('pictor:routes:api'),
   DEBUG = debug.enabled;
 
@@ -523,6 +524,66 @@ function downloadFile(req, res) {
 }
 
 /**
+ * @api {put} /pictor/rename/:id/:target rename a file
+ * @apiName renameFile
+ * @apiGroup pictor_experimental
+ * @apiDescription rename a file.
+ *
+ * EXPERIMENTAL: local storage only.
+ *
+ * @apiParam {string} id identifier(with extension to guess mime type)
+ * @apiParam {string} target target identifier renamed to
+ *
+ * @apiSuccessStructure result
+ * @apiErrorStructure error
+ */
+function renameFile(req, res) {
+  var id = req.strParam('id');
+  var target = req.strParam('target');
+
+  return pictor.renameFile(id, target)
+    .then(function () {
+      return _sendStatus(req, res, errors.StatusCode.ACCEPTED);
+    })
+    .fail(function (err) {
+      return _sendError(req, res, err);
+    })
+    .done();
+}
+
+/**
+ * @api {get} /pictor/files list files
+ * @apiName listFiles
+ * @apiGroup pictor_experimental
+ * @apiDescription list files
+ *
+ * EXPERIMENTAL: local storage only.
+ *
+ * @apiParam {string} [prefix]
+ * @apiParam {string} [format]
+ * @apiParam {number} [skip]
+ * @apiParam {number} [limit]
+ *
+ * @apiSuccessStructure result
+ * @apiErrorStructure error
+ */
+function listFiles(req, res) {
+  var prefix = req.strParam('prefix', '');
+  var format = req.strParam('format', '');
+  var skip = req.intParam('skip', 0);
+  var limit = req.intParam('limit', 0);
+
+  return pictor.listFiles({prefix: prefix, format: format, skip: skip, limit: limit})
+    .then(function (result) {
+      return _sendResult(req, res, result);
+    })
+    .fail(function (err) {
+      return _sendError(req, res, err);
+    })
+    .done();
+}
+
+/**
  * @apiDefineStructure convertRequest
  *
  * @apiParam {string} [converter='preset'] 'preset', 'convert', 'resize', 'thumbnail', 'crop', 'resizecrop', 'meta', 'exif', 'holder', ...
@@ -632,6 +693,10 @@ function configureRoutes(app, config) {
   var prefix = config.prefix || '';
 
   // TODO: require auth!
+
+  // XXX: experimental for issue #4 and #5
+  app.get(prefix + '/rename', renameFile);
+  app.get(prefix + '/files', listFiles);
 
   app.post(prefix + '/convert', convertFile);
   app.get(prefix + '/convert', convertAndDownloadFile);
