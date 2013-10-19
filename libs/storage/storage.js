@@ -138,7 +138,7 @@ Storage.prototype.renameFile = function (id, targetId) {
 Storage.prototype.listFiles = function (criteria) {
   DEBUG && debug('storage.listFiles:', criteria);
   return Q.reject(new StorageError(501, 'not implemented'));
-}
+};
 
 //
 //
