@@ -144,4 +144,46 @@ FtpStorage.prototype.deleteFile = function (id) {
   });
 };
 
+FtpStorage.prototype.renameFile = function (id, targetId) {
+  var source = this._getPath(id);
+  var target = this._getPath(targetId);
+  return this._withFtpClient(function (ftpClient) {
+    return Q.ninvoke(ftpClient, 'rename', source, target)
+      .then(function (result) {
+        DEBUG && debug('ftp.renameFile:', source, '-->', target, '-->', result);
+        return true;
+      })
+      .fail(storage.wrapError);
+  });
+};
+
+FtpStorage.prototype.listFiles = function (criteria) {
+  var self = this;
+  return this._withFtpClient(function (ftpClient) {
+    return Q.ninvoke(ftpClient, 'list', this.config.baseDir)
+      .then(function (files) {
+        DEBUG && debug('ftp.listFile:', criteria, '-->', files);
+        var idPattern = '';
+        if (criteria.prefix) {
+          idPattern = '^' + criteria.prefix;
+        }
+        if (criteria.format) {
+          idPattern += '.*\\.' + criteria.format + '$';
+        }
+        var idRegExp = new RegExp(idPattern, 'i');
+        var fromIndex = criteria.skip || 0;
+        var toIndex = (criteria.limit > 0) ? fromIndex + criteria.limit : filenames.length + 1;
+        return files.reduce(function (result, file, index) {
+          if (fromIndex <= index && index <= toIndex && idRegExp.test(id)) {
+            var src = self._getPath(file.name);
+            var url = self._getUrl(file.name);
+            result.push({id: id, url: url, file: src, name: file.name, size: file.size, date: file.date});
+          }
+          return result;
+        }, []);
+      })
+      .fail(storage.wrapError);
+  });
+};
+
 module.exports = FtpStorage;
