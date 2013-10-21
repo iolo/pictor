@@ -104,4 +104,41 @@ S3Storage.prototype.deleteFile = function (id) {
     .fail(storage.wrapError);
 };
 
+S3Storage.prototype.renameFile = function (id, targetId) {
+  // XXX: s3 doesn't support rename, so I do copy and delete here. is this best?
+  // see http://docs.aws.amazon.com/AmazonS3/latest/API/RESTObjectCOPY.html
+  var source = this._getPath(id);
+  var target = this._getPath(targetId);
+
+  return Q.ninvoke(s3Client, 'copyFile', source, target)
+    .then(function (result) {
+      DEBUG && debug('s3.renameFile copyFile:', source, '-->', target, '-->', result);
+      return Q.ninvoke(s3Client, 'deleteFile', source)
+        .then(function (result) {
+          DEBUG && debug('s3.renameFile deleteFile:', source, '-->', result);
+          return true;
+        });
+    })
+    .fail(storage.wrapError);
+};
+
+S3Storage.prototype.listFiles = function (criteria) {
+  var self = this;
+  // TODO: support skip/limit paging. is it possible???
+  // http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
+  var listOpts = {prefix: criteria.prefix || ''};
+
+  return Q.ninvoke(s3Client, 'list', listOpts)
+    .then(function (result) {
+      DEBUG && debug('s3.listFile:', criteria, '-->', result);
+      return result.Contents.reduce(function (result, file) {
+        var src = self._getPath(file.Key);
+        var url = self._getUrl(file.Key);
+        result.push({id: id, url: url, file: src, name: file.Key, size: file.Size, date: file.LastModified});
+        return result;
+      }, []);
+    })
+    .fail(storage.wrapError);
+};
+
 module.exports = S3Storage;
