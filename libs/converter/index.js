@@ -7,6 +7,7 @@ var
     'thumbnail': require('./thumbnail'),
     'crop': require('./crop'),
     'resizecrop': require('./resizecrop'),
+    'watermark': require('./watermark'),
     'optimize': require('./optimize'),
     'meta': require('./meta'),
     'exif': require('./exif'),
