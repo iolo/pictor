@@ -117,6 +117,13 @@ function _getFileId(id, prefix, type) {
  */
 
 /**
+ * @apiDefineSuccessStructure accepted
+ *
+ * @apiSuccessExample 202 accepted
+ *    HTTP/1.1 202 OK
+ */
+
+/**
  * @apiDefineErrorStructure error
  *
  * @apiError {*} error
@@ -125,7 +132,7 @@ function _getFileId(id, prefix, type) {
  * @apiError {number} [error.code] pictor specific error code(only if error.status is 500)
  * @apiError {*} [error.cause] internal error object(debug mode only)
  * @apiError {*} [error.stack] stack trace(debug mode only)
- * @apiErrorExample bad request
+ * @apiErrorExample 400 bad request
  *    HTTP/1.1 400 Bad Request
  *    Content-Type: application/json
  *    {
@@ -253,7 +260,7 @@ function _sendResult(req, res, result) {
  *
  * @param {*} req
  * @param {*} res
- * @param {PictorFile|array.<PictorFile>|number} result
+ * @param {PictorFile|array.<PictorFile>} result
  * @returns {*}
  * @private
  */
@@ -374,7 +381,7 @@ function _getConvertParams(req) {
  * @api {post} /pictor/upload upload multiple files
  * @apiName uploadMulti
  * @apiGroup pictor
- * @apiDescription upload multiple files with multipart/upload-data
+ * @apiDescription upload multiple files with `multipart/upload-data`.
  *
  * @apiParam {file|array} file one or more file data as a part of multipart/upload-data
  * @apiParam {string|array} [id='new'] zero or more identifiers for each file(with optional extension to guess mime type)
@@ -388,11 +395,11 @@ function uploadFiles(req, res) {
   // NOTE: file field name should be 'file'
   var fileParam = Array.prototype.concat(req.files.file);
   if (fileParam.length === 0) {
-    return _sendError(req, res, {status: 400, message: 'required_param_file'});
+    return _sendError(req, res, new errors.BadRequest('required_param_file'));
   }
   var idParam = Array.prototype.concat(req.param('id'));
   var prefixParam = Array.prototype.concat(req.param('prefix'));
-  // FIXME: express ignore paramter order... need to change api spec.
+  // FIXME: express ignore parameter order... need to change api spec.
 
   return Q.all(fileParam.map(function (file, index) {
       var id = idParam[index];
@@ -410,10 +417,10 @@ function uploadFiles(req, res) {
 }
 
 /**
- * @api {post} /pictor/:id upload a file
+ * @api {post} /pictor/upload upload a file
  * @apiName upload
  * @apiGroup pictor
- * @apiDescription upload a single file with multipart/form-data
+ * @apiDescription upload a single file with `multipart/form-data`.
  *
  * @apiParam {file} file file data as a part of multipart/upload-data
  * @apiParam {string} [id='new'] identifier for the file(with optional extension to guess mime type)
@@ -446,7 +453,7 @@ function uploadFile(req, res) {
 }
 
 /**
- * @api {put} /pictor/:id upload a file with raw data
+ * @api {put} /pictor/upload upload a file with raw data
  * @apiName uploadRaw
  * @apiGroup pictor
  * @apiDescription upload a single file with raw data.
@@ -474,7 +481,7 @@ function uploadFileRaw(req, res) {
 }
 
 /**
- * @api {get} /pictor/upload upload a file with public url
+ * @api {get} /pictor/upload upload a file with url
  * @apiName uploadUrl
  * @apiGroup pictor
  * @apiDescription upload a single file with public url
@@ -492,47 +499,52 @@ function uploadFileUrl(req, res) {
     return _sendError(req, res, new errors.BadRequest('required_param_url'));
   }
 
-  var clientReq = http.get(url, function (clientRes) {
-    if (clientRes.statusCode < 200 || clientRes.statusCode >= 300) {
-      var data = [];
-      clientRes.on('data', function (chunk) {
-        data.push(chunk);
-      });
-      clientRes.on('end', function () {
-        var cause = {status: clientRes.statusCode, headers: clientRes.headers, body: data.join('')};
-        return _sendError(req, res, new errors.BadRequest('invalid_param_url', cause));
-      });
-      return;
-    }
+  http.get(url)
+    .on('response', function (clientRes) {
+      if (clientRes.statusCode < 200 || clientRes.statusCode >= 300) {
+        DEBUG && debug('failed to upload url: url=', url, 'status=', clientRes.statusCode);
+        var body = [];
+        return clientRes
+          .on('data',function (chunk) {
+            body.push(chunk);
+          }).on('end', function () {
+            var cause = {
+              status: clientRes.statusCode,
+              headers: clientRes.headers,
+              body: body.join('')
+            };
+            return _sendError(req, res, new errors.BadRequest('invalid_param_url', cause));
+          });
+      }
 
-    var id = req.param('id');
-    var prefix = req.param('prefix');
-    var type = clientRes.headers['content-type'];
-    // clientRes is stream.Readable!
-    return pictor.putFile(_getFileId(id, prefix, type), clientRes)
-      .then(function (result) {
-        return _sendResult(req, res, result);
-      })
-      .fail(function (err) {
-        return _sendError(req, res, err);
-      })
-      .done();
-  });
-  clientReq.on('error', function (err) {
-    throw new errors.BadRequest('invalid_param_url', err);
-  });
-  //clientReq.end();
+      var id = req.param('id');
+      var prefix = req.param('prefix');
+      var type = clientRes.headers['content-type'];
+      // clientRes is stream.Readable!
+      return pictor.putFile(_getFileId(id, prefix, type), clientRes)
+        .then(function (result) {
+          return _sendResult(req, res, result);
+        })
+        .fail(function (err) {
+          return _sendError(req, res, err);
+        })
+        .done();
+    })
+    .on('error', function (err) {
+      DEBUG && debug('failed to upload url: url=', url, 'err=', err);
+      return _sendError(req, res, new errors.BadRequest('invalid_param_url', err));
+    });
 }
 
 /**
- * @api {delete} /pictor/:id delete a file
+ * @api {delete} /pictor/delete delete a file
  * @apiName delete
  * @apiGroup pictor
- * @apiDescription delete the file and its variants.
+ * @apiDescription delete a file and all variants of the file.
  *
- * @apiParam {string} id identifier(with extension to guess mime type)
+ * @apiParam {string} id identifier
  *
- * @apiSuccessStructure result
+ * @apiSuccessStructure accepted
  * @apiErrorStructure error
  */
 function deleteFile(req, res) {
@@ -549,12 +561,12 @@ function deleteFile(req, res) {
 }
 
 /**
- * @api {get} /pictor/:id download a file
+ * @api {get} /pictor/download download a file
  * @apiName download
  * @apiGroup pictor
  * @apiDescription download a file.
  *
- * @apiParam {string} id identifier(with extension to guess mime type)
+ * @apiParam {string} id identifier
  * @apiParam {string} [fallback] fallback file identifier or url served instead of error.
  *
  * @apiSuccessStructure file
@@ -577,14 +589,12 @@ function downloadFile(req, res) {
  * @api {put} /pictor/rename/:id/:target rename a file
  * @apiName renameFile
  * @apiGroup pictor_experimental
- * @apiDescription rename a file.
+ * @apiDescription rename a file. all variants of the file are deleted.
  *
- * EXPERIMENTAL: local storage only.
- *
- * @apiParam {string} id identifier(with extension to guess mime type)
+ * @apiParam {string} id identifier
  * @apiParam {string} target target identifier renamed to
  *
- * @apiSuccessStructure result
+ * @apiSuccessStructure accepted
  * @apiErrorStructure error
  */
 function renameFile(req, res) {
@@ -606,8 +616,6 @@ function renameFile(req, res) {
  * @apiName listFiles
  * @apiGroup pictor_experimental
  * @apiDescription list files
- *
- * EXPERIMENTAL: local storage only.
  *
  * @apiParam {string} [prefix]
  * @apiParam {string} [format]
@@ -639,14 +647,14 @@ function listFiles(req, res) {
  * @apiParam {string} [converter='preset'] 'preset', 'convert', 'resize', 'thumbnail', 'crop', 'resizecrop', 'meta', 'exif', 'holder', ...
  * @apiParam {string} [id] input file identifier. required except 'holder' converter.
  * @apiParam {string} [format] output file format. if not specified, use source file format or converter default format.
- * @apiParam {number} [preset] preset name. used 'preset' converter only
+ * @apiParam {number} [preset] preset name. used 'preset' converter only.
  * @apiParam {number} [w] width in pixels. used for 'resize', 'thumbnail', 'crop', holder' converters.
  * @apiParam {number} [h] height in pixels. used for 'resize', 'thumbnail', 'crop', holder' converters.
- * @apiParam {number} [x] distance in pixel from the left edge. used for 'crop' converter only.
- * @apiParam {number} [y] distance in pixels from the top edge. used for 'crop' converter only.
- * @apiParam {number} [rw] resize width before crop. used for 'cropresize' and 'resizecrop' converters only
- * @apiParam {number} [rh] resize height before crop. used for 'cropresize' and 'resizecrop' converters only.
- * @apiParam {string} [flags] resize flags. used for 'resize' and 'cropresize' and 'resizecrop' converters only.
+ * @apiParam {number} [x] distance in pixel from the left edge. used for 'crop', 'cropresize', 'resizecrop' converters.
+ * @apiParam {number} [y] distance in pixels from the top edge. used for 'crop', 'cropresize', 'resizecorp' converters.
+ * @apiParam {number} [nw] resize width before/after crop. used for 'cropresize' and 'resizecrop' converters.
+ * @apiParam {number} [nh] resize height before/after crop. used for 'cropresize' and 'resizecrop' converters.
+ * @apiParam {string} [flags] resize flags. used for 'resize' and 'cropresize' and 'resizecrop' converters.
  * @apiParam {*} [*] and various converter specific params...
  */
 
@@ -744,22 +752,100 @@ function configureRoutes(app, config) {
   var prefix = config.prefix || '';
 
   // TODO: require auth!
+//  app.use(function (req, res, next) {
+//    if (req.method === 'GET' && !/(upload|delete|rename|files)/.test(req.path)) {
+//      return next();
+//    }
+//    return res.send(new errors.Forbidden());
+//  });
 
-  // XXX: experimental for issue #4 and #5
-  app.get(prefix + '/rename', renameFile);
-  app.get(prefix + '/files', listFiles);
+  //
+  // CRUD routes
+  //
 
-  app.post(prefix + '/convert', convertFile);
-  app.get(prefix + '/convert', convertAndDownloadFile);
   app.post(prefix + '/upload', uploadFiles);
   app.put(prefix + '/upload', uploadFileRaw);
   app.get(prefix + '/upload', uploadFileUrl);
-  app.get(prefix + '/download', downloadFile);
   app.get(prefix + '/delete', deleteFile);
+  app.get(prefix + '/download', downloadFile);
+
+  //
+  // convert routes
+  //
+
+  app.post(prefix + '/convert', convertFile);
+  app.get(prefix + '/convert', convertAndDownloadFile);
+
+  //
+  // restful(?) aliases of CRUD routes
+  //
+
+  /**
+   * @api {post} /pictor/{id} upload a file
+   * @apiName uploadRestful
+   * @apiGroup pictor_restful
+   * @apiDescription upload a single file with `multipart/form-data`.
+   * convenient alias of `upload` api.
+   *
+   * @apiParam {file} file file data as a part of multipart/upload-data
+   * @apiParam {string} [id='new'] identifier for the file(with optional extension to guess mime type)
+   * @apiParam {string} [prefix=''] prefix for generated identifier when id is 'new'
+   *
+   * @apiSuccessStructure result
+   * @apiErrorStructure error
+   */
   app.post(prefix + '/:id', uploadFile);
+
+  /**
+   * @api {put} /pictor/{id} upload a file with raw data
+   * @apiName uploadRawRestful
+   * @apiGroup pictor_restful
+   * @apiDescription upload a single file with raw data.
+   * convenient alias of `uploadRaw` api.
+   *
+   * @apiParam {file} file file data as raw binary
+   * @apiParam {string} [id='new'] identifier for the file
+   * @apiParam {string} [prefix=''] the prefix for generated identifier(used for when id is 'new')
+   *
+   * @apiSuccessStructure result
+   * @apiErrorStructure error
+   */
   app.put(prefix + '/:id', uploadFileRaw);
-  app.get(prefix + '/:id', downloadFile);
+
+  /**
+   * @api {delete} /pictor/{id} delete a file
+   * @apiName deleteRestful
+   * @apiGroup pictor_restful
+   * @apiDescription delete a file and all variants of the file.
+   * convenient alias of `delete` api.
+   *
+   * @apiParam {string} id identifier
+   *
+   * @apiSuccessStructure accepted
+   * @apiErrorStructure error
+   */
   app.del(prefix + '/:id', deleteFile);
+
+  /**
+   * @api {get} /pictor/{id} download a file
+   * @apiName downloadRestful
+   * @apiGroup pictor_restful
+   * @apiDescription download a file.
+   * convenient alias of `download` api.
+   *
+   * @apiParam {string} id identifier
+   *
+   * @apiSuccessStructure accepted
+   * @apiErrorStructure error
+   */
+  app.get(prefix + '/:id', downloadFile);
+
+  //
+  // XXX: experimental for issue #4 and #5
+  //
+
+  app.get(prefix + '/rename', renameFile);
+  app.get(prefix + '/files', listFiles);
 
   //
   // convenient aliases of convertAndDownload api using specific converters
@@ -770,7 +856,7 @@ function configureRoutes(app, config) {
    * @api {get} /pictor/holder/{width}x{height}.{format} download holder image.
    * @apiName downloadHolderImage
    * @apiGroup pictor_images
-   * @apiDescription convenient alias of convertAndDownload api.
+   * @apiDescription convenient alias of `convertAndDownload` api using `holder` converter.
    *
    * @apiParam {number} w width in pixels
    * @apiParam {number} h height in pixels
@@ -794,7 +880,7 @@ function configureRoutes(app, config) {
    * @api {get} /pictor/resize/{id}/{width}x{height}{flags}.{format} download resize image.
    * @apiName downloadResizeImage
    * @apiGroup pictor_images
-   * @apiDescription convenient alias of convertAndDownload api using 'resize' converter.
+   * @apiDescription convenient alias of `convertAndDownload` api using `resize` converter.
    *
    * @apiParam {number} w width in pixels
    * @apiParam {number} h height in pixels
@@ -821,7 +907,7 @@ function configureRoutes(app, config) {
    * @api {get} /pictor/thumbnail/{id}/{w}x{h}.{format} download thumbnail image.
    * @apiName downloadThumbnailImage
    * @apiGroup pictor_images
-   * @apiDescription convenient alias of convertAndDownload api using 'thumbnail' converter.
+   * @apiDescription convenient alias of `convertAndDownload` api using `thumbnail` converter.
    *
    * @apiParam {number} w width in pixels
    * @apiParam {number} h height in pixels
@@ -846,7 +932,7 @@ function configureRoutes(app, config) {
    * @api {get} /pictor/crop/{id}/{w}x{h}+{x}+{y}.{format} download crop image.
    * @apiName downloadCropImage
    * @apiGroup pictor_images
-   * @apiDescription convenient alias of convertAndDownload api using 'crop' converter.
+   * @apiDescription convenient alias of `convertAndDownload` api using `crop` converter.
    *
    * @apiParam {number} w width in pixels
    * @apiParam {number} h height in pixels
@@ -875,7 +961,7 @@ function configureRoutes(app, config) {
    * @api {get} /pictor/preset/{id}/{preset}.{format} download preset image.
    * @apiName downloadPresetImage
    * @apiGroup pictor_images
-   * @apiDescription convenient alias of convertAndDownload api using 'preset' converter.
+   * @apiDescription convenient alias of `convertAndDownload` api using `preset` converter.
    *
    * @apiParam {string} id source file identifier
    * @apiParam {string} preset preset name. 'xxs', 'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxs@2x', 'xs@2x', 's@2x', 'm@2x', 'l@2x', 'xl@2x', 'xxl@2x', ...
