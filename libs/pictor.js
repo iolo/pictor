@@ -39,7 +39,7 @@ function _getTempPath(prefix, suffix) {
     prefix || '',
     Date.now().toString(36),
     '-',
-    (Math.random() * 0x100000000 + 1).toString(36),
+    Math.random().toString(36).substring(2), // remove leading '0.'
     '-',
     process.pid,
     suffix || ''
@@ -56,6 +56,8 @@ function _getTempPath(prefix, suffix) {
  * @private
  */
 function _getVariantId(id, variation, ext) {
+  // XXX: storage providers handle this? or not???
+  // ex. cacheStorage.getVariantId(id, variation, ext);
   var variantId = id + '.d';
   if (variation) {
     variantId += '/' + variation;
@@ -379,6 +381,7 @@ function configure(config) {
 }
 
 module.exports = {
+  presets: presets,
   putFile: putFile,
   deleteFile: deleteFile,
   getFile: getFile,

@@ -6,7 +6,7 @@ var
   DEBUG = debug.enabled;
 
 function loadConfig() {
-  var env = process.env.PICTOR_CONFIG || ('./' + process.env.NODE_ENV || 'development');
+  var env = process.env.PICTOR_CONFIG || ('./' + (process.env.NODE_ENV || 'development'));
   var defConfig = require('./defaults');
   var envConfig = require(env);
   var config = _.merge(defConfig, envConfig);
