@@ -1,0 +1,27 @@
+.panel.panel-info
+  .panel-heading
+    a.btn.btn-info.btn-xs.pull-right(href="/docs/api/#api-pictor-uploadUrl") api document
+    h5.panel-title upload a single file with public url
+
+  .panel-body
+    form#uploadRawForm.form-horizontal(action="{{apiUrl}}/{{upload.id}}",method="get",target="responseView")
+      .form-group
+        label.control-label.col-md-3 url:
+        .col-md-9
+          input.form-control(type="url",name="url",required,ng-model="upload.url",ng-init="upload.url = 'http://upload.wikimedia.org/wikipedia/commons/0/05/Pictor_constellation_map.png'")
+      .form-group
+        label.control-label.col-md-3 id:
+        .col-md-9
+          input.form-control(type="text",name="id",required,ng-model="upload.id",ng-init="upload.id = 'foo.jpg'")
+      .form-group
+        label.control-label.col-md-3 prefix:
+        .col-md-9
+          input.form-control(type="text",name="prefix",ng-model="upload.prefix")
+      .form-group
+        .col-md-9.col-md-offset-3
+          button.btn.btn-primary(type="submit",disabled) upload
+
+    pre(ng-show="!!upload.id && !upload.prefix"): code.
+      curl -X GET -d @foo.jpg {{apiUrl}}/upload?id={{upload.id}}&url={{upload.url}}
+    pre(ng-show="!!upload.prefix"): code.
+      curl -X GET -d @foo.jpg {{apiUrl}}/upload?id={{upload.id}}&prefix={{upload.prefix}}&url={{upload.url}}

@@ -14,6 +14,8 @@
             option(value="resize") resize
             option(value="thumbnail") thumbnail
             option(value="crop") crop
+            option(value="cropresize") cropresize
+            option(value="resizecrop") resizecrop
             option(value="optimize") optimize
             option(value="meta") meta
             option(value="exif") exif
@@ -53,13 +55,13 @@
       .form-group(ng-show="convert.converter == 'crop'")
         label.control-label.col-md-3 top:
         .col-md-9: input.form-control(type="number",name="y",ng-model="convert.y")
-      .form-group(ng-show="convert.converter == 'resize'")
+      .form-group(ng-show="!!convert.converter.match('resize|cropresize|resizecrop')")
         label.control-label.col-md-3 flags:
         .col-md-9: input.form-control(type="text",name="flags",ng-model="convert.flags")
-      .form-group(ng-show="convert.converter == 'resizecrop'")
+      .form-group(ng-show="!!convert.converter.match('cropresize|resizecrop')")
         label.control-label.col-md-3 nw:
         .col-md-9: input.form-control(type="number",name="nw",ng-model="convert.nw")
-      .form-group(ng-show="convert.converter == 'resizecrop'")
+      .form-group(ng-show="!!convert.converter.match('cropresize|resizecrop')")
         label.control-label.col-md-3 nh:
         .col-md-9: input.form-control(type="number",name="nh",ng-model="convert.nh")
       .form-group(ng-show="!!convert.converter.match('convert|resize|thumbnail|crop|holder')")
@@ -77,6 +79,8 @@
       curl -X GET "{{apiUrl}}/convert?converter=thumbnail&id={{convert.id}}&w={{convert.w}}&h={{convert.h}}&format={{convert.format}}"
     pre(ng-show="convert.converter == 'crop'"): code.
       curl -X GET "{{apiUrl}}/convert?converter=crop&id={{convert.id}}&w={{convert.w}}&h={{convert.h}}&x={{convert.x}}&y={{convert.y}}&format={{convert.format}}"
+    pre(ng-show="convert.converter == 'cropresize'"): code.
+      curl -X GET "{{apiUrl}}/convert?converter=cropresize&id={{convert.id}}&w={{convert.w}}&h={{convert.h}}&x={{convert.x}}&y={{convert.y}}&nw={{convert.nw}}&nh={{convert.nh}}&format={{convert.format}}"
     pre(ng-show="convert.converter == 'resizecrop'"): code.
       curl -X GET "{{apiUrl}}/convert?converter=resizecrop&id={{convert.id}}&nw={{convert.nw}}&nh={{convert.nh}}&w={{convert.w}}&h={{convert.h}}&x={{convert.x}}&y={{convert.y}}&format={{convert.format}}"
     pre(ng-show="convert.converter == 'optimize'"): code.
