@@ -5,6 +5,14 @@ var
   debug = require('debug')('pictor:config'),
   DEBUG = debug.enabled;
 
-module.exports = _.merge(require('./defaults'), require('./' + (process.env.NODE_ENV || 'development')));
+function loadConfig() {
+  var env = process.env.PICTOR_CONFIG || ('./' + process.env.NODE_ENV || 'development');
+  var defConfig = require('./defaults');
+  var envConfig = require(env);
+  var config = _.merge(defConfig, envConfig);
+  DEBUG && debug('load config: env=', env, 'config=', require('util').inspect(config, {depth: null}));
+  return config;
+}
 
-DEBUG && debug('configuration for ', process.env.NODE_ENV, '\n----------\n', require('util').inspect(module.exports, {depth: null}), '\n----------');
+module.exports = loadConfig();
+
