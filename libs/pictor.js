@@ -124,17 +124,18 @@ function putFile(id, file) {
     })
     .then(function () {
       // XXX: handle stream
-      if (file instanceof stream.Stream) {
+      if (file instanceof stream.Readable) {
         var d = Q.defer();
         var tempFilePath = _getTempPath(null, id);
-        fs.createWriteStream(tempFilePath).pipe(file)
+        var tempFileStream = fs.createWriteStream(tempFilePath)
           .on('error', function (err) {
             return d.reject(err);
           })
-          .on('end', function () {
-            return dataStorage.putFile(id, tempFilePath);
+          .on('finish', function () {
+            return d.resolve(dataStorage.putFile(id, tempFilePath));
             // TODO: delete tempFilePath
           });
+        file.pipe(tempFileStream);
         return d.promise;
       }
       return dataStorage.putFile(id, file);
@@ -185,7 +186,7 @@ function deleteFile(id) {
 /**
  * EXPERIMENTAL: rename a file.
  *
- * NOTE: all variants of the file is deleted.
+ * NOTE: all variants of the file are deleted.
  *
  * @param {string} id
  * @param {string} targetId
