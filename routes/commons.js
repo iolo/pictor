@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * @module opentrophy.routes.common
+ * @module routes.commons
  */
 
 var
@@ -11,7 +11,7 @@ var
   Q = require('q'),
   express = require('express'),
   errors = require('./errors'),
-  debug = require('debug')('pictor:routes:httputils'),
+  debug = require('debug')('routes:commons'),
   DEBUG = debug.enabled;
 
 /**

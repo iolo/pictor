@@ -23,7 +23,7 @@ app.configure('all', function () {
   app.set('view engine', 'jade');
   app.set('case sensitive routing', 'true');
 
-  require('./routes/httputils').configureMiddlewares(app, config.http);
+  require('./routes/commons').configureMiddlewares(app, config.http);
 
   // pictor as sub app.
   if(config.api) {
@@ -43,7 +43,7 @@ app.configure('all', function () {
 //routes.configureRoutes(app, config.api);
 //}
 
-require('./routes/httputils').configureRoutes(app, config.http);
+require('./routes/commons').configureRoutes(app, config.http);
 
 //
 //
