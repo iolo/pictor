@@ -22,7 +22,6 @@ var
   DEF_PREFIX = '',
   DEF_SUFFIX = '';
 
-
 /**
  * generate unique identifier.
  *
@@ -227,7 +226,7 @@ function _sendError(req, res, err) {
  *
  * @param {*} req
  * @param {*} res
- * @param {PictorFile|array.<PictorFile>|number} result
+ * @param {PictorFile|Array.<PictorFile>} result
  * @returns {*}
  * @private
  */
@@ -249,8 +248,8 @@ function _sendResult(req, res, result) {
  * send success response with file binary or redirect.
  *
  * result is one of followings:
- * - 200 ok with file binary(download)
- * - 301,302,307 redirect(download)
+ * - 200 ok with file binary(download or proxy)
+ * - 301,302,307 redirect
  *
  * @param {*} req
  * @param {*} res
@@ -427,10 +426,10 @@ function uploadFile(req, res) {
   // NOTE: file field name should be 'file'
   var file = req.files.file;
   if (!file) {
-    return _sendError(req, res, {status: 400, message: 'required_param_file'});
+    return _sendError(req, res, new errors.BadRequest('required_param_file'));
   }
   if (!file.size) {
-    return _sendError(req, res, {status: 400, message: 'invalid_param_file'});
+    return _sendError(req, res, new errors.BadRequest('invalid_param_file'));
   }
 
   var id = req.param('id');
@@ -475,6 +474,57 @@ function uploadFileRaw(req, res) {
 }
 
 /**
+ * @api {get} /pictor/upload upload a file with public url
+ * @apiName uploadUrl
+ * @apiGroup pictor
+ * @apiDescription upload a single file with public url
+ *
+ * @apiParam {string} url public url to download file data.
+ * @apiParam {string} [id='new'] identifier for the file
+ * @apiParam {string} [prefix=''] the prefix for generated identifier(used for when id is 'new')
+ *
+ * @apiSuccessStructure result
+ * @apiErrorStructure error
+ */
+function uploadFileUrl(req, res) {
+  var url = req.param('url');
+  if (!url) {
+    return _sendError(req, res, new errors.BadRequest('required_param_url'));
+  }
+
+  var clientReq = http.get(url, function (clientRes) {
+    if (clientRes.statusCode < 200 || clientRes.statusCode >= 300) {
+      var data = [];
+      clientRes.on('data', function (chunk) {
+        data.push(chunk);
+      });
+      clientRes.on('end', function () {
+        var cause = {status: clientRes.statusCode, headers: clientRes.headers, body: data.join('')};
+        return _sendError(req, res, new errors.BadRequest('invalid_param_url', cause));
+      });
+      return;
+    }
+
+    var id = req.param('id');
+    var prefix = req.param('prefix');
+    var type = clientRes.headers['content-type'];
+    // clientRes is stream.Readable!
+    return pictor.putFile(_getFileId(id, prefix, type), clientRes)
+      .then(function (result) {
+        return _sendResult(req, res, result);
+      })
+      .fail(function (err) {
+        return _sendError(req, res, err);
+      })
+      .done();
+  });
+  clientReq.on('error', function (err) {
+    throw new errors.BadRequest('invalid_param_url', err);
+  });
+  //clientReq.end();
+}
+
+/**
  * @api {delete} /pictor/:id delete a file
  * @apiName delete
  * @apiGroup pictor
@@ -490,7 +540,7 @@ function deleteFile(req, res) {
 
   return pictor.deleteFile(id)
     .then(function () {
-      return _sendStatus(req, res, 202);
+      return _sendStatus(req, res, errors.StatusCode.ACCEPTED);
     })
     .fail(function (err) {
       return _sendError(req, res, err);
@@ -594,9 +644,9 @@ function listFiles(req, res) {
  * @apiParam {number} [h] height in pixels. used for 'resize', 'thumbnail', 'crop', holder' converters.
  * @apiParam {number} [x] distance in pixel from the left edge. used for 'crop' converter only.
  * @apiParam {number} [y] distance in pixels from the top edge. used for 'crop' converter only.
- * @apiParam {string} [flags] resize flags. used for 'resize' converter only.
- * @apiParam {number} [rw] resize width before crop. used for 'resizecrop' converter only
- * @apiParam {number} [rh] resize height before crop. used for 'resizecrop' converter only.
+ * @apiParam {number} [rw] resize width before crop. used for 'cropresize' and 'resizecrop' converters only
+ * @apiParam {number} [rh] resize height before crop. used for 'cropresize' and 'resizecrop' converters only.
+ * @apiParam {string} [flags] resize flags. used for 'resize' and 'cropresize' and 'resizecrop' converters only.
  * @apiParam {*} [*] and various converter specific params...
  */
 
@@ -616,6 +666,7 @@ function listFiles(req, res) {
  */
 function convertFile(req, res) {
   // TODO: convert multiple files...
+  // TODO: support chaining converters...
 
   var opts = _getConvertParams(req);
   DEBUG && debug('convertFile: opts=', opts);
@@ -702,6 +753,7 @@ function configureRoutes(app, config) {
   app.get(prefix + '/convert', convertAndDownloadFile);
   app.post(prefix + '/upload', uploadFiles);
   app.put(prefix + '/upload', uploadFileRaw);
+  app.get(prefix + '/upload', uploadFileUrl);
   app.get(prefix + '/download', downloadFile);
   app.get(prefix + '/delete', deleteFile);
   app.post(prefix + '/:id', uploadFile);
