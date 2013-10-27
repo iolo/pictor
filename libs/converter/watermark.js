@@ -3,6 +3,7 @@
 var
   util = require('util'),
   Q = require('q'),
+  _ = require('lodash'),
   gm = require('gm'),
   converter = require('./converter'),
   DEF_CONFIG = {
@@ -32,7 +33,7 @@ var
 function watermark(src, dst, opts) {
   //var cmd = gm(src).noProfile();
   //return Q.ninvoke(cmd, 'write', dst);
-  var exec = require('child_process').exec
+  var exec = require('child_process').exec;
   var command = [
     'gm',
     'composite',
@@ -75,7 +76,7 @@ WatermarkConverter.prototype.getVariation = function (opts) {
 };
 
 WatermarkConverter.prototype.convert = function (opts) {
-  return convert(opts.src, opts.dst, this._defaults(opts, this.config.options));
+  return watermark(opts.src, opts.dst, this._defaults(opts, this.config.options));
 };
 
 module.exports = WatermarkConverter;

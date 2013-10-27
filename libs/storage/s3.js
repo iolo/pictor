@@ -110,6 +110,7 @@ S3Storage.prototype.renameFile = function (id, targetId) {
   var source = this._getPath(id);
   var target = this._getPath(targetId);
 
+  var s3Client = this.s3Client;
   return Q.ninvoke(s3Client, 'copyFile', source, target)
     .then(function (result) {
       DEBUG && debug('s3.renameFile copyFile:', source, '-->', target, '-->', result);
@@ -128,13 +129,14 @@ S3Storage.prototype.listFiles = function (criteria) {
   // http://docs.aws.amazon.com/AmazonS3/latest/API/RESTBucketGET.html
   var listOpts = {prefix: criteria.prefix || ''};
 
+    var s3Client = this.s3Client;
   return Q.ninvoke(s3Client, 'list', listOpts)
     .then(function (result) {
       DEBUG && debug('s3.listFile:', criteria, '-->', result);
       return result.Contents.reduce(function (result, file) {
         var src = self._getPath(file.Key);
         var url = self._getUrl(file.Key);
-        result.push({id: id, url: url, file: src, name: file.Key, size: file.Size, date: file.LastModified});
+        result.push({id: file.Key, url: url, file: src, name: file.Key, size: file.Size, date: file.LastModified});
         return result;
       }, []);
     })
