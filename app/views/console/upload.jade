@@ -23,9 +23,9 @@
           button.btn.btn-primary(type="submit") upload
 
     pre(ng-show="!!upload.id && !upload.prefix"): code.
-      curl -X POST -F "file=@foo.jpg" {{apiUrl}}/{{upload.id}}
       curl -X POST -F "id={{upload.id}}" -F "file=@foo.jpg" {{apiUrl}}/upload
+      curl -X POST -F "file=@foo.jpg" {{apiUrl}}/{{upload.id}}
     pre(ng-show="!!upload.prefix"): code.
-      curl -X POST -F "prefix={{upload.prefix}}" -F "file=@foo.jpg" {{apiUrl}}/{{upload.id}}
       curl -X POST -F "id={{upload.id}}" -F "prefix={{upload.prefix}}" -F "file=@foo.jpg" {{apiUrl}}/upload
+      curl -X POST -F "file=@foo.jpg" {{apiUrl}}/{{upload.id}}?prefix={{upload.prefix}}
 

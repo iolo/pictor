@@ -13,5 +13,5 @@
           button.btn.btn-primary(type="submit") delete
 
     pre(ng-show="!!delete.id"): code.
-      curl -X DELETE "{{apiUrl}}/{{delete.id}}"
       curl -X GET "{{apiUrl}}/delete?id={{delete.id}}"
+      curl -X DELETE "{{apiUrl}}/{{delete.id}}"

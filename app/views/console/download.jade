@@ -13,5 +13,5 @@
           button.btn.btn-primary(type="submit") download
 
     pre(ng-show="!!download.id"): code.
-      curl -X GET {{apiUrl}}/{{download.id}}
       curl -X GET {{apiUrl}}/download?id={{download.id}}
+      curl -X GET {{apiUrl}}/{{download.id}}

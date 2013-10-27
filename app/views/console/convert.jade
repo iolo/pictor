@@ -9,11 +9,12 @@
         label.control-label.col-md-3 converter
         .col-md-9
           select.form-control(name="converter",ng-model="convert.converter")
-            option(value="",selected) -- chooser a converter --
+            option(value="",selected) -- choose a converter --
             option(value="convert") convert
             option(value="resize") resize
             option(value="thumbnail") thumbnail
             option(value="crop") crop
+            option(value="cropresize") cropresize
             option(value="resizecrop") resizecrop
             option(value="optimize") optimize
             option(value="meta") meta
@@ -24,7 +25,7 @@
         label.control-label.col-md-3 preset
         .col-md-9
           select.form-control(name="preset",ng-model="convert.preset")
-            option(value="",selected) -- chooser a preset --
+            option(value="",selected) -- choose a preset --
             option(value="xxs") xxs
             option(value="xs") xs
             option(value="s") s
@@ -42,33 +43,33 @@
       .form-group(ng-show="!!convert.converter.match('convert|resize|thumbnail|crop|optimize|meta|exif|preset')")
         label.control-label.col-md-3 id:
         .col-md-9: input.form-control(type="text",name="id",ng-model="convert.id",ng-init="convert.id = 'foo.jpg'")
-      .form-group(ng-show="!!convert.converter.match('resize|thumbnail|crop|holder')")
+      .form-group(ng-show="!!convert.converter.match('resize|thumbnail|crop|cropresize|resizecrop|holder')")
         label.control-label.col-md-3 width:
         .col-md-9: input.form-control(type="number",name="w",ng-model="convert.w")
-      .form-group(ng-show="!!convert.converter.match('resize|thumbnail|crop|holder')")
+      .form-group(ng-show="!!convert.converter.match('resize|thumbnail|crop|cropresize|resizecrop|holder')")
         label.control-label.col-md-3 height:
         .col-md-9: input.form-control(type="number",name="h",ng-model="convert.h")
-      .form-group(ng-show="convert.converter == 'crop'")
+      .form-group(ng-show="!!convert.converter.match('crop|cropresize|resizecrop')")
         label.control-label.col-md-3 left:
         .col-md-9: input.form-control(type="number",name="x",ng-model="convert.x")
-      .form-group(ng-show="convert.converter == 'crop'")
+      .form-group(ng-show="!!convert.converter.match('crop|cropresize|resizecrop')")
         label.control-label.col-md-3 top:
         .col-md-9: input.form-control(type="number",name="y",ng-model="convert.y")
-      .form-group(ng-show="convert.converter == 'resize'")
+      .form-group(ng-show="!!convert.converter.match('resize|cropresize|resizecrop')")
         label.control-label.col-md-3 flags:
         .col-md-9: input.form-control(type="text",name="flags",ng-model="convert.flags")
-      .form-group(ng-show="convert.converter == 'resizecrop'")
+      .form-group(ng-show="!!convert.converter.match('cropresize|resizecrop')")
         label.control-label.col-md-3 nw:
         .col-md-9: input.form-control(type="number",name="nw",ng-model="convert.nw")
-      .form-group(ng-show="convert.converter == 'resizecrop'")
+      .form-group(ng-show="!!convert.converter.match('cropresize|resizecrop')")
         label.control-label.col-md-3 nh:
         .col-md-9: input.form-control(type="number",name="nh",ng-model="convert.nh")
-      .form-group(ng-show="!!convert.converter.match('convert|resize|thumbnail|crop|holder')")
+      .form-group(ng-show="!!convert.converter.match('convert|resize|thumbnail|crop|holder|preset')")
         label.control-label.col-md-3 format:
         .col-md-9: input.form-control(type="text",name="format",ng-model="convert.format")
       .form-group
         .col-md-9.col-md-offset-3
-            button.btn.btn-primary(type="submit") convert
+          button.btn.btn-primary(type="submit") convert
 
     pre(ng-show="convert.converter == 'convert'"): code.
       curl -X POST "{{apiUrl}}/convert?converter=convert&id={{convert.id}}&format={{convert.format}}"
@@ -78,6 +79,8 @@
       curl -X POST "{{apiUrl}}/convert?converter=thumbnail&id={{convert.id}}&w={{convert.w}}&h={{convert.h}}&format={{convert.format}}"
     pre(ng-show="convert.converter == 'crop'"): code.
       curl -X POST "{{apiUrl}}/convert?converter=crop&id={{convert.id}}&w={{convert.w}}&h={{convert.h}}&x={{convert.x}}&y={{convert.y}}&format={{convert.format}}"
+    pre(ng-show="convert.converter == 'cropresize'"): code.
+      curl -X POST "{{apiUrl}}/convert?converter=cropresize&id={{convert.id}}&w={{convert.w}}&h={{convert.h}}&x={{convert.x}}&y={{convert.y}}&nw={{convert.nw}}&nh={{convert.nh}}&format={{convert.format}}"
     pre(ng-show="convert.converter == 'resizecrop'"): code.
       curl -X POST "{{apiUrl}}/convert?converter=resizecrop&id={{convert.id}}&nw={{convert.nw}}&nh={{convert.nh}}&w={{convert.w}}&h={{convert.h}}&x={{convert.x}}&y={{convert.y}}&format={{convert.format}}"
     pre(ng-show="convert.converter == 'optimize'"): code.
