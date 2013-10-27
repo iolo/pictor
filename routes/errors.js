@@ -48,6 +48,7 @@ var
  * @param {int} [status]
  * @param {*} [cause]
  * @constructor
+ * @extends Error
  * @abstract
  */
 function HttpError(message, status, cause) {
@@ -69,6 +70,7 @@ HttpError.prototype.toString = function () {
  * @param {int} [status=400]
  * @param {*} [cause]
  * @constructor
+ * @extends HttpError
  * @abstract
  */
 function ClientError(message, status, cause) {
@@ -83,6 +85,7 @@ ClientError.prototype.name = 'ClientError';
  * @param {String} [message]
  * @param {*} [cause]
  * @constructor
+ * @extends ClientError
  */
 function BadRequest(message, cause) {
   BadRequest.super_.call(this, message, StatusCode.BAD_REQUEST, cause);
@@ -96,6 +99,7 @@ BadRequest.prototype.name = 'BadRequest';
  * @param {String} [message]
  * @param {*} [cause]
  * @constructor
+ * @extends ClientError
  */
 function Unauthorized(message, cause) {
   Unauthorized.super_.call(this, message, StatusCode.UNAUTHORIZED, cause);
@@ -109,6 +113,7 @@ Unauthorized.prototype.name = 'Unauthorized';
  * @param {String} [message]
  * @param {*} [cause]
  * @constructor
+ * @extends ClientError
  */
 function Forbidden(message, cause) {
   Forbidden.super_.call(this, message, StatusCode.FORBIDDEN, cause);
@@ -122,6 +127,7 @@ Forbidden.prototype.name = 'Forbidden';
  * @param {String} [message]
  * @param {*} [cause]
  * @constructor
+ * @extends ClientError
  */
 function NotFound(message, cause) {
   NotFound.super_.call(this, message, StatusCode.NOT_FOUND, cause);
@@ -136,6 +142,7 @@ NotFound.prototype.name = 'NotFound';
  * @param {int} [status]
  * @param {*} [cause]
  * @constructor
+ * @extends HttpError
  * @abstract
  */
 function ServerError(message, status, cause) {
@@ -150,6 +157,7 @@ ServerError.prototype.name = 'ServerError';
  * @param {String} [message]
  * @param {*} [cause]
  * @constructor
+ * @extends ServerError
  */
 function InternalServerError(message, cause) {
   InternalServerError.super_.call(this, message, StatusCode.INTERNAL_SERVER_ERROR, cause);
@@ -163,6 +171,7 @@ InternalServerError.prototype.name = 'InternalServerError';
  * @param {String} [message]
  * @param {*} [cause]
  * @constructor
+ * @extends ServerError
  */
 function NotImplemented(message, cause) {
   NotImplemented.super_.call(this, message, StatusCode.NOT_IMPLEMENTED, cause);
