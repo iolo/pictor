@@ -76,7 +76,7 @@ WatermarkConverter.prototype.getVariation = function (opts) {
 };
 
 WatermarkConverter.prototype.convert = function (opts) {
-  var opts = _.defaults(opts, this.config.options);
+  opts = _.defaults(opts, this.config.options);
   return watermark(opts.src, opts.dst, opts);
 };
 

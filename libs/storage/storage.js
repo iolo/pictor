@@ -116,7 +116,7 @@ Storage.prototype.putFile = function (id, src) {
  */
 Storage.prototype.getFile = function (id) {
   DEBUG && debug('storage.getFile:', id);
-  return Q.reject(new StorageError(501, 'not implemented'));
+  return Q.reject(new StorageError(501, 'not_implemented'));
 };
 
 /**
@@ -127,17 +127,17 @@ Storage.prototype.getFile = function (id) {
  */
 Storage.prototype.deleteFile = function (id) {
   DEBUG && debug('storage.deleteFile:', id);
-  return Q.reject(new StorageError(501, 'not implemented'));
+  return Q.reject(new StorageError(501, 'not_implemented'));
 };
 
 Storage.prototype.renameFile = function (id, targetId) {
   DEBUG && debug('storage.renameFile:', id, targetId);
-  return Q.reject(new StorageError(501, 'not implemented'));
+  return Q.reject(new StorageError(501, 'not_implemented'));
 };
 
 Storage.prototype.listFiles = function (criteria) {
   DEBUG && debug('storage.listFiles:', criteria);
-  return Q.reject(new StorageError(501, 'not implemented'));
+  return Q.reject(new StorageError(501, 'not_implemented'));
 };
 
 //
@@ -151,12 +151,12 @@ function wrapError(err) {
       return Q.reject(err);
     }
     if (err.code === 'ENOENT') {
-      //throw new StorageError('file not found', 404, err);
-      return Q.reject(new StorageError('file not found', 404, err));
+      //throw new StorageError('file_not_found', 404, err);
+      return Q.reject(new StorageError('not_found', 404, err));
     }
   }
-  //throw new StorageError('io error', 500, err);
-  return Q.reject(new StorageError('io error', 500, err));
+  //throw new StorageError('storage_error', 500, err;
+  return Q.reject(new StorageError('storage_error', 500, err));
 }
 
 
