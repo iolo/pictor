@@ -67,16 +67,17 @@ function WatermarkConverter(config) {
 util.inherits(WatermarkConverter, converter.Converter);
 
 WatermarkConverter.prototype.getParamNames = function () {
-  return ['format'];
+  return _.keys(DEF_CONFIG.options);
 };
 
 WatermarkConverter.prototype.getVariation = function (opts) {
   opts = _.defaults(opts, this.config.options);
-  return 'watermark_' + opts.brightness + 'x' + opts.saturation + '_' + opts.gravity + opts.quality;
+  return 'watermark_' + opts.brightness + 'x' + opts.saturation + '_' + opts.gravity + '_' + opts.quality;
 };
 
 WatermarkConverter.prototype.convert = function (opts) {
-  return watermark(opts.src, opts.dst, this._defaults(opts, this.config.options));
+  var opts = _.defaults(opts, this.config.options);
+  return watermark(opts.src, opts.dst, opts);
 };
 
 module.exports = WatermarkConverter;
