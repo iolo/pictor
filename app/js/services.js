@@ -1,4 +1,6 @@
-(function (module) {
-  'use strict';
+(function (angular) {
+    'use strict';
 
-}(angular.module('app.services', [])));
+    var module = angular.module('app.services', []);
+
+}(angular));

@@ -1,45 +1,45 @@
 /* cropper */
 
 .cropper {
-  position: relative;
-  margin: 0;
-  padding: 0;
+    position: relative;
+    margin: 0;
+    padding: 0;
 }
 
 .cropper > .cropper-mask {
-  position: relative;
-  overflow: hidden;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  border-bottom: 2em solid transparent; /* for magin(1em) + slider(1em) */
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    border-bottom: 2em solid transparent; /* for magin(1em) + slider(1em) */
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 .cropper > .slider {
-  position: relative;
-  top: -1em;
-  width: 100%;
-  height: 1em;
+    position: relative;
+    top: -1em;
+    width: 100%;
+    height: 1em;
 }
 
 .cropper > .cropper-mask > .cropper-image {
-  position: absolute;
-  top: 0;
-  left: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 .cropper > .cropper-mask > .cropper-crop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-style: solid;
-  border-color: rgba(0, 0, 0, .25);
-  /* border-width: ... set by code */
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  cursor: move;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, .25);
+    /* border-width: ... set by code */
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    cursor: move;
 }

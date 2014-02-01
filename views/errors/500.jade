@@ -1,13 +1,12 @@
 doctype 5
 html
-  head
-    title #{error.status} #{error.message}
-  body
-    h1 #{error.status} #{error.message}
+    head
+        title #{error.status} #{error.message}
+    body
+        h1 #{error.status} #{error.message}
 
-    if (typeof error.stack !== 'undefined')
-      pre #{error.stack}
+        if (typeof error.stack !== 'undefined')
+            pre #{error.stack}
 
-    hr
-    p
-      a(href="/") Take me home!
+        hr
+        p: a(href="/") Take me home!

@@ -1,12 +1,12 @@
 'use strict';
 
 var
-  util = require('util'),
-  Q = require('q'),
-  gm = require('gm'),
-  converter = require('./converter'),
-  debug = require('debug')('pictor:converter:thumbnail'),
-  DEBUG = debug.enabled;
+    util = require('util'),
+    Q = require('q'),
+    gm = require('gm'),
+    converter = require('./converter'),
+    debug = require('debug')('pictor:converter:thumbnail'),
+    DEBUG = debug.enabled;
 
 /**
  * create thumbnail image.
@@ -18,13 +18,13 @@ var
  * @returns {promise} success or not
  */
 function thumbnail(src, dst, w, h) {
-  DEBUG && debug('thumbnail', src, '-->', dst, w, h);
-  //var cmd = gm(src).noProfile().thumbnail(w || '', h || '');
-  w = w || h || '';
-  h = h || w || '';
-  // see http://www.imagemagick.org/Usage/resize/#fill
-  var cmd = gm(src).noProfile().resize(w, h, '^').gravity('Center').extent(w, h);
-  return Q.ninvoke(cmd, 'write', dst);
+    DEBUG && debug('thumbnail', src, '-->', dst, w, h);
+    //var cmd = gm(src).noProfile().thumbnail(w || '', h || '');
+    w = w || h || '';
+    h = h || w || '';
+    // see http://www.imagemagick.org/Usage/resize/#fill
+    var cmd = gm(src).noProfile().resize(w, h, '^').gravity('Center').extent(w, h);
+    return Q.ninvoke(cmd, 'write', dst);
 }
 
 //
@@ -32,17 +32,17 @@ function thumbnail(src, dst, w, h) {
 //
 
 function ThumbnailConverter(config) {
-  ThumbnailConverter.super_.apply(this, arguments);
-  DEBUG && debug('create thumbnail converter: ', config);
+    ThumbnailConverter.super_.apply(this, arguments);
+    DEBUG && debug('create thumbnail converter: ', config);
 }
 util.inherits(ThumbnailConverter, converter.Converter);
 
 ThumbnailConverter.prototype.getParamNames = function () {
-  return ['w', 'h'];
+    return ['w', 'h'];
 };
 
 ThumbnailConverter.prototype.getVariation = function (opts) {
-  return 'thumbnail_' + (opts.w || '') + 'x' + (opts.h || '');
+    return 'thumbnail_' + (opts.w || '') + 'x' + (opts.h || '');
 };
 
 /**
@@ -56,7 +56,7 @@ ThumbnailConverter.prototype.getVariation = function (opts) {
  * @returns {promise}
  */
 ThumbnailConverter.prototype.convert = function (opts) {
-  return thumbnail(opts.src, opts.dst, opts.w, opts.h);
+    return thumbnail(opts.src, opts.dst, opts.w, opts.h);
 };
 
 module.exports = ThumbnailConverter;

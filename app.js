@@ -1,105 +1,72 @@
 'use strict';
 
 var
-  path = require('path'),
-  express = require('express'),
-  config = require('./config'),
-  pictor = require('./libs/pictor'),
-  debug = require('debug')('pictor:app'),
-  DEBUG = debug.enabled;
+    path = require('path'),
+    config = require('./config'),
+    pictor = require('./libs/pictor'),
+    debug = require('debug')('pictor:app'),
+    DEBUG = debug.enabled;
 
-//
-//
-//
-
+// change current working directory for later use of 'process.cwd()'
 process.chdir(__dirname);
 
+// XXX: best initialization sequence & timing?
 pictor.configure(config.pictor);
 
-var app = express();
+function createApp(config) {
+    var
+        express = require('express'),
+        express_common = require('express-toybox').common;
 
-app.configure('all', function () {
-  app.set('views', path.join(__dirname, 'views'));
-  app.set('view engine', 'jade');
-  app.set('case sensitive routing', 'true');
+    var app = express();
 
-  require('./routes/commons').configureMiddlewares(app, config.http);
+    app.configure('all', function () {
+        app.set('views', path.join(__dirname, 'views'));
+        app.set('view engine', 'jade');
+        app.set('case sensitive routing', 'true');
 
-  // pictor as sub app.
-  if(config.api) {
-    app.use(config.api.root || '/pictor', require('./routes/api').createApp(config.api));
-  }
+        // NOTE: this should be prior to router middleware.
+        // logger, session, cors, ...
+        express_common.configureMiddlewares(app, config.http);
 
-  // embed pictor in your app.
-  //if(config.api.prefix) {
-  //routes.configureMiddlewares(app, config.api);
-  //}
+        // pictor as sub app.
+        if (config.api) {
+            app.use(config.api.root || '/pictor', require('./routes/api').createApp(config.api));
+        }
 
-  app.use(app.router);
-});
+        // embed pictor in your app.
+        //if(config.api.prefix) {
+        //routes.configureMiddlewares(app, config.api);
+        //}
 
-// embed pictor in your app.
-//if(config.api.prefix) {
-//routes.configureRoutes(app, config.api);
-//}
-
-require('./routes/commons').configureRoutes(app, config.http);
-
-//
-//
-//
-
-var httpServer;
-
-function start(callback, port, host) {
-  if (httpServer) {
-    console.warn('***ignore*** http server is already running!...');
-    callback && callback();
-    return httpServer;
-  }
-
-  port = port || (config && config.http && config.http.port) || 3000;
-  host = host || (config && config.http && config.http.host) || 'localhost';
-
-  console.log('start http server ' + host + ':' + port);
-  httpServer = require('http').createServer(app).listen(port, host, callback);
-
-  httpServer.on('close', function () {
-    console.log('close http server');
-    httpServer = null;
-  });
-
-  process.on('exit', stop);
-
-  if (process.env.NODE_ENV === 'production') {
-    process.on('uncaughtException', function (err) {
-      console.error('***uncaughtexception***', err);
+        app.use(app.router);
     });
-  }
 
-  return httpServer;
+    // embed pictor in your app.
+    //if(config.api.prefix) {
+    //routes.configureRoutes(app, config.api);
+    //}
+
+    // NOTE: this should be the end of routes
+    // error404, error500, ...
+    express_common.configureRoutes(app, config.http);
+    return app;
 }
 
-function stop(callback) {
-  if (httpServer) {
-    console.log('stop http server');
-    try {
-      httpServer.close(callback);
-    } catch (e) {
-    }
-    httpServer = null;
-  }
+function startServer() {
+    return require('express-toybox').server.start(createApp(config), config.http, function (httpServer) {
+        DEBUG && debug('*** pictor server ready!');
+    });
 }
 
-module.exports = app;
-module.exports.start = start;
-module.exports.stop = stop;
+module.exports.createApp = createApp;
+module.exports.startServer = startServer;
 
 //
-//
+// ***CLI ENTRY POINT***
 //
 
 if (require.main === module) {
-  start();
+    startServer();
 }
 

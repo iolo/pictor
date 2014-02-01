@@ -1,8 +1,8 @@
 <!doctype html>
 <html>
 <head>
-  <title>slider test page</title>
-  <link rel="stylesheet" href="slider.css">
+    <title>slider test page</title>
+    <link rel="stylesheet" href="slider.css">
 </head>
 <body>
 
@@ -19,18 +19,18 @@
 <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 <script src="slider.js"></script>
 <script>
-  $(function () {
-    $('#slider1')
-      .on('slide', function (event, value) {
-        $('#slider1_value').html(value);
-      })
-      .slider({min: 100, max: 200, value: 150});
-    $('#slider2')
-      .on('slide', function (event, value) {
-        $('#slider2_value').html(value);
-      })
-      .slider();
-  });
+    $(function () {
+        $('#slider1')
+                .on('slide', function (event, value) {
+                    $('#slider1_value').html(value);
+                })
+                .slider({min: 100, max: 200, value: 150});
+        $('#slider2')
+                .on('slide', function (event, value) {
+                    $('#slider2_value').html(value);
+                })
+                .slider();
+    });
 </script>
 </body>
 </html>

@@ -1,4 +1,6 @@
-(function (module) {
-  'use strict';
+(function (angular) {
+    'use strict';
 
-}(angular.module('app.directives', [])));
+    var module = angular.module('app.directives', []);
+
+}(angular));

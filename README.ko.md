@@ -23,11 +23,11 @@ pictor는 이런 환경에 맞춰 설계되었습니다.
 
 pictor는 기본적으로 다음과 같이 동작합니다:
 
-- *업로드*는 pictor가 처리합니다. 가능하다면 클라우드/원격 스토리지가 처리할 수도 있습니다.
-- *변환*은 pictor가 처리합니다.
-- *다운로드*는 가능하다면 클라우드/원격 스토리지가 처리합니다. 원한다면 pictor가 처리할 수도 있습니다.
-- 모든 파일은 클라우드/원격 저장소에 보관됩니다. 물론 로컬 저장소도 사용할 수 있습니다.
-- 모든 변환된 파일(pictor가 생성한)은 *언제든지* 삭제해도 됩니다. 필요하면 pictor가 다시 생성합니다.
+* *업로드*는 pictor가 처리합니다. 가능하다면 클라우드/원격 스토리지가 처리할 수도 있습니다.
+* *변환*은 pictor가 처리합니다.
+* *다운로드*는 가능하다면 클라우드/원격 스토리지가 처리합니다. 원한다면 pictor가 처리할 수도 있습니다.
+* 모든 파일은 클라우드/원격 저장소에 보관됩니다. 물론 로컬 저장소도 사용할 수 있습니다.
+* 모든 변환된 파일(pictor가 생성한)은 *언제든지* 삭제해도 됩니다. 필요하면 pictor가 다시 생성합니다.
 
 ![다이어그램](../master/app/img/how_pictor_works/pictor.png?raw=true)
 
@@ -36,51 +36,51 @@ pictor는 기본적으로 다음과 같이 동작합니다:
 
 1. install prerequisites
 
-  for mac osx:
-  ```
-  brew install graphicsmagick
-  ```
-  for debian/ubuntu linux:
-  ```
-  apt-get install graphicsmagick
-  ```
-  or else see http://graphicsmagick.org
+    for mac osx:
+    ```
+    brew install graphicsmagick
+    ```
+    for debian/ubuntu linux:
+    ```
+    apt-get install graphicsmagick
+    ```
+    or else see http://graphicsmagick.org
 
 1. get source from github:
 
-  ```
-  git clone git@github.com:iolo/pictor.git
-  ```
-  
-  or install with npm:
-  
-  ```
-  npm install pictor
-  ```
+    ```
+    git clone git@github.com:iolo/pictor.git
+    ```
+
+    or install with npm:
+
+    ```
+    npm install pictor
+    ```
   
 1. startup pictor server
 
-  ```
-  node app.js
-  ```
+    ```
+    node app.js
+    ```
 
-  or startup with cluster:
+    or startup with cluster:
 
-  ```
-  node cluster.js
-  ```
+    ```
+    node cluster.js
+    ```
 
 1. test run in browser
 
-  ```
-  open http://localhost:3001
-  ```
-  
+    ```
+    open http://localhost:3001
+    ```
+
 1. test run in console
 
-  ```
-	TBD...
-  ```
+    ```
+    TBD...
+    ```
 
 설정
 ----
@@ -113,35 +113,35 @@ set `DEBUG` environment variable to `*` or `pictor:*` and run pictor.
 see http://github.com/visionmedia/debug
 
 * external dependencies for converters
-  * convert/resize/thumbnail/crop/resizecrop/meta/exif/holder: [graphicsmagick](http://graphicsmagick.org)(or [imagemagick](http://imagemagick.org)))
-  * optimize jpeg: [jpegtran](http://jpegclub.org/jpegtran/) (already included via [jpegtran-bin nodejs module](https://github.com/yeoman/node-jpegtran-bin))
-  * optimize png: [optipng](http://optipng.sourceforge.net) (already included via [optipng-bin nodejs moudle](https://github.com/yeoman/node-optipng-bin))
-  * optimize gif: [gifsicle](http://www.lcdf.org/gifsicle/) (already included via [gifsicle nodejs module](https://github.com/yeoman/node-gifsicle))
+    * convert/resize/thumbnail/crop/resizecrop/meta/exif/holder: [graphicsmagick](http://graphicsmagick.org)(or [imagemagick](http://imagemagick.org)))
+    * optimize jpeg: [jpegtran](http://jpegclub.org/jpegtran/) (already included via [jpegtran-bin nodejs module](https://github.com/yeoman/node-jpegtran-bin))
+    * optimize png: [optipng](http://optipng.sourceforge.net) (already included via [optipng-bin nodejs moudle](https://github.com/yeoman/node-optipng-bin))
+    * optimize gif: [gifsicle](http://www.lcdf.org/gifsicle/) (already included via [gifsicle nodejs module](https://github.com/yeoman/node-gifsicle))
 
 * 프로젝트 디렉토리 구조
 
 ```
 config/ --- 환경별 설정(서버측)
 libs/ -- nodejs 모듈(서버측) --> jshint, doxx task
-  converter/ -- converters
-  storage/ -- storage providers
-  pictor.js -- the main module
-  ...
+    converter/ -- converters
+    storage/ -- storage providers
+    pictor.js -- the main module
+    ...
 routes/ -- expressjs 모듈(서버측) --> jshint, apidoc task
 tests/
-  **/*_test.js -- nodeunit 테스트케이스(서버측) --> nodeunit task
-  **/*_test.html -- qunit 테스트케이스(서버측) --> qunit task
+    **/*_test.js -- nodeunit 테스트케이스(서버측) --> nodeunit task
+    **/*_test.html -- qunit 테스트케이스(서버측) --> qunit task
 app/ -- 정적 웹 리소스 소스(클라이언트측) --> concat, uglify, copy, jade task
-  js/ -- 자바스크립트 소스(클라이언트 측) --> jshint task
-  ...
-build/
-  app/ --> 정적 웹 리소스의 빌드 결과(클라이언트측)
-    docs/
-      api/ --> apidoc이 routes/를 대상으로 생성한 문서 --> apidoc task
-      dox/ --> doxx가 libs/를 대상으로 생성한 문서 --> doxx task
+    js/ -- 자바스크립트 소스(클라이언트 측) --> jshint task
     ...
-app.js -- 클러스터를 사용하지 않는 nodejs 실행 모듈(server-side)
-cluster.js -- 클러스터를 사용한 nodejs 실행 모듈(server-side)
+build/
+    app/ --> 정적 웹 리소스의 빌드 결과(클라이언트측)
+      docs/
+        api/ --> apidoc이 routes/를 대상으로 생성한 문서 --> apidoc task
+        dox/ --> doxx가 libs/를 대상으로 생성한 문서 --> doxx task
+      ...
+app.js -- 클러스터를 사용하지 않는 실행 모듈(server-side)
+bin/pictor -- 클러스터를 사용한 실행 모듈(server-side)
 ```
 
 * 소스에서 API 문서 생성하기

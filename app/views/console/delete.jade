@@ -1,17 +1,17 @@
 .panel.panel-info
-  .panel-heading
-    a.btn.btn-info.btn-xs.pull-right(href="/docs/api/#api-pictor-delete") api document
-    h3.panel-title delete a file
+    .panel-heading
+        a.btn.btn-info.btn-xs.pull-right(href="/docs/api/#api-pictor-delete") api document
+        h3.panel-title delete a file
 
-  .panel-body
-    form#deleteForm.form-horizontal(action="{{apiUrl}}/delete",method="get",target="responseView")
-      .form-group
-        label.control-label.col-md-3 id:
-        .col-md-9: input.form-control(type="text",name="id",required,ng-model="delete.id",ng-init="delete.id = 'foo.jpg'")
-      .form-group
-        .col-md-9.col-md-offset-3
-          button.btn.btn-primary(type="submit") delete
+    .panel-body
+        form#deleteForm.form-horizontal(action="{{apiUrl}}/delete",method="get",target="responseView")
+            .form-group
+                label.control-label.col-md-3 id:
+                .col-md-9: input.form-control(type="text",name="id",required,ng-model="delete.id",ng-init="delete.id = 'foo.jpg'")
+            .form-group
+                .col-md-9.col-md-offset-3
+                    button.btn.btn-primary(type="submit") delete
 
-    pre(ng-show="!!delete.id"): code.
-      curl -X GET "{{apiUrl}}/delete?id={{delete.id}}"
-      curl -X DELETE "{{apiUrl}}/{{delete.id}}"
+        pre(ng-show="!!delete.id"): code.
+            curl -X GET "{{apiUrl}}/delete?id={{delete.id}}"
+            curl -X DELETE "{{apiUrl}}/{{delete.id}}"

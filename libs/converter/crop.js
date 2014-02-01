@@ -1,12 +1,12 @@
 'use strict';
 
 var
-  util = require('util'),
-  Q = require('q'),
-  gm = require('gm'),
-  converter = require('./converter'),
-  debug = require('debug')('pictor:converter:crop'),
-  DEBUG = debug.enabled;
+    util = require('util'),
+    Q = require('q'),
+    gm = require('gm'),
+    converter = require('./converter'),
+    debug = require('debug')('pictor:converter:crop'),
+    DEBUG = debug.enabled;
 
 /**
  * crop image.
@@ -21,9 +21,9 @@ var
  * @returns {promise} success or not
  */
 function crop(src, dst, w, h, x, y) {
-  DEBUG && debug('crop', src, '-->', dst, w, h, x, y);
-  var cmd = gm(src).noProfile().crop(w || '', h || '', x || 0, y || 0);
-  return Q.ninvoke(cmd, 'write', dst);
+    DEBUG && debug('crop', src, '-->', dst, w, h, x, y);
+    var cmd = gm(src).noProfile().crop(w || '', h || '', x || 0, y || 0);
+    return Q.ninvoke(cmd, 'write', dst);
 }
 
 //
@@ -31,17 +31,17 @@ function crop(src, dst, w, h, x, y) {
 //
 
 function CropConverter(config) {
-  CropConverter.super_.apply(this, arguments);
-  DEBUG && debug('create crop converter: ', config);
+    CropConverter.super_.apply(this, arguments);
+    DEBUG && debug('create crop converter: ', config);
 }
 util.inherits(CropConverter, converter.Converter);
 
 CropConverter.prototype.getParamNames = function () {
-  return ['w', 'h', 'x', 'y', 'format'];
+    return ['w', 'h', 'x', 'y', 'format'];
 };
 
 CropConverter.prototype.getVariation = function (opts) {
-  return 'crop_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '');
+    return 'crop_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '');
 };
 
 /**
@@ -56,7 +56,7 @@ CropConverter.prototype.getVariation = function (opts) {
  * @returns {promise}
  */
 CropConverter.prototype.convert = function (opts) {
-  return crop(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y);
+    return crop(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y);
 };
 
 module.exports = CropConverter;

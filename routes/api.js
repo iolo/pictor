@@ -1,26 +1,26 @@
 'use strict';
 
 var
-  util = require('util'),
-  http = require('http'),
-  Q = require('q'),
-  _ = require('lodash'),
-  express = require('express'),
-  mime = require('mime'),
-  pictor = require('../libs/pictor'),
-  errors = require('./errors'),
-  debug = require('debug')('pictor:routes:api'),
-  DEBUG = debug.enabled;
+    util = require('util'),
+    http = require('http'),
+    Q = require('q'),
+    _ = require('lodash'),
+    express = require('express'),
+    mime = require('mime'),
+    pictor = require('../libs/pictor'),
+    errors = require('express-toybox').errors,
+    debug = require('debug')('pictor:routes:api'),
+    DEBUG = debug.enabled;
 
 var
-  DEF_REDIRECT_STATUS_CODE = false,//or 301,302,307
-  redirectStatusCode;
+    DEF_REDIRECT_STATUS_CODE = false,//or 301,302,307
+    redirectStatusCode;
 
 var
-  ID_NEW = 'new',
-  ID_REGEX = /^[\w\-]+(\.\w+)?/,// /[^a-zA-Z0-9가-힣-_.]/
-  DEF_PREFIX = '',
-  DEF_SUFFIX = '';
+    ID_NEW = 'new',
+    ID_REGEX = /^[\w\-]+(\.\w+)?/,// /[^a-zA-Z0-9가-힣-_.]/
+    DEF_PREFIX = '',
+    DEF_SUFFIX = '';
 
 /**
  * generate unique identifier.
@@ -31,13 +31,13 @@ var
  * @private
  */
 function _generateUniqueId(prefix, suffix) {
-  return [
-    prefix || '',
-    Date.now().toString(36),
-    '-',
-    (Math.random() * 0x100000000).toString(36),
-    suffix || ''
-  ].join('');
+    return [
+        prefix || '',
+        Date.now().toString(36),
+        '-',
+        (Math.random() * 0x100000000).toString(36),
+        suffix || ''
+    ].join('');
 }
 
 /**
@@ -49,16 +49,16 @@ function _generateUniqueId(prefix, suffix) {
  * @returns {string}
  */
 function _getFileId(id, prefix, type) {
-  if (!id) {
-    throw 'required_param_id';
-  }
-  if (id === ID_NEW) {
-    return _generateUniqueId(prefix || DEF_PREFIX, type ? '.' + mime.extension(type) : DEF_SUFFIX);
-  }
-  if (ID_REGEX.test(id)) {
-    return id;
-  }
-  throw 'invalid_param_id';
+    if (!id) {
+        throw 'required_param_id';
+    }
+    if (id === ID_NEW) {
+        return _generateUniqueId(prefix || DEF_PREFIX, type ? '.' + mime.extension(type) : DEF_SUFFIX);
+    }
+    if (ID_REGEX.test(id)) {
+        return id;
+    }
+    throw 'invalid_param_id';
 }
 
 //
@@ -184,8 +184,8 @@ function _getFileId(id, prefix, type) {
  * @private
  */
 function _sendResponseIframe(res, status, result) {
-  res.type('html');
-  return res.send('<textarea data-type="application/json" data-status="' + status + '">' + JSON.stringify(result) + '</textarea>');
+    res.type('html');
+    return res.send('<textarea data-type="application/json" data-status="' + status + '">' + JSON.stringify(result) + '</textarea>');
 }
 
 /**
@@ -202,25 +202,25 @@ function _sendResponseIframe(res, status, result) {
  * @private
  */
 function _sendError(req, res, err) {
-  DEBUG && debug('*** send error', err);
+    DEBUG && debug('*** send error', err);
 
-  // TODO: cleanup error response...
-  var status = (err && err.status) || 500;
-  var error = {
-    error: {
-      status: status,
-      message: (err && err.message) || 'internal server error',
-      code: (err && err.code) || 0,
-      cause: err,
-      stack: (err && err.stack && err.stack.split('\n')) || []
+    // TODO: cleanup error response...
+    var status = (err && err.status) || 500;
+    var error = {
+        error: {
+            status: status,
+            message: (err && err.message) || 'internal server error',
+            code: (err && err.code) || 0,
+            cause: err,
+            stack: (err && err.stack && err.stack.split('\n')) || []
+        }
+    };
+
+    if (!!req.param('iframe')) {
+        return _sendResponseIframe(res, status, error);
     }
-  };
 
-  if (!!req.param('iframe')) {
-    return _sendResponseIframe(res, status, error);
-  }
-
-  return res.jsonp(status, error);
+    return res.jsonp(status, error);
 }
 
 /**
@@ -238,17 +238,17 @@ function _sendError(req, res, err) {
  * @private
  */
 function _sendResult(req, res, result) {
-  DEBUG && debug('*** send result', result);
+    DEBUG && debug('*** send result', result);
 
-  if (!_.isObject(result) && !_.isArray(result)) {
-    return _sendError(req, res); // internal server error
-  }
+    if (!_.isObject(result) && !_.isArray(result)) {
+        return _sendError(req, res); // internal server error
+    }
 
-  if (!!req.param('iframe')) {
-    return _sendResponseIframe(res, 200, result);
-  }
+    if (!!req.param('iframe')) {
+        return _sendResponseIframe(res, 200, result);
+    }
 
-  return res.jsonp(result);
+    return res.jsonp(result);
 }
 
 /**
@@ -265,48 +265,48 @@ function _sendResult(req, res, result) {
  * @private
  */
 function _sendFile(req, res, result) {
-  if (!_.isObject(result)) {
-    return _sendError(req, res); // internal server error
-  }
+    if (!_.isObject(result)) {
+        return _sendError(req, res); // internal server error
+    }
 
-  if (redirectStatusCode) { // redirect is enabled by configuration
+    if (redirectStatusCode) { // redirect is enabled by configuration
+        if (result.url) {
+            DEBUG && debug('*** redirect:', redirectStatusCode, result.url);
+            return res.redirect(redirectStatusCode, result.url);
+        } else {
+            DEBUG && debug('*** redirect fail! storage does not provide url!');
+        }
+    }
+    if (result.type) {
+        res.type(result.type);
+    }
+    var disposition = req.param('disposition');
+    if (disposition) {
+        var filename = req.param('filename');
+        if (filename) {
+            disposition += ';' + filename;
+        }
+        res.set('Content-Disposition', disposition); // (inline|attachment)[; filename=...]
+    }
+    if (result.stream) {
+        DEBUG && debug('*** send stream');
+        return result.stream.pipe(res);
+    }
+    if (result.file) {
+        DEBUG && debug('*** send file:', result.file);
+        return res.sendfile(result.file);
+    }
+    // redirect is disabled by configuration,
+    // neither file nor stream is available...
+    // try manual proxy...
     if (result.url) {
-      DEBUG && debug('*** redirect:', redirectStatusCode, result.url);
-      return res.redirect(redirectStatusCode, result.url);
-    } else {
-      DEBUG && debug('*** redirect fail! storage does not provide url!');
+        DEBUG && debug('*** manual proxy:', result.url);
+        return http.get(result.url, function (response) {
+            return response.pipe(res);
+        });
     }
-  }
-  if (result.type) {
-    res.type(result.type);
-  }
-  var disposition = req.param('disposition');
-  if (disposition) {
-    var filename = req.param('filename');
-    if (filename) {
-      disposition += ';' + filename;
-    }
-    res.set('Content-Disposition', disposition); // (inline|attachment)[; filename=...]
-  }
-  if (result.stream) {
-    DEBUG && debug('*** send stream');
-    return result.stream.pipe(res);
-  }
-  if (result.file) {
-    DEBUG && debug('*** send file:', result.file);
-    return res.sendfile(result.file);
-  }
-  // redirect is disabled by configuration,
-  // neither file nor stream is available...
-  // try manual proxy...
-  if (result.url) {
-    DEBUG && debug('*** manual proxy:', result.url);
-    return http.get(result.url, function (response) {
-      return response.pipe(res);
-    });
-  }
-  // no way to download!!! error??
-  return _sendError(req, res); // internal server error
+    // no way to download!!! error??
+    return _sendError(req, res); // internal server error
 }
 
 /**
@@ -319,25 +319,25 @@ function _sendFile(req, res, result) {
  * @private
  */
 function _sendFallbackOrError(req, res, err) {
-  var fallback = req.param('fallback');
-  if (fallback) {
-    DEBUG && debug('***ignore*** download fallback:', fallback);
-    // fallback to url
-    if (fallback && /^https?:\/\//.test(fallback)) {
-      return {url: fallback};
+    var fallback = req.param('fallback');
+    if (fallback) {
+        DEBUG && debug('***ignore*** download fallback:', fallback);
+        // fallback to url
+        if (fallback && /^https?:\/\//.test(fallback)) {
+            return {url: fallback};
+        }
+        // fallback to file id
+        return pictor.getFile(fallback)
+            .then(function (result) {
+                return _sendFile(req, res, result);
+            })
+            .fail(function (fallbackErr) {
+                DEBUG && debug('***ignore*** failed to download fallback:', fallbackErr);
+                return _sendError(req, res, err);
+            })
+            .done();
     }
-    // fallback to file id
-    return pictor.getFile(fallback)
-      .then(function (result) {
-        return _sendFile(req, res, result);
-      })
-      .fail(function (fallbackErr) {
-        DEBUG && debug('***ignore*** failed to download fallback:', fallbackErr);
-        return _sendError(req, res, err);
-      })
-      .done();
-  }
-  return _sendError(req, res, err);
+    return _sendError(req, res, err);
 }
 
 /**
@@ -355,7 +355,7 @@ function _sendFallbackOrError(req, res, err) {
  * @private
  */
 function _sendStatus(req, res, status) {
-  return res.send(status);
+    return res.send(status);
 }
 
 /**
@@ -370,7 +370,7 @@ function _sendStatus(req, res, status) {
  * @private
  */
 function _getConvertParams(req) {
-  return _.extend({}, req.params, req.query, req.body);
+    return _.extend({}, req.params, req.query, req.body);
 }
 
 //
@@ -392,28 +392,28 @@ function _getConvertParams(req) {
  * @apiErrorStructure error
  */
 function uploadFiles(req, res) {
-  // NOTE: file field name should be 'file'
-  var fileParam = Array.prototype.concat(req.files.file);
-  if (fileParam.length === 0) {
-    return _sendError(req, res, new errors.BadRequest('required_param_file'));
-  }
-  var idParam = Array.prototype.concat(req.param('id'));
-  var prefixParam = Array.prototype.concat(req.param('prefix'));
-  // FIXME: express ignore parameter order... need to change api spec.
+    // NOTE: file field name should be 'file'
+    var fileParam = Array.prototype.concat(req.files.file);
+    if (fileParam.length === 0) {
+        return _sendError(req, res, new errors.BadRequest('required_param_file'));
+    }
+    var idParam = Array.prototype.concat(req.param('id'));
+    var prefixParam = Array.prototype.concat(req.param('prefix'));
+    // FIXME: express ignore parameter order... need to change api spec.
 
-  return Q.all(fileParam.map(function (file, index) {
-      var id = idParam[index];
-      var prefix = prefixParam[index];
-      var type = file.headers['content-type'];
-      return pictor.putFile(_getFileId(id, prefix, type), file.path);
-    }))
-    .then(function (result) {
-      return _sendResult(req, res, result);
-    })
-    .fail(function (err) {
-      return _sendError(req, res, err);
-    })
-    .done();
+    return Q.all(fileParam.map(function (file, index) {
+            var id = idParam[index];
+            var prefix = prefixParam[index];
+            var type = file.headers['content-type'];
+            return pictor.putFile(_getFileId(id, prefix, type), file.path);
+        }))
+        .then(function (result) {
+            return _sendResult(req, res, result);
+        })
+        .fail(function (err) {
+            return _sendError(req, res, err);
+        })
+        .done();
 }
 
 /**
@@ -430,26 +430,26 @@ function uploadFiles(req, res) {
  * @apiErrorStructure error
  */
 function uploadFile(req, res) {
-  // NOTE: file field name should be 'file'
-  var file = req.files.file;
-  if (!file) {
-    return _sendError(req, res, new errors.BadRequest('required_param_file'));
-  }
-  if (!file.size) {
-    return _sendError(req, res, new errors.BadRequest('invalid_param_file'));
-  }
+    // NOTE: file field name should be 'file'
+    var file = req.files && req.files.file;
+    if (!file) {
+        return _sendError(req, res, new errors.BadRequest('required_param_file'));
+    }
+    if (!file.size) {
+        return _sendError(req, res, new errors.BadRequest('invalid_param_file'));
+    }
 
-  var id = req.param('id');
-  var prefix = req.param('prefix');
-  var type = file.headers['content-type'];
-  return pictor.putFile(_getFileId(id, prefix, type), file.path)
-    .then(function (result) {
-      return _sendResult(req, res, result);
-    })
-    .fail(function (err) {
-      return _sendError(req, res, err);
-    })
-    .done();
+    var id = req.param('id');
+    var prefix = req.param('prefix');
+    var type = file.type;//file.headers['content-type'];
+    return pictor.putFile(_getFileId(id, prefix, type), file.path)
+        .then(function (result) {
+            return _sendResult(req, res, result);
+        })
+        .fail(function (err) {
+            return _sendError(req, res, err);
+        })
+        .done();
 }
 
 /**
@@ -466,18 +466,18 @@ function uploadFile(req, res) {
  * @apiErrorStructure error
  */
 function uploadFileRaw(req, res) {
-  var id = req.param('id');
-  var prefix = req.param('prefix');
-  var type = req.get('content-type');
-  // req is stream.Readable!
-  return pictor.putFile(_getFileId(id, prefix, type), req)
-    .then(function (result) {
-      return _sendResult(req, res, result);
-    })
-    .fail(function (err) {
-      return _sendError(req, res, err);
-    })
-    .done();
+    var id = req.param('id');
+    var prefix = req.param('prefix');
+    var type = req.get('content-type');
+    // req is stream.Readable!
+    return pictor.putFile(_getFileId(id, prefix, type), req)
+        .then(function (result) {
+            return _sendResult(req, res, result);
+        })
+        .fail(function (err) {
+            return _sendError(req, res, err);
+        })
+        .done();
 }
 
 /**
@@ -494,46 +494,46 @@ function uploadFileRaw(req, res) {
  * @apiErrorStructure error
  */
 function uploadFileUrl(req, res) {
-  var url = req.param('url');
-  if (!url) {
-    return _sendError(req, res, new errors.BadRequest('required_param_url'));
-  }
+    var url = req.param('url');
+    if (!url) {
+        return _sendError(req, res, new errors.BadRequest('required_param_url'));
+    }
 
-  http.get(url)
-    .on('response', function (clientRes) {
-      if (clientRes.statusCode < 200 || clientRes.statusCode >= 300) {
-        DEBUG && debug('failed to upload url: url=', url, 'status=', clientRes.statusCode);
-        var body = [];
-        return clientRes
-          .on('data',function (chunk) {
-            body.push(chunk);
-          }).on('end', function () {
-            var cause = {
-              status: clientRes.statusCode,
-              headers: clientRes.headers,
-              body: body.join('')
-            };
-            return _sendError(req, res, new errors.BadRequest('invalid_param_url', cause));
-          });
-      }
+    http.get(url)
+        .on('response', function (clientRes) {
+            if (clientRes.statusCode < 200 || clientRes.statusCode >= 300) {
+                DEBUG && debug('failed to upload url: url=', url, 'status=', clientRes.statusCode);
+                var body = [];
+                return clientRes
+                    .on('data',function (chunk) {
+                        body.push(chunk);
+                    }).on('end', function () {
+                        var cause = {
+                            status: clientRes.statusCode,
+                            headers: clientRes.headers,
+                            body: body.join('')
+                        };
+                        return _sendError(req, res, new errors.BadRequest('invalid_param_url', cause));
+                    });
+            }
 
-      var id = req.param('id');
-      var prefix = req.param('prefix');
-      var type = clientRes.headers['content-type'];
-      // clientRes is stream.Readable!
-      return pictor.putFile(_getFileId(id, prefix, type), clientRes)
-        .then(function (result) {
-          return _sendResult(req, res, result);
+            var id = req.param('id');
+            var prefix = req.param('prefix');
+            var type = clientRes.headers['content-type'];
+            // clientRes is stream.Readable!
+            return pictor.putFile(_getFileId(id, prefix, type), clientRes)
+                .then(function (result) {
+                    return _sendResult(req, res, result);
+                })
+                .fail(function (err) {
+                    return _sendError(req, res, err);
+                })
+                .done();
         })
-        .fail(function (err) {
-          return _sendError(req, res, err);
-        })
-        .done();
-    })
-    .on('error', function (err) {
-      DEBUG && debug('failed to upload url: url=', url, 'err=', err);
-      return _sendError(req, res, new errors.BadRequest('invalid_param_url', err));
-    });
+        .on('error', function (err) {
+            DEBUG && debug('failed to upload url: url=', url, 'err=', err);
+            return _sendError(req, res, new errors.BadRequest('invalid_param_url', err));
+        });
 }
 
 /**
@@ -548,16 +548,16 @@ function uploadFileUrl(req, res) {
  * @apiErrorStructure error
  */
 function deleteFile(req, res) {
-  var id = req.param('id');
+    var id = req.param('id');
 
-  return pictor.deleteFile(id)
-    .then(function () {
-      return _sendStatus(req, res, errors.StatusCode.ACCEPTED);
-    })
-    .fail(function (err) {
-      return _sendError(req, res, err);
-    })
-    .done();
+    return pictor.deleteFile(id)
+        .then(function () {
+            return _sendStatus(req, res, errors.StatusCode.ACCEPTED);
+        })
+        .fail(function (err) {
+            return _sendError(req, res, err);
+        })
+        .done();
 }
 
 /**
@@ -573,16 +573,16 @@ function deleteFile(req, res) {
  * @apiErrorStructure error
  */
 function downloadFile(req, res) {
-  var id = req.param('id');
+    var id = req.param('id');
 
-  return pictor.getFile(id)
-    .then(function (result) {
-      return _sendFile(req, res, result);
-    })
-    .fail(function (err) {
-      return _sendFallbackOrError(req, res, err);
-    })
-    .done();
+    return pictor.getFile(id)
+        .then(function (result) {
+            return _sendFile(req, res, result);
+        })
+        .fail(function (err) {
+            return _sendFallbackOrError(req, res, err);
+        })
+        .done();
 }
 
 /**
@@ -598,17 +598,17 @@ function downloadFile(req, res) {
  * @apiErrorStructure error
  */
 function renameFile(req, res) {
-  var id = req.strParam('id');
-  var target = req.strParam('target');
+    var id = req.strParam('id');
+    var target = req.strParam('target');
 
-  return pictor.renameFile(id, target)
-    .then(function () {
-      return _sendStatus(req, res, errors.StatusCode.ACCEPTED);
-    })
-    .fail(function (err) {
-      return _sendError(req, res, err);
-    })
-    .done();
+    return pictor.renameFile(id, target)
+        .then(function () {
+            return _sendStatus(req, res, errors.StatusCode.ACCEPTED);
+        })
+        .fail(function (err) {
+            return _sendError(req, res, err);
+        })
+        .done();
 }
 
 /**
@@ -626,19 +626,19 @@ function renameFile(req, res) {
  * @apiErrorStructure error
  */
 function listFiles(req, res) {
-  var prefix = req.strParam('prefix', '');
-  var format = req.strParam('format', '');
-  var skip = req.intParam('skip', 0);
-  var limit = req.intParam('limit', 0);
+    var prefix = req.strParam('prefix', '');
+    var format = req.strParam('format', '');
+    var skip = req.intParam('skip', 0);
+    var limit = req.intParam('limit', 0);
 
-  return pictor.listFiles({prefix: prefix, format: format, skip: skip, limit: limit})
-    .then(function (result) {
-      return _sendResult(req, res, result);
-    })
-    .fail(function (err) {
-      return _sendError(req, res, err);
-    })
-    .done();
+    return pictor.listFiles({prefix: prefix, format: format, skip: skip, limit: limit})
+        .then(function (result) {
+            return _sendResult(req, res, result);
+        })
+        .fail(function (err) {
+            return _sendError(req, res, err);
+        })
+        .done();
 }
 
 /**
@@ -673,20 +673,20 @@ function listFiles(req, res) {
  * @apiErrorStructure error
  */
 function convertFile(req, res) {
-  // TODO: convert multiple files...
-  // TODO: support chaining converters...
+    // TODO: convert multiple files...
+    // TODO: support chaining converters...
 
-  var opts = _getConvertParams(req);
-  DEBUG && debug('convertFile: opts=', opts);
+    var opts = _getConvertParams(req);
+    DEBUG && debug('convertFile: opts=', opts);
 
-  return pictor.convertFile(opts)
-    .then(function (result) {
-      return _sendResult(req, res, result);
-    })
-    .fail(function (err) {
-      return _sendError(req, res, err);
-    })
-    .done();
+    return pictor.convertFile(opts)
+        .then(function (result) {
+            return _sendResult(req, res, result);
+        })
+        .fail(function (err) {
+            return _sendError(req, res, err);
+        })
+        .done();
 }
 
 /**
@@ -706,17 +706,17 @@ function convertFile(req, res) {
  * @apiErrorStructure error
  */
 function convertAndDownloadFile(req, res) {
-  var opts = _getConvertParams(req);
-  DEBUG && debug('convertAndDownloadFile: opts=', opts);
+    var opts = _getConvertParams(req);
+    DEBUG && debug('convertAndDownloadFile: opts=', opts);
 
-  return pictor.convertFile(opts)
-    .then(function (result) {
-      return _sendFile(req, res, result);
-    })
-    .fail(function (err) {
-      return _sendFallbackOrError(req, res, err);
-    })
-    .done();
+    return pictor.convertFile(opts)
+        .then(function (result) {
+            return _sendFile(req, res, result);
+        })
+        .fail(function (err) {
+            return _sendFallbackOrError(req, res, err);
+        })
+        .done();
 }
 
 //
@@ -732,11 +732,11 @@ function convertAndDownloadFile(req, res) {
  * @returns {express.application}
  */
 function configureMiddlewares(app, config) {
-  DEBUG && debug('create pictor middlewares...', config);
+    DEBUG && debug('create pictor middlewares...', config);
 
-  redirectStatusCode = config.redirect || DEF_REDIRECT_STATUS_CODE;
+    redirectStatusCode = config.redirect || DEF_REDIRECT_STATUS_CODE;
 
-  return app;
+    return app;
 }
 
 /**
@@ -747,11 +747,11 @@ function configureMiddlewares(app, config) {
  * @returns {express.application}
  */
 function configureRoutes(app, config) {
-  DEBUG && debug('create pictor routes...');
+    DEBUG && debug('create pictor routes...');
 
-  var prefix = config.prefix || '';
+    var prefix = config.prefix || '';
 
-  // TODO: require auth!
+    // TODO: require auth!
 //  app.use(function (req, res, next) {
 //    if (req.method === 'GET' && !/(upload|delete|rename|files)/.test(req.path)) {
 //      return next();
@@ -759,229 +759,229 @@ function configureRoutes(app, config) {
 //    return res.send(new errors.Forbidden());
 //  });
 
-  //
-  // CRUD routes
-  //
+    //
+    // CRUD routes
+    //
 
-  app.post(prefix + '/upload', uploadFiles);
-  app.put(prefix + '/upload', uploadFileRaw);
-  app.get(prefix + '/upload', uploadFileUrl);
-  app.get(prefix + '/delete', deleteFile);
-  app.get(prefix + '/download', downloadFile);
+    app.post(prefix + '/upload', uploadFiles);
+    app.put(prefix + '/upload', uploadFileRaw);
+    app.get(prefix + '/upload', uploadFileUrl);
+    app.get(prefix + '/delete', deleteFile);
+    app.get(prefix + '/download', downloadFile);
 
-  //
-  // convert routes
-  //
+    //
+    // convert routes
+    //
 
-  app.post(prefix + '/convert', convertFile);
-  app.get(prefix + '/convert', convertAndDownloadFile);
+    app.post(prefix + '/convert', convertFile);
+    app.get(prefix + '/convert', convertAndDownloadFile);
 
-  //
-  // restful(?) aliases of CRUD routes
-  //
+    //
+    // restful(?) aliases of CRUD routes
+    //
 
-  /**
-   * @api {post} /pictor/{id} upload a file
-   * @apiName uploadRestful
-   * @apiGroup pictor_restful
-   * @apiDescription upload a single file with `multipart/form-data`.
-   * convenient alias of `upload` api.
-   *
-   * @apiParam {file} file file data as a part of multipart/upload-data
-   * @apiParam {string} [id='new'] identifier for the file(with optional extension to guess mime type)
-   * @apiParam {string} [prefix=''] prefix for generated identifier when id is 'new'
-   *
-   * @apiSuccessStructure result
-   * @apiErrorStructure error
-   */
-  app.post(prefix + '/:id', uploadFile);
+    /**
+     * @api {post} /pictor/{id} upload a file
+     * @apiName uploadRestful
+     * @apiGroup pictor_restful
+     * @apiDescription upload a single file with `multipart/form-data`.
+     * convenient alias of `upload` api.
+     *
+     * @apiParam {file} file file data as a part of multipart/upload-data
+     * @apiParam {string} [id='new'] identifier for the file(with optional extension to guess mime type)
+     * @apiParam {string} [prefix=''] prefix for generated identifier when id is 'new'
+     *
+     * @apiSuccessStructure result
+     * @apiErrorStructure error
+     */
+    app.post(prefix + '/:id', uploadFile);
 
-  /**
-   * @api {put} /pictor/{id} upload a file with raw data
-   * @apiName uploadRawRestful
-   * @apiGroup pictor_restful
-   * @apiDescription upload a single file with raw data.
-   * convenient alias of `uploadRaw` api.
-   *
-   * @apiParam {file} file file data as raw binary
-   * @apiParam {string} [id='new'] identifier for the file
-   * @apiParam {string} [prefix=''] the prefix for generated identifier(used for when id is 'new')
-   *
-   * @apiSuccessStructure result
-   * @apiErrorStructure error
-   */
-  app.put(prefix + '/:id', uploadFileRaw);
+    /**
+     * @api {put} /pictor/{id} upload a file with raw data
+     * @apiName uploadRawRestful
+     * @apiGroup pictor_restful
+     * @apiDescription upload a single file with raw data.
+     * convenient alias of `uploadRaw` api.
+     *
+     * @apiParam {file} file file data as raw binary
+     * @apiParam {string} [id='new'] identifier for the file
+     * @apiParam {string} [prefix=''] the prefix for generated identifier(used for when id is 'new')
+     *
+     * @apiSuccessStructure result
+     * @apiErrorStructure error
+     */
+    app.put(prefix + '/:id', uploadFileRaw);
 
-  /**
-   * @api {delete} /pictor/{id} delete a file
-   * @apiName deleteRestful
-   * @apiGroup pictor_restful
-   * @apiDescription delete a file and all variants of the file.
-   * convenient alias of `delete` api.
-   *
-   * @apiParam {string} id identifier
-   *
-   * @apiSuccessStructure accepted
-   * @apiErrorStructure error
-   */
-  app.del(prefix + '/:id', deleteFile);
+    /**
+     * @api {delete} /pictor/{id} delete a file
+     * @apiName deleteRestful
+     * @apiGroup pictor_restful
+     * @apiDescription delete a file and all variants of the file.
+     * convenient alias of `delete` api.
+     *
+     * @apiParam {string} id identifier
+     *
+     * @apiSuccessStructure accepted
+     * @apiErrorStructure error
+     */
+    app.del(prefix + '/:id', deleteFile);
 
-  /**
-   * @api {get} /pictor/{id} download a file
-   * @apiName downloadRestful
-   * @apiGroup pictor_restful
-   * @apiDescription download a file.
-   * convenient alias of `download` api.
-   *
-   * @apiParam {string} id identifier
-   *
-   * @apiSuccessStructure accepted
-   * @apiErrorStructure error
-   */
-  app.get(prefix + '/:id', downloadFile);
+    /**
+     * @api {get} /pictor/{id} download a file
+     * @apiName downloadRestful
+     * @apiGroup pictor_restful
+     * @apiDescription download a file.
+     * convenient alias of `download` api.
+     *
+     * @apiParam {string} id identifier
+     *
+     * @apiSuccessStructure accepted
+     * @apiErrorStructure error
+     */
+    app.get(prefix + '/:id', downloadFile);
 
-  //
-  // XXX: experimental for issue #4 and #5
-  //
+    //
+    // XXX: experimental for issue #4 and #5
+    //
 
-  app.get(prefix + '/rename', renameFile);
-  app.get(prefix + '/files', listFiles);
+    app.get(prefix + '/rename', renameFile);
+    app.get(prefix + '/files', listFiles);
 
-  //
-  // convenient aliases of convertAndDownload api using specific converters
-  // XXX: this code depends on implementation of built-in converters.
-  //
+    //
+    // convenient aliases of convertAndDownload api using specific converters
+    // XXX: this code depends on implementation of built-in converters.
+    //
 
-  /**
-   * @api {get} /pictor/holder/{width}x{height}.{format} download holder image.
-   * @apiName downloadHolderImage
-   * @apiGroup pictor_images
-   * @apiDescription convenient alias of `convertAndDownload` api using `holder` converter.
-   *
-   * @apiParam {number} w width in pixels
-   * @apiParam {number} h height in pixels
-   * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
-   *
-   * @apiExample create 400x300 holder of png and download it with curl:
-   *    curl -X GET -o output.png http://localhost:3001/pictor/holder/400x300.png
-   *
-   * @apiSuccessStructure file
-   * @apiErrorStructure error
-   */
-  app.get(new RegExp(prefix + '/holder/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
-    req.query.converter = 'holder';
-    req.query.w = req.params[0];
-    req.query.h = req.params[1];
-    req.query.format = req.params[3];
-    return convertAndDownloadFile(req, res);
-  });
+    /**
+     * @api {get} /pictor/holder/{width}x{height}.{format} download holder image.
+     * @apiName downloadHolderImage
+     * @apiGroup pictor_images
+     * @apiDescription convenient alias of `convertAndDownload` api using `holder` converter.
+     *
+     * @apiParam {number} w width in pixels
+     * @apiParam {number} h height in pixels
+     * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+     *
+     * @apiExample create 400x300 holder of png and download it with curl:
+     *    curl -X GET -o output.png http://localhost:3001/pictor/holder/400x300.png
+     *
+     * @apiSuccessStructure file
+     * @apiErrorStructure error
+     */
+    app.get(new RegExp(prefix + '/holder/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
+        req.query.converter = 'holder';
+        req.query.w = req.params[0];
+        req.query.h = req.params[1];
+        req.query.format = req.params[3];
+        return convertAndDownloadFile(req, res);
+    });
 
-  /**
-   * @api {get} /pictor/resize/{id}/{width}x{height}{flags}.{format} download resize image.
-   * @apiName downloadResizeImage
-   * @apiGroup pictor_images
-   * @apiDescription convenient alias of `convertAndDownload` api using `resize` converter.
-   *
-   * @apiParam {number} w width in pixels
-   * @apiParam {number} h height in pixels
-   * @apiParam {string} [flags] resizing flags. '!' for force. '%' for percent. '^' for fill area, '<' for enlarge, '>' shrink, '@' for pixels
-   * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
-   *
-   * @apiExample resize foo.jpg to 400x300(ignore aspect ratio) of png and download it with curl:
-   *    curl -X GET -o output.png http://localhost:3001/pictor/resize/foo.jpg/400x300!.png
-   *
-   * @apiSuccessStructure file
-   * @apiErrorStructure error
-   */
-  app.get(new RegExp(prefix + '/resize/([\\w\\-\\.]+)/(\\d+)x(\\d+)([!%^<>@]?)(.(\\w+))?'), function (req, res) {
-    req.query.converter = 'resize';
-    req.query.id = req.params[0];
-    req.query.w = req.params[1];
-    req.query.h = req.params[2];
-    req.query.flags = req.params[3];
-    req.query.format = req.params[5];
-    return convertAndDownloadFile(req, res);
-  });
+    /**
+     * @api {get} /pictor/resize/{id}/{width}x{height}{flags}.{format} download resize image.
+     * @apiName downloadResizeImage
+     * @apiGroup pictor_images
+     * @apiDescription convenient alias of `convertAndDownload` api using `resize` converter.
+     *
+     * @apiParam {number} w width in pixels
+     * @apiParam {number} h height in pixels
+     * @apiParam {string} [flags] resizing flags. '!' for force. '%' for percent. '^' for fill area, '<' for enlarge, '>' shrink, '@' for pixels
+     * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+     *
+     * @apiExample resize foo.jpg to 400x300(ignore aspect ratio) of png and download it with curl:
+     *    curl -X GET -o output.png http://localhost:3001/pictor/resize/foo.jpg/400x300!.png
+     *
+     * @apiSuccessStructure file
+     * @apiErrorStructure error
+     */
+    app.get(new RegExp(prefix + '/resize/([\\w\\-\\.]+)/(\\d+)x(\\d+)([!%^<>@]?)(.(\\w+))?'), function (req, res) {
+        req.query.converter = 'resize';
+        req.query.id = req.params[0];
+        req.query.w = req.params[1];
+        req.query.h = req.params[2];
+        req.query.flags = req.params[3];
+        req.query.format = req.params[5];
+        return convertAndDownloadFile(req, res);
+    });
 
-  /**
-   * @api {get} /pictor/thumbnail/{id}/{w}x{h}.{format} download thumbnail image.
-   * @apiName downloadThumbnailImage
-   * @apiGroup pictor_images
-   * @apiDescription convenient alias of `convertAndDownload` api using `thumbnail` converter.
-   *
-   * @apiParam {number} w width in pixels
-   * @apiParam {number} h height in pixels
-   * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
-   *
-   * @apiExample thumbnail foo.jpg to 400x300 of png and download it with curl:
-   *    curl -X GET -o output.png http://localhost:3001/pictor/thumbnail/foo.jpg/400x300.png
-   *
-   * @apiSuccessStructure file
-   * @apiErrorStructure error
-   */
-  app.get(new RegExp(prefix + '/thumbnail/([\\w\\-\\.]+)/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
-    req.query.converter = 'thumbnail';
-    req.query.id = req.params[0];
-    req.query.w = req.params[1];
-    req.query.h = req.params[2];
-    req.query.format = req.params[4];
-    return convertAndDownloadFile(req, res);
-  });
+    /**
+     * @api {get} /pictor/thumbnail/{id}/{w}x{h}.{format} download thumbnail image.
+     * @apiName downloadThumbnailImage
+     * @apiGroup pictor_images
+     * @apiDescription convenient alias of `convertAndDownload` api using `thumbnail` converter.
+     *
+     * @apiParam {number} w width in pixels
+     * @apiParam {number} h height in pixels
+     * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+     *
+     * @apiExample thumbnail foo.jpg to 400x300 of png and download it with curl:
+     *    curl -X GET -o output.png http://localhost:3001/pictor/thumbnail/foo.jpg/400x300.png
+     *
+     * @apiSuccessStructure file
+     * @apiErrorStructure error
+     */
+    app.get(new RegExp(prefix + '/thumbnail/([\\w\\-\\.]+)/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
+        req.query.converter = 'thumbnail';
+        req.query.id = req.params[0];
+        req.query.w = req.params[1];
+        req.query.h = req.params[2];
+        req.query.format = req.params[4];
+        return convertAndDownloadFile(req, res);
+    });
 
-  /**
-   * @api {get} /pictor/crop/{id}/{w}x{h}+{x}+{y}.{format} download crop image.
-   * @apiName downloadCropImage
-   * @apiGroup pictor_images
-   * @apiDescription convenient alias of `convertAndDownload` api using `crop` converter.
-   *
-   * @apiParam {number} w width in pixels
-   * @apiParam {number} h height in pixels
-   * @apiParam {number} x distance in pixel from the left edge
-   * @apiParam {number} y distance in pixels from the top edge
-   * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
-   *
-   * @apiExample crop foo.jpg to rectangle(400x300+200+100) of png and download it with curl:
-   *    curl -X GET -o output.png http://localhost:3001/pictor/crop/foo.jpg/400x300+200+100.png
-   *
-   * @apiSuccessStructure file
-   * @apiErrorStructure error
-   */
-  app.get(new RegExp(prefix + '/crop/([\\w\\-\\.]+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)(.(\\w+))?'), function (req, res) {
-    req.query.converter = 'crop';
-    req.query.id = req.params[0];
-    req.query.w = req.params[1];
-    req.query.h = req.params[2];
-    req.query.x = req.params[3];
-    req.query.y = req.params[4];
-    req.query.format = req.params[6];
-    return convertAndDownloadFile(req, res);
-  });
+    /**
+     * @api {get} /pictor/crop/{id}/{w}x{h}+{x}+{y}.{format} download crop image.
+     * @apiName downloadCropImage
+     * @apiGroup pictor_images
+     * @apiDescription convenient alias of `convertAndDownload` api using `crop` converter.
+     *
+     * @apiParam {number} w width in pixels
+     * @apiParam {number} h height in pixels
+     * @apiParam {number} x distance in pixel from the left edge
+     * @apiParam {number} y distance in pixels from the top edge
+     * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+     *
+     * @apiExample crop foo.jpg to rectangle(400x300+200+100) of png and download it with curl:
+     *    curl -X GET -o output.png http://localhost:3001/pictor/crop/foo.jpg/400x300+200+100.png
+     *
+     * @apiSuccessStructure file
+     * @apiErrorStructure error
+     */
+    app.get(new RegExp(prefix + '/crop/([\\w\\-\\.]+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)(.(\\w+))?'), function (req, res) {
+        req.query.converter = 'crop';
+        req.query.id = req.params[0];
+        req.query.w = req.params[1];
+        req.query.h = req.params[2];
+        req.query.x = req.params[3];
+        req.query.y = req.params[4];
+        req.query.format = req.params[6];
+        return convertAndDownloadFile(req, res);
+    });
 
-  /**
-   * @api {get} /pictor/preset/{id}/{preset}.{format} download preset image.
-   * @apiName downloadPresetImage
-   * @apiGroup pictor_images
-   * @apiDescription convenient alias of `convertAndDownload` api using `preset` converter.
-   *
-   * @apiParam {string} id source file identifier
-   * @apiParam {string} preset preset name. 'xxs', 'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxs@2x', 'xs@2x', 's@2x', 'm@2x', 'l@2x', 'xl@2x', 'xxl@2x', ...
-   * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
-   *
-   * @apiExample preset to xxl@2x(thumbnail to 512x512) of png and download it with curl:
-   *    curl -X GET -o output.png http://localhost:3001/pictor/preset/foo.jpg/xxl@2x.png
-   *
-   * @apiSuccessStructure file
-   * @apiErrorStructure error
-   */
-  app.get(new RegExp(prefix + '/preset/([\\w\\-\\.]+)/([\\w@]+)(.(\\w+))?'), function (req, res) {
-    req.query.converter = 'preset';
-    req.query.id = req.params[0];
-    req.query.preset = req.params[1];
-    req.query.format = req.params[3];
-    return convertAndDownloadFile(req, res);
-  });
+    /**
+     * @api {get} /pictor/preset/{id}/{preset}.{format} download preset image.
+     * @apiName downloadPresetImage
+     * @apiGroup pictor_images
+     * @apiDescription convenient alias of `convertAndDownload` api using `preset` converter.
+     *
+     * @apiParam {string} id source file identifier
+     * @apiParam {string} preset preset name. 'xxs', 'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxs@2x', 'xs@2x', 's@2x', 'm@2x', 'l@2x', 'xl@2x', 'xxl@2x', ...
+     * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+     *
+     * @apiExample preset to xxl@2x(thumbnail to 512x512) of png and download it with curl:
+     *    curl -X GET -o output.png http://localhost:3001/pictor/preset/foo.jpg/xxl@2x.png
+     *
+     * @apiSuccessStructure file
+     * @apiErrorStructure error
+     */
+    app.get(new RegExp(prefix + '/preset/([\\w\\-\\.]+)/([\\w@]+)(.(\\w+))?'), function (req, res) {
+        req.query.converter = 'preset';
+        req.query.id = req.params[0];
+        req.query.preset = req.params[1];
+        req.query.format = req.params[3];
+        return convertAndDownloadFile(req, res);
+    });
 
-  return app;
+    return app;
 }
 
 /**
@@ -991,22 +991,22 @@ function configureRoutes(app, config) {
  * @returns {express.application}
  */
 function createApp(config) {
-  DEBUG && debug('create pictor app...');
+    DEBUG && debug('create pictor app...');
 
-  var app = express();
+    var app = express();
 
-  configureMiddlewares(app, config);
+    configureMiddlewares(app, config);
 
-  app.on('mount', function (parent) {
-    DEBUG && debug('mount ' + app.path() + ' on ' + parent.path());
-    configureRoutes(app, config);
-  });
+    app.on('mount', function (parent) {
+        DEBUG && debug('mount ' + app.path() + ' on ' + parent.path());
+        configureRoutes(app, config);
+    });
 
-  return app;
+    return app;
 }
 
 module.exports = {
-  configureMiddlewares: configureMiddlewares,
-  configureRoutes: configureRoutes,
-  createApp: createApp
+    configureMiddlewares: configureMiddlewares,
+    configureRoutes: configureRoutes,
+    createApp: createApp
 };

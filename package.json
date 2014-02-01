@@ -1,51 +1,54 @@
 {
-  "name": "pictor",
-  "version": "0.1.5",
-  "description": "simple image upload/convert/download server",
-  "author": "Dongsu Jang <iolothebard@gmail.com>",
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:iolo/pictor.git"
-  },
-  "license": "MIT",
-  "engines": {
-    "node": "~0.10"
-  },
-  "dependencies": {
-    "lodash": "~2.2.1",
-    "q": "~0.9.7",
-    "debug": "~0.7.2",
-    "express": "~3.4.1",
-    "jade": "~0.35.0",
-    "mime": "~1.2.11",
-    "q-io": "~1.10.1"
-  },
-  "optionalDependencies": {
-    "gm": "~1.13.1",
-    "optipng-bin": "~0.3.1",
-    "jpegtran-bin": "~0.2.0",
-    "gifsicle": "~0.1.4",
-    "ftp": "~0.3.4",
-    "knox": "~0.8.6"
-  },
-  "devDependencies": {
-    "nodeunit": "~0.8.1",
-    "superagent": "~0.15.4",
-    "grunt": "~0.4.1",
-    "grunt-contrib-clean": "latest",
-    "grunt-contrib-concat": "latest",
-    "grunt-contrib-copy": "latest",
-    "grunt-contrib-jade": "latest",
-    "grunt-contrib-jshint": "latest",
-    "grunt-contrib-nodeunit": "latest",
-    "grunt-contrib-qunit": "latest",
-    "grunt-contrib-uglify": "latest",
-    "grunt-contrib-watch": "latest",
-    "grunt-apidoc": "latest",
-    "doxx": "~0.7.0"
-  },
-  "directories": {
-    "lib": "./libs"
-  },
-  "main": "./libs/pictor"
+    "name": "pictor",
+    "version": "0.2.0",
+    "description": "simple image upload/convert/download server",
+    "author": "Dongsu Jang <iolothebard@gmail.com>",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:iolo/pictor.git"
+    },
+    "license": "MIT",
+    "engines": {
+        "node": "~0.10"
+    },
+    "dependencies": {
+        "lodash": "~2.4.1",
+        "q": "~1.0.0",
+        "debug": "~0.7.4",
+        "express": "~3.4.8",
+        "jade": "~1.1.5",
+        "mime": "~1.2.11",
+        "q-io": "~1.10.8",
+        "node-toybox": "*",
+        "express-toybox": "*"
+    },
+    "optionalDependencies": {
+        "gm": "~1.14.2",
+        "optipng-bin": "~0.3.1",
+        "jpegtran-bin": "~0.2.3",
+        "gifsicle": "~0.1.4",
+        "ftp": "~0.3.6",
+        "knox": "~0.8.8"
+    },
+    "devDependencies": {
+        "nodeunit": "~0.8.4",
+        "superagent": "~0.16.0",
+        "grunt": "~0.4.2",
+        "grunt-contrib-clean": "latest",
+        "grunt-contrib-concat": "latest",
+        "grunt-contrib-copy": "latest",
+        "grunt-contrib-jade": "latest",
+        "grunt-contrib-jshint": "latest",
+        "grunt-contrib-nodeunit": "latest",
+        "grunt-contrib-qunit": "latest",
+        "grunt-contrib-uglify": "latest",
+        "grunt-contrib-watch": "latest",
+        "grunt-apidoc": "latest",
+        "doxx": "~0.7.2"
+    },
+    "directories": {
+        "lib": "./libs"
+    },
+    "bin": "./bin/pictor",
+    "main": "./index"
 }

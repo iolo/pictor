@@ -1,4 +1,6 @@
-(function (module) {
-  'use strict';
+(function (angular) {
+    'use strict';
 
-}(angular.module('app.filters', [])));
+    var module = angular.module('app.filters', []);
+
+}(angular));

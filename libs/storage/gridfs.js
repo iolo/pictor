@@ -1,10 +1,10 @@
 'use strict';
 
 var
-  util = require('util'),
-  storage = require('./storage'),
-  debug = require('debug')('pictor:storage:gridfs'),
-  DEBUG = debug.enabled;
+    util = require('util'),
+    storage = require('./storage'),
+    debug = require('debug')('pictor:storage:gridfs'),
+    DEBUG = debug.enabled;
 
 /**
  * GridFS(mongodb) based implementation of {@link Storage}.
@@ -17,8 +17,8 @@ var
  * @constructor
  */
 function GridFSStorage(config) {
-  GridFSStorage.super_.apply(this, arguments);
-  DEBUG && debug('create gridfs storage:', this.config);
+    GridFSStorage.super_.apply(this, arguments);
+    DEBUG && debug('create gridfs storage:', this.config);
 }
 util.inherits(GridFSStorage, storage.Storage);
 

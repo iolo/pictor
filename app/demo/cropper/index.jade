@@ -1,107 +1,108 @@
 doctype html
 html
-  head
-    meta(charset="utf-8")
-    meta(name="viewport",content="width=device-width,initial-scale=1.0")
-    title Pictor
-    link(rel="shortcut icon",href="/favicon.ico",type="image/x-icon")
-    link(rel="icon",href="/favicon.ico",type="image/x-icon")
-    link(rel="stylesheet",href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css")
-    link(rel="stylesheet",href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-theme.min.css")
-    link(rel="stylesheet",href="http://fonts.googleapis.com/css?family=Roboto:300,400,700|Droid+Sans+Mono")
-    link(rel="stylesheet",href="/css/app.css")
-    link(rel="stylesheet",href="slider.css")
-    link(rel="stylesheet",href="cropper.css")
-    //![if lt IE 9]
-      script(src="//cdnjs.cloudflare.com/ajax/libs/respond.js/1.2.0/respond.min.js")
-  body
-    a(href="https://github.com/iolo/pictor")
-      img(style="position:absolute;top:0;right:0;border:0;z-index:9999;",src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png",alt="Fork me on GitHub")
+    head
+        meta(charset="utf-8")
+        meta(name="viewport",content="width=device-width,initial-scale=1.0")
+        title Pictor
+        link(rel="shortcut icon",href="/favicon.ico",type="image/x-icon")
+        link(rel="icon",href="/favicon.ico",type="image/x-icon")
+        link(rel="stylesheet",href="http://netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css")
+        link(rel="stylesheet",href="http://netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap-theme.min.css")
+        link(rel="stylesheet",href="http://fonts.googleapis.com/css?family=Roboto|Source+Code+Pro")
+        link(rel="stylesheet",href="/css/app.css")
+        link(rel="stylesheet",href="slider.css")
+        link(rel="stylesheet",href="cropper.css")
+        //![if lt IE 9]
+            script(src="//cdnjs.cloudflare.com/ajax/libs/respond.js/1.2.0/respond.min.js")
+    body
+        a(href="https://github.com/iolo/pictor")
+            img(style="position:absolute;top:0;right:0;border:0;z-index:9999;",src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png",alt="Fork me on GitHub")
 
-    #wrap
-      #header.navbar.navbar-fixed-top.navbar-inverse(role="navigation")
-        .navbar-header
-          button.navbar-toggle(data-toggle="collapse",data-target="#nav")
-            span.sr-only Toggle navigation
-            span.icon-bar
-            span.icon-bar
-            span.icon-bar
-          a.navbar-brand(href="/") Pictor
-        #nav.navbar-collapse.collapse
-          ul.nav.navbar-nav
-            li: a(href="/#/docs") Documents
-            li: a(href="/#/console") Console
-            li.dropdown
-              a.dropdown-toggle(href="#",data-toggle="dropdown") Demos
-                b.caret
-              ul.dropdown-menu
-                li: a(href="/demo/cropper") Image Resize &amp; Crop Demo
+        #wrap
+            #header.navbar.navbar-fixed-top.navbar-inverse(role="navigation")
+                .navbar-header
+                    button.navbar-toggle(data-toggle="collapse",data-target="#nav")
+                        span.sr-only Toggle navigation
+                        span.icon-bar
+                        span.icon-bar
+                        span.icon-bar
+                    a.navbar-brand(href="/") Pictor
+                    #nav.navbar-collapse.collapse
+                        ul.nav.navbar-nav
+                            li: a(href="/#/docs") Documents
+                            li: a(href="/#/console") Console
+                            li.dropdown
+                                a.dropdown-toggle(href="#",data-toggle="dropdown") Demos
+                                    b.caret
+                                ul.dropdown-menu
+                                    li: a(href="/demo/cropper") Image Resize &amp; Crop Demo
 
-      .container
-        #inputView.panel.panel-info
-          .panel-heading
-            h3.panel-title cropper demo
-          .panel-body
-            form#uploadForm.form-horizontal(action="/pictor/new",method="post",enctype="multipart/form-data",target="uploadFrame")
-              input(type="hidden",name="iframe",value="true")
-              .form-group
-                label.control-label.col-md-2 file:
-                .col-md-8: input.form-control(type="file",name="file",required)
-                .col-md-2: button.btn.btn-primary.btn-block(type="submit") upload
+            .container
+                #inputView.panel.panel-info
+                    .panel-heading
+                        h3.panel-title cropper demo
+                    .panel-body
+                        form#uploadForm.form-horizontal(action="/pictor/new",method="post",enctype="multipart/form-data",target="uploadFrame")
+                            input(type="hidden",name="iframe",value="true")
 
-            iframe#uploadFrame(style="display:none;")
-            p upload request(multipart post):
-            pre: code#uploadResultText
+                            .form-group
+                                label.control-label.col-md-2 file:
+                                .col-md-8: input.form-control(type="file",name="file",required)
+                                .col-md-2: button.btn.btn-primary.btn-block(type="submit") upload
 
-            form.form-horizontal
-              .form-group
-                label.control-label.col-md-2 source id:
-                .col-md-8: input#sourceIdEdit.form-control(type="text",value="foo.jpg",required)
-                .col-md-2: button#openCropperBtn.btn.btn-primary.btn-block(type="button") open cropper
+                            iframe#uploadFrame(style="display:none;")
+                            p upload request(multipart post):
+                            pre: code#uploadResultText
 
-        #resultView.panel.panel-success
-          .panel-heading
-            h3.panel-title result(resized and then cropped image)
-          .panel-body
-            h5 use&nbsp;
-              a(href="/docs/api/#api-pictor-convertAndDownload") convertAndDownload
-              | &nbsp;or&nbsp;
-              a(href="/docs/api/#api-pictor-convert") convert
-              | &nbsp;API:
+                        form.form-horizontal
+                            .form-group
+                                label.control-label.col-md-2 source id:
+                                .col-md-8: input#sourceIdEdit.form-control(type="text",value="foo.jpg",required)
+                                .col-md-2: button#openCropperBtn.btn.btn-primary.btn-block(type="button") open cropper
 
-            p for same convert request, pictor use the previous converted file in cache.
+                #resultView.panel.panel-success
+                    .panel-heading
+                        h3.panel-title result(resized and then cropped image)
+                    .panel-body
+                        h5 use&nbsp;
+                            a(href="/docs/api/#api-pictor-convertAndDownload") convertAndDownload
+                            | &nbsp;or&nbsp;
+                            a(href="/docs/api/#api-pictor-convert") convert
+                            | &nbsp;API:
 
-            p convertAndDownload request(get url):
-            pre: code#convertAndDownloadRequestText
+                        p for same convert request, pictor use the previous converted file in cache.
 
-            p convertAndDownload response(image):
-            p: img#convertAndDownloadResponseImg(alt="...")
+                        p convertAndDownload request(get url):
+                        pre: code#convertAndDownloadRequestText
 
-            p convert request(post):
-            pre: code#convertRequestText
+                        p convertAndDownload response(image):
+                        p: img#convertAndDownloadResponseImg(alt="...")
 
-            p convert response:
-            pre: code#convertResponseText
+                        p convert request(post):
+                        pre: code#convertRequestText
+
+                        p convert response:
+                        pre: code#convertResponseText
 
         #cropperDialog.modal.fade
-          .modal-dialog(style="width:360px;")
-            .modal-content
-              .modal-header
-                button.close(type="button",data-dismiss="modal",aria-hidden="true") &times;
-                h4.modal-title cropper
-              .modal-body
-                #cropper.cropper(style="width:300px;height:300px;")
-              .modal-footer.text-right
-                button.btn.btn-default(type="button",data-dismiss="modal") cancel
-                button#cropper_okBtn.btn.btn-primary(type="button",data-dismiss="modal") save changes
+            .modal-dialog(style="width:360px;")
+                .modal-content
+                    .modal-header
+                        button.close(type="button",data-dismiss="modal",aria-hidden="true") &times;
+                        h4.modal-title cropper
+                    .modal-body
+                        #cropper.cropper(style="width:300px;height:300px;")
+                    .modal-footer.text-right
+                        button.btn.btn-default(type="button",data-dismiss="modal") cancel
+                        button#cropper_okBtn.btn.btn-primary(type="button",data-dismiss="modal") save changes
 
-    #footer.container
-      hr
-      p.text-muted.text-center Copyright &copy; 2013 IoloTheBard Inc. All rights reserved.
+        #footer.container
+            hr
+            p.text-muted.text-center Copyright &copy; 2013 IoloTheBard Inc. All rights reserved.
 
-    script(src="http://code.jquery.com/jquery-1.10.2.min.js")
-    script(src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js")
+        script(src="http://code.jquery.com/jquery-1.10.2.min.js")
+        script(src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js")
 
-    script(src="slider.js")
-    script(src="cropper.js")
-    script(src="index.js")
+        script(src="slider.js")
+        script(src="cropper.js")
+        script(src="index.js")

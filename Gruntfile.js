@@ -8,7 +8,7 @@ module.exports = function (grunt) {
         devel: true,
         node: true,
         '-W030': true,//Expected an assignment or function call and instead saw an expression.
-        '-W097': true,//Use the function form of "use strict".
+        '-W097': true,//Use the function form of 'use strict'.
         globals: {
         }
       },
@@ -48,29 +48,37 @@ module.exports = function (grunt) {
       },
       app: {
         expand: true,
-        cwd: "app/",
-        src: ["**/*.jade"],
-        dest: "build/app",
-        ext: ".html"
+        cwd: 'app/',
+        src: ['**/*.jade'],
+        dest: 'build/app',
+        ext: '.html'
       }
     },
     copy: {
       app: {
         expand: true,
         cwd: 'app/',
-        src: ['**', '!**/*.jade'],
+        src: ['**', '!**/*.jade', '!**/*.coffee', '!**/*.less'],
         dest: 'build/app'
       }
     },
     watch: {
       options: {nospawn: true},
       app: {
-        files: ['app/**/*', '!app/**/*.jade', '!app/lib'],
-        tasks: ['copy']
+        files: ['app/**/*', '!app/**/*.jade', '!app/**/*.coffee', '!app/**/*.less'],
+        tasks: ['copy:app']
       },
       jade: {
-        files: ['app/**/*.jade', '!app/lib'],
-        tasks: ['jade']
+        files: ['app/**/*.jade'],
+        tasks: ['jade:app']
+      },
+      coffee: {
+        files: ['app/**/*.coffee'],
+        tasks: ['coffee:app']
+      },
+      less: {
+        files: ['app/**/*.less'],
+        tasks: ['less:app']
       }
     },
     apidoc: {
@@ -139,12 +147,12 @@ module.exports = function (grunt) {
 
   grunt.event.on('watch', function (action, filepath, target) {
     if (grunt.file.isMatch(grunt.config('watch.app.files'), filepath)) {
-      var copySrc = filepath.replace(grunt.config('copy.app.cwd'), '');
-      grunt.config('copy.app.src', [copySrc]);
+      var src = filepath.replace(grunt.config('copy.app.cwd'), '');
+      grunt.config('copy.app.src', [src]);
     }
     if (grunt.file.isMatch(grunt.config('watch.jade.files'), filepath)) {
-      var jadeSrc = filepath.replace(grunt.config('jade.app.cwd'), '');
-      grunt.config('jade.app.src', [jadeSrc]);
+      var src = filepath.replace(grunt.config('jade.app.cwd'), '');
+      grunt.config('jade.app.src', [src]);
     }
   });
 };

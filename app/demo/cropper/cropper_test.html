@@ -1,9 +1,9 @@
 <!doctype html>
 <html>
 <head>
-  <title>cropper test page</title>
-  <link rel="stylesheet" href="slider.css">
-  <link rel="stylesheet" href="cropper.css">
+    <title>cropper test page</title>
+    <link rel="stylesheet" href="slider.css">
+    <link rel="stylesheet" href="cropper.css">
 </head>
 <body>
 
@@ -22,18 +22,18 @@
 <script src="slider.js"></script>
 <script src="cropper.js"></script>
 <script>
-  $(function () {
-    $('#cropper1')
-      .on('crop', function (event, value) {
-        $('#cropper1_value').html(JSON.stringify(value));
-      })
-      .cropper({w: 64, h: 64, src: '../../img/pictor.jpg'});
-    $('#cropper2')
-      .on('crop', function (event, value) {
-        $('#cropper2_value').html(JSON.stringify(value));
-      })
-      .cropper();
-  })
+    $(function () {
+        $('#cropper1')
+                .on('crop', function (event, value) {
+                    $('#cropper1_value').html(JSON.stringify(value));
+                })
+                .cropper({w: 64, h: 64, src: '../../img/pictor.jpg'});
+        $('#cropper2')
+                .on('crop', function (event, value) {
+                    $('#cropper2_value').html(JSON.stringify(value));
+                })
+                .cropper();
+    })
 </script>
 </body>
 </html>

@@ -1,14 +1,14 @@
 'use strict';
 
 var
-  util = require('util'),
-  _ = require('lodash'),
-  Q = require('q'),
-  gm = require('gm'),
-  converter = require('./converter'),
-  DEF_CONFIG = {format: 'jpeg', background: '#eee', foreground: '#aaa', font: '', size: 12, gravity: 'center'},
-  debug = require('debug')('pictor:converter:holder'),
-  DEBUG = debug.enabled;
+    util = require('util'),
+    _ = require('lodash'),
+    Q = require('q'),
+    gm = require('gm'),
+    converter = require('./converter'),
+    DEF_CONFIG = {format: 'jpeg', background: '#eee', foreground: '#aaa', font: '', size: 12, gravity: 'center'},
+    debug = require('debug')('pictor:converter:holder'),
+    DEBUG = debug.enabled;
 
 /**
  * create a placeholder image.
@@ -26,15 +26,15 @@ var
  * @returns {promise} success or not
  */
 function holder(dst, w, h, opts) {
-  DEBUG && debug('holder opts:', opts);
-  var cmd = gm(w, h, opts.background).stroke().fill(opts.foreground);
-  // XXX: graphicsmagick should be build with freetype and/or ghostscript.
-  if (opts.font) {
-    var size = Math.max(opts.size, Math.floor(Math.min(w, h) / 8));
-    var text = opts.text || (w + 'x' + h);
-    cmd.font(opts.font, size).drawText(0, 0, text, opts.gravity);
-  }
-  return Q.ninvoke(cmd, 'write', dst);
+    DEBUG && debug('holder opts:', opts);
+    var cmd = gm(w, h, opts.background).stroke().fill(opts.foreground);
+    // XXX: graphicsmagick should be build with freetype and/or ghostscript.
+    if (opts.font) {
+        var size = Math.max(opts.size, Math.floor(Math.min(w, h) / 8));
+        var text = opts.text || (w + 'x' + h);
+        cmd.font(opts.font, size).drawText(0, 0, text, opts.gravity);
+    }
+    return Q.ninvoke(cmd, 'write', dst);
 }
 
 //
@@ -42,22 +42,22 @@ function holder(dst, w, h, opts) {
 //
 
 function HolderConverter(config) {
-  _.defaults(config, DEF_CONFIG);
-  HolderConverter.super_.apply(this, arguments);
-  DEBUG && debug('create holder converter: ', this.config);
+    _.defaults(config, DEF_CONFIG);
+    HolderConverter.super_.apply(this, arguments);
+    DEBUG && debug('create holder converter: ', this.config);
 }
 util.inherits(HolderConverter, converter.Converter);
 
 HolderConverter.prototype.getVariation = function (opts) {
-  return 'holder_' + (opts.w || '') + 'x' + (opts.h || '');
+    return 'holder_' + (opts.w || '') + 'x' + (opts.h || '');
 };
 
 HolderConverter.prototype.getExtension = function (opts) {
-  return opts.format || this.config.format;
+    return opts.format || this.config.format;
 };
 
 HolderConverter.prototype.convert = function (opts) {
-  return holder(opts.dst, opts.w, opts.h, this.config);
+    return holder(opts.dst, opts.w, opts.h, this.config);
 };
 
 module.exports = HolderConverter;

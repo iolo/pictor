@@ -1,24 +1,24 @@
 'use strict';
 
 var
-  util = require('util'),
-  _ = require('lodash'),
-  Q = require('q'),
-  gm = require('gm'),
-  converter = require('./converter'),
-  DEF_CONFIG = {
-    options: {
-      w: '',
-      h: '',
-      x: 0,
-      y: 0,
-      nw: '',
-      nh: '',
-      flags: ''
-    }
-  },
-  debug = require('debug')('pictor:converter:cropresize'),
-  DEBUG = debug.enabled;
+    util = require('util'),
+    _ = require('lodash'),
+    Q = require('q'),
+    gm = require('gm'),
+    converter = require('./converter'),
+    DEF_CONFIG = {
+        options: {
+            w: '',
+            h: '',
+            x: 0,
+            y: 0,
+            nw: '',
+            nh: '',
+            flags: ''
+        }
+    },
+    debug = require('debug')('pictor:converter:cropresize'),
+    DEBUG = debug.enabled;
 
 /**
  * crop and resize image
@@ -35,9 +35,9 @@ var
  * @returns {promise} success or not
  */
 function cropResize(src, dst, w, h, x, y, nw, nh, flags) {
-  DEBUG && debug('cropResize', src, '-->', dst, w, h, x, y, nw, nh, flags);
-  var cmd = gm(src).noProfile().crop(w, h, x, y).resize(nw, nh, flags);
-  return Q.ninvoke(cmd, 'write', dst);
+    DEBUG && debug('cropResize', src, '-->', dst, w, h, x, y, nw, nh, flags);
+    var cmd = gm(src).noProfile().crop(w, h, x, y).resize(nw, nh, flags);
+    return Q.ninvoke(cmd, 'write', dst);
 }
 
 //
@@ -45,19 +45,19 @@ function cropResize(src, dst, w, h, x, y, nw, nh, flags) {
 //
 
 function CropResizeConverter(config) {
-  _.defaults(config, DEF_CONFIG);
-  CropResizeConverter.super_.apply(this, arguments);
-  DEBUG && debug('create cropresize converter: ', this.config);
+    _.defaults(config, DEF_CONFIG);
+    CropResizeConverter.super_.apply(this, arguments);
+    DEBUG && debug('create cropresize converter: ', this.config);
 }
 util.inherits(CropResizeConverter, converter.Converter);
 
 CropResizeConverter.prototype.getParamNames = function () {
-  return _.keys(DEF_CONFIG.options);
+    return _.keys(DEF_CONFIG.options);
 };
 
 CropResizeConverter.prototype.getVariation = function (opts) {
-  opts = _.defaults(opts, this.config.options);
-  return 'cropresize_' + opts.w + 'x' + opts.h + '_' + opts.x + '_' + opts.y + '_' + opts.nw + 'x' + opts.nh + '_' + opts.flags;
+    opts = _.defaults(opts, this.config.options);
+    return 'cropresize_' + opts.w + 'x' + opts.h + '_' + opts.x + '_' + opts.y + '_' + opts.nw + 'x' + opts.nh + '_' + opts.flags;
 };
 
 /**
@@ -74,8 +74,8 @@ CropResizeConverter.prototype.getVariation = function (opts) {
  * @returns {promise}
  */
 CropResizeConverter.prototype.convert = function (opts) {
-  opts = _.defaults(opts, this.config.options);
-  return cropResize(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y, opts.nw, opts.nh, opts.flags);
+    opts = _.defaults(opts, this.config.options);
+    return cropResize(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y, opts.nw, opts.nh, opts.flags);
 };
 
 module.exports = CropResizeConverter;

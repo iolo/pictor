@@ -1,31 +1,31 @@
 .panel.panel-info
-  .panel-heading
-    a.btn.btn-info.btn-xs.pull-right(href="/docs/api/#api-pictor-upload") api document
-    h5.panel-title upload a single file with multipart/form-data
+    .panel-heading
+        a.btn.btn-info.btn-xs.pull-right(href="/docs/api/#api-pictor-upload") api document
+        h5.panel-title upload a single file with multipart/form-data
 
-  .panel-body
-    form#uploadForm.form-horizontal(action="{{apiUrl}}/{{upload.id}}",method="post",enctype="multipart/form-data",target="responseView")
-      .form-group
-        label.control-label.col-md-3 file:
-        .col-md-9: input.form-control(type="file",name="file",required)
-      .form-group
-        label.control-label.col-md-3 id:
-        .col-md-9
-          input.form-control(type="text",name="id",required,ng-model="upload.id",ng-init="upload.id = 'foo.jpg'")
-          span.help-block enter 'new' to generate unique id(recommended) or enter id you want.
-      .form-group
-        label.control-label.col-md-3 prefix:
-        .col-md-9
-          input.form-control(type="text",name="prefix",ng-model="upload.prefix")
-          span.help-block enter prefix(maybe category) for generated id. used only if id is 'new'.
-      .form-group
-        .col-md-9.col-md-offset-3
-          button.btn.btn-primary(type="submit") upload
+    .panel-body
+        form#uploadForm.form-horizontal(action="{{apiUrl}}/{{upload.id}}",method="post",enctype="multipart/form-data",target="responseView")
+            .form-group
+                label.control-label.col-md-3 file:
+                .col-md-9: input.form-control(type="file",name="file",required)
+            .form-group
+                label.control-label.col-md-3 id:
+                .col-md-9
+                    input.form-control(type="text",name="id",required,ng-model="upload.id",ng-init="upload.id = 'foo.jpg'")
+                    span.help-block enter 'new' to generate unique id(recommended) or enter id you want.
+            .form-group
+                label.control-label.col-md-3 prefix:
+                .col-md-9
+                    input.form-control(type="text",name="prefix",ng-model="upload.prefix")
+                    span.help-block enter prefix(maybe category) for generated id. used only if id is 'new'.
+            .form-group
+                .col-md-9.col-md-offset-3
+                    button.btn.btn-primary(type="submit") upload
 
-    pre(ng-show="!!upload.id && !upload.prefix"): code.
-      curl -X POST -F "id={{upload.id}}" -F "file=@foo.jpg" {{apiUrl}}/upload
-      curl -X POST -F "file=@foo.jpg" {{apiUrl}}/{{upload.id}}
-    pre(ng-show="!!upload.prefix"): code.
-      curl -X POST -F "id={{upload.id}}" -F "prefix={{upload.prefix}}" -F "file=@foo.jpg" {{apiUrl}}/upload
-      curl -X POST -F "file=@foo.jpg" {{apiUrl}}/{{upload.id}}?prefix={{upload.prefix}}
+        pre(ng-show="!!upload.id && !upload.prefix"): code.
+            curl -X POST -F "id={{upload.id}}" -F "file=@foo.jpg" {{apiUrl}}/upload
+            curl -X POST -F "file=@foo.jpg" {{apiUrl}}/{{upload.id}}
+        pre(ng-show="!!upload.prefix"): code.
+            curl -X POST -F "id={{upload.id}}" -F "prefix={{upload.prefix}}" -F "file=@foo.jpg" {{apiUrl}}/upload
+            curl -X POST -F "file=@foo.jpg" {{apiUrl}}/{{upload.id}}?prefix={{upload.prefix}}
 

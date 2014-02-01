@@ -1,11 +1,11 @@
 'use strict';
 
 var
-  util = require('util'),
-  path = require('path'),
-  Q = require('q'),
-  debug = require('debug')('pictor:converter'),
-  DEBUG = debug.enabled;
+    util = require('util'),
+    path = require('path'),
+    Q = require('q'),
+    debug = require('debug')('pictor:converter'),
+    DEBUG = debug.enabled;
 
 //
 //
@@ -21,15 +21,15 @@ var
  * @abstract
  */
 function ConverterError(message, status, cause) {
-  this.message = message || 'unknown';
-  this.status = status || 0;
-  this.cause = cause;
-  ConverterError.super_.call(this, message);
+    this.message = message || 'unknown';
+    this.status = status || 0;
+    this.cause = cause;
+    ConverterError.super_.call(this, message);
 }
 util.inherits(ConverterError, Error);
 ConverterError.prototype.name = 'ConverterError';
 ConverterError.prototype.toString = function () {
-  return 'ConverterError: ' + this.message;
+    return 'ConverterError: ' + this.message;
 };
 
 //
@@ -48,25 +48,25 @@ ConverterError.prototype.toString = function () {
  * @abstract
  */
 function Converter(config) {
-  this.config = config;
+    this.config = config;
 }
 
 Converter.prototype.getParamNames = function () {
-  return [];
+    return [];
 };
 
 Converter.prototype.getVariation = function (opts) {
-  return Object.keys(opts).reduce(function(result, key) {
-    if (key !== 'src' && key !== 'dst') {
-      result.push(encodeURIComponent(key));
-      result.push(encodeURIComponent(opts[key]));
-    }
-    return result;
-  }, []).join('_');
+    return Object.keys(opts).reduce(function (result, key) {
+        if (key !== 'src' && key !== 'dst') {
+            result.push(encodeURIComponent(key));
+            result.push(encodeURIComponent(opts[key]));
+        }
+        return result;
+    }, []).join('_');
 };
 
 Converter.prototype.getExtension = function (opts) {
-  return opts.format || (opts.src && path.extname(opts.src).substring(1)) || this.config.format || 'bin';
+    return opts.format || (opts.src && path.extname(opts.src).substring(1)) || this.config.format || 'bin';
 };
 
 /**
@@ -80,11 +80,11 @@ Converter.prototype.getExtension = function (opts) {
  * @returns {promise}
  */
 Converter.prototype.convert = function (opts) {
-  DEBUG && debug('converter.convert:', opts);
-  return Q.reject(new Error('abstract method'));
+    DEBUG && debug('converter.convert:', opts);
+    return Q.reject(new Error('abstract method'));
 };
 
 module.exports = {
-  ConverterError: ConverterError,
-  Converter: Converter
+    ConverterError: ConverterError,
+    Converter: Converter
 };
