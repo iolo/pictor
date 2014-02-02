@@ -1,6 +1,7 @@
 'use strict';
 
 var
+    util = require('util'),
     _ = require('lodash'),
     debug = require('debug')('pictor:config'),
     DEBUG = debug.enabled;
@@ -10,7 +11,8 @@ function loadConfig() {
     var defConfig = require('./defaults');
     var envConfig = require(env);
     var config = _.merge(defConfig, envConfig);
-    DEBUG && debug('load config: env=', env, 'config=', require('util').inspect(config, {depth: null}));
+    DEBUG && debug('pictor configuration for', env);
+    DEBUG && debug(util.inspect(config, {depth: null, colors: true}));
     return config;
 }
 
