@@ -393,19 +393,17 @@ function _getConvertParams(req) {
  */
 function uploadFiles(req, res) {
     // NOTE: file field name should be 'file'
-    var fileParam = Array.prototype.concat(req.files.file);
-    if (fileParam.length === 0) {
+    var files = req.files && Array.prototype.concat(req.files.file);
+    if (!files || files.length === 0) {
         return _sendError(req, res, new errors.BadRequest('required_param_file'));
     }
     var idParam = Array.prototype.concat(req.param('id'));
     var prefixParam = Array.prototype.concat(req.param('prefix'));
     // FIXME: express ignore parameter order... need to change api spec.
 
-    return Q.all(fileParam.map(function (file, index) {
-            var id = idParam[index];
-            var prefix = prefixParam[index];
+    return Q.all(files.map(function (file, index) {
             var type = file.headers['content-type'];
-            return pictor.putFile(_getFileId(id, prefix, type), file.path);
+            return pictor.putFile(_getFileId(idParam[index], prefixParam[index], type), file.path);
         }))
         .then(function (result) {
             return _sendResult(req, res, result);
@@ -431,7 +429,7 @@ function uploadFiles(req, res) {
  */
 function uploadFile(req, res) {
     // NOTE: file field name should be 'file'
-    var file = req.files && req.files.file;
+    var file = req.files && req.files.file && req.files.file[0];
     if (!file) {
         return _sendError(req, res, new errors.BadRequest('required_param_file'));
     }
@@ -441,7 +439,7 @@ function uploadFile(req, res) {
 
     var id = req.param('id');
     var prefix = req.param('prefix');
-    var type = file.type;//file.headers['content-type'];
+    var type = file.headers['content-type'];
     return pictor.putFile(_getFileId(id, prefix, type), file.path)
         .then(function (result) {
             return _sendResult(req, res, result);
@@ -824,7 +822,7 @@ function configureRoutes(app, config) {
      * @apiSuccessStructure accepted
      * @apiErrorStructure error
      */
-    app.del(prefix + '/:id', deleteFile);
+    app.delete(prefix + '/:id', deleteFile);
 
     /**
      * @api {get} /pictor/{id} download a file

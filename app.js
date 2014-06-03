@@ -20,32 +20,18 @@ function createApp(config) {
 
     var app = express();
 
-    app.configure('all', function () {
-        app.set('views', path.join(__dirname, 'views'));
-        app.set('view engine', 'jade');
-        app.set('case sensitive routing', 'true');
+    app.set('views', path.join(__dirname, 'views'));
+    app.set('view engine', 'jade');
+    app.set('case sensitive routing', 'true');
 
-        // NOTE: this should be prior to router middleware.
-        // logger, session, cors, ...
-        express_common.configureMiddlewares(app, config.http);
+    // NOTE: this should be prior to router middleware.
+    // logger, session, cors, ...
+    express_common.configureMiddlewares(app, config.http);
 
-        // pictor as sub app.
-        if (config.api) {
-            app.use(config.api.root || '/pictor', require('./routes/api').createApp(config.api));
-        }
-
-        // embed pictor in your app.
-        //if(config.api.prefix) {
-        //routes.configureMiddlewares(app, config.api);
-        //}
-
-        app.use(app.router);
-    });
-
-    // embed pictor in your app.
-    //if(config.api.prefix) {
-    //routes.configureRoutes(app, config.api);
-    //}
+    // pictor as sub app.
+    if (config.api) {
+        app.use(config.api.root || '/pictor', require('./routes/api').createApp(config.api));
+    }
 
     // NOTE: this should be the end of routes
     // error404, error500, ...
