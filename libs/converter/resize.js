@@ -24,11 +24,15 @@ var
  * @param {number} w
  * @param {number} h
  * @param {string} flags
+ * @param {number} c
  * @returns {promise} success or not
  */
-function resize(src, dst, w, h, flags) {
+function resize(src, dst, w, h, flags, c) {
     DEBUG && debug('resize', src, '-->', dst, w, h);
     var cmd = gm(src).noProfile().resize(w || '', h || '', flags);
+    if (c > 0) {
+        cmd.colors(c);
+    }
     return Q.ninvoke(cmd, 'write', dst);
 }
 
@@ -47,7 +51,7 @@ ResizeConverter.prototype.getParamNames = function () {
 };
 
 ResizeConverter.prototype.getVariation = function (opts) {
-    return 'resize_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.flags || '');
+    return 'resize_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.flags || '') + '_' + (opts.c || '');
 };
 
 /**
@@ -61,7 +65,7 @@ ResizeConverter.prototype.getVariation = function (opts) {
  * @returns {promise}
  */
 ResizeConverter.prototype.convert = function (opts) {
-    return resize(opts.src, opts.dst, opts.w, opts.h, opts.flags);
+    return resize(opts.src, opts.dst, opts.w, opts.h, opts.flags, opts.c);
 };
 
 module.exports = ResizeConverter;

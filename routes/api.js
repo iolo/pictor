@@ -653,6 +653,7 @@ function listFiles(req, res) {
  * @apiParam {number} [nw] resize width before/after crop. used for 'cropresize' and 'resizecrop' converters.
  * @apiParam {number} [nh] resize height before/after crop. used for 'cropresize' and 'resizecrop' converters.
  * @apiParam {string} [flags] resize flags. used for 'resize' and 'cropresize' and 'resizecrop' converters.
+ * @apiParam {number} [c] preferred number of colors in result image. used for 'resize', 'thumbnail' converters.
  * @apiParam {*} [*] and various converter specific params...
  */
 

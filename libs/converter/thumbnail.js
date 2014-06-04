@@ -15,15 +15,18 @@ var
  * @param {string} dst
  * @param {number} w
  * @param {number} h
+ * @param {number} c
  * @returns {promise} success or not
  */
-function thumbnail(src, dst, w, h) {
-    DEBUG && debug('thumbnail', src, '-->', dst, w, h);
-    //var cmd = gm(src).noProfile().thumbnail(w || '', h || '');
+function thumbnail(src, dst, w, h, c) {
+    DEBUG && debug('thumbnail', src, '-->', dst, w, h, c);
     w = w || h || '';
     h = h || w || '';
     // see http://www.imagemagick.org/Usage/resize/#fill
-    var cmd = gm(src).noProfile().resize(w, h, '^').gravity('Center').extent(w, h);
+    var cmd = gm(src).noProfile().thumbnail(w, h + '^').gravity('Center').extent(w, h);
+    if (c > 0) {
+        cmd.colors(c);
+    }
     return Q.ninvoke(cmd, 'write', dst);
 }
 
@@ -42,7 +45,7 @@ ThumbnailConverter.prototype.getParamNames = function () {
 };
 
 ThumbnailConverter.prototype.getVariation = function (opts) {
-    return 'thumbnail_' + (opts.w || '') + 'x' + (opts.h || '');
+    return 'thumbnail_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.c||'');
 };
 
 /**
@@ -56,7 +59,7 @@ ThumbnailConverter.prototype.getVariation = function (opts) {
  * @returns {promise}
  */
 ThumbnailConverter.prototype.convert = function (opts) {
-    return thumbnail(opts.src, opts.dst, opts.w, opts.h);
+    return thumbnail(opts.src, opts.dst, opts.w, opts.h, opts.c);
 };
 
 module.exports = ThumbnailConverter;
