@@ -119,7 +119,6 @@ module.exports = function (grunt) {
   });
   grunt.registerTask('doxx', function() {
     var done = this.async();
-    // XXX: doxx 0.6.0 contains broken template.
     var doxx_cmdline = './node_modules/.bin/doxx --source libs --target build/app/docs/dox';
     require('child_process').exec(doxx_cmdline, function(err, stdout, stderr) {
       if(err) {
