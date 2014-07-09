@@ -28,11 +28,9 @@ var
  * @returns {promise} success or not
  */
 function resize(src, dst, w, h, flags, c) {
-    DEBUG && debug('resize', src, '-->', dst, w, h);
+    DEBUG && debug('resize', src, '-->', dst, w, h, c);
     var cmd = gm(src).noProfile().resize(w || '', h || '', flags);
-    if (c > 0) {
-        cmd.colors(c);
-    }
+    (c > 0) && cmd.colors(c);
     return Q.ninvoke(cmd, 'write', dst);
 }
 
@@ -47,7 +45,7 @@ function ResizeConverter(config) {
 util.inherits(ResizeConverter, converter.Converter);
 
 ResizeConverter.prototype.getParamNames = function () {
-    return ['w', 'h', 'flags'];
+    return ['w', 'h', 'flags', 'c'];
 };
 
 ResizeConverter.prototype.getVariation = function (opts) {

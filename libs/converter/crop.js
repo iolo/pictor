@@ -17,12 +17,13 @@ var
  * @param {number} h
  * @param {number} x
  * @param {number} y
- * @param {string} flags
+ * @param {number} c
  * @returns {promise} success or not
  */
-function crop(src, dst, w, h, x, y) {
-    DEBUG && debug('crop', src, '-->', dst, w, h, x, y);
+function crop(src, dst, w, h, x, y, c) {
+    DEBUG && debug('crop', src, '-->', dst, w, h, x, y, c);
     var cmd = gm(src).noProfile().crop(w || '', h || '', x || 0, y || 0);
+    (c > 0) && cmd.colors(c);
     return Q.ninvoke(cmd, 'write', dst);
 }
 
@@ -37,11 +38,11 @@ function CropConverter(config) {
 util.inherits(CropConverter, converter.Converter);
 
 CropConverter.prototype.getParamNames = function () {
-    return ['w', 'h', 'x', 'y', 'format'];
+    return ['w', 'h', 'x', 'y', 'c'];
 };
 
 CropConverter.prototype.getVariation = function (opts) {
-    return 'crop_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '');
+    return 'crop_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '') + '_' + (opts.c || '');
 };
 
 /**
@@ -52,11 +53,12 @@ CropConverter.prototype.getVariation = function (opts) {
  *    - {number} h
  *    - {number} x
  *    - {number} y
+ *    - {number} c
  * @param {object} opts
  * @returns {promise}
  */
 CropConverter.prototype.convert = function (opts) {
-    return crop(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y);
+    return crop(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y, opts.c);
 };
 
 module.exports = CropConverter;

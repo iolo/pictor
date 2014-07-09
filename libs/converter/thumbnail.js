@@ -24,9 +24,7 @@ function thumbnail(src, dst, w, h, c) {
     h = h || w || '';
     // see http://www.imagemagick.org/Usage/resize/#fill
     var cmd = gm(src).noProfile().thumbnail(w, h + '^').gravity('Center').extent(w, h);
-    if (c > 0) {
-        cmd.colors(c);
-    }
+    (c > 0) && cmd.colors(c);
     return Q.ninvoke(cmd, 'write', dst);
 }
 
@@ -41,7 +39,7 @@ function ThumbnailConverter(config) {
 util.inherits(ThumbnailConverter, converter.Converter);
 
 ThumbnailConverter.prototype.getParamNames = function () {
-    return ['w', 'h'];
+    return ['w', 'h', 'c'];
 };
 
 ThumbnailConverter.prototype.getVariation = function (opts) {
@@ -56,6 +54,7 @@ ThumbnailConverter.prototype.getVariation = function (opts) {
  * @param {string|stream} opts.dst
  * @param {number} opts.w
  * @param {number} opts.h
+ * @param {number} opts.c
  * @returns {promise}
  */
 ThumbnailConverter.prototype.convert = function (opts) {

@@ -19,12 +19,13 @@ var
  * @param {number} h
  * @param {number} x
  * @param {number} y
- * @param {string} flags
+ * @param {number} c
  * @returns {promise} success or not
  */
-function resizeCrop(src, dst, nw, nh, w, h, x, y) {
-    DEBUG && debug('resizeCrop', src, '-->', dst, nw, nh, w, h, x, y);
+function resizeCrop(src, dst, nw, nh, w, h, x, y, c) {
+    DEBUG && debug('resizeCrop', src, '-->', dst, nw, nh, w, h, x, y, c);
     var cmd = gm(src).noProfile().resize(nw || '', nh || '').crop(w || '', h || '', x || 0, y || 0);
+    (c > 0) && cmd.colors(c);
     return Q.ninvoke(cmd, 'write', dst);
 }
 
@@ -39,11 +40,11 @@ function ResizeCropConverter(config) {
 util.inherits(ResizeCropConverter, converter.Converter);
 
 ResizeCropConverter.prototype.getParamNames = function () {
-    return ['nw', 'nh', 'w', 'h', 'x', 'y', 'format'];
+    return ['nw', 'nh', 'w', 'h', 'x', 'y', 'c'];
 };
 
 ResizeCropConverter.prototype.getVariation = function (opts) {
-    return 'resizecrop_' + (opts.nw || '') + 'x' + (opts.nh || '') + '_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '');
+    return 'resizecrop_' + (opts.nw || '') + 'x' + (opts.nh || '') + '_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '') + '_' + (opts.c || '');
 };
 
 /**
@@ -56,11 +57,12 @@ ResizeCropConverter.prototype.getVariation = function (opts) {
  *    - {number} h
  *    - {number} x
  *    - {number} y
+ *    - {number} c
  * @param {object} opts
  * @returns {promise}
  */
 ResizeCropConverter.prototype.convert = function (opts) {
-    return resizeCrop(opts.src, opts.dst, opts.nw, opts.nh, opts.w, opts.h, opts.x, opts.y);
+    return resizeCrop(opts.src, opts.dst, opts.nw, opts.nh, opts.w, opts.h, opts.x, opts.y, opts.c);
 };
 
 module.exports = ResizeCropConverter;
