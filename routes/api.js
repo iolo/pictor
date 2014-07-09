@@ -957,6 +957,72 @@ function configureRoutes(app, config) {
     });
 
     /**
+     * @api {get} /pictor/resizecrop/{id}/{nw}x{nh}/{w}x{h}+{x}+{y}.{format} download crop image.
+     * @apiName downloadResizeCropImage
+     * @apiGroup pictor_images
+     * @apiDescription convenient alias of `convertAndDownload` api using `resizecrop` converter.
+     *
+     * @apiParam {number} [nw] resize width before crop.
+     * @apiParam {number} [nh] resize height before crop.
+     * @apiParam {number} w width in pixels
+     * @apiParam {number} h height in pixels
+     * @apiParam {number} x distance in pixel from the left edge
+     * @apiParam {number} y distance in pixels from the top edge
+     * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+     *
+     * @apiExample resize foo.jpg to 1280x720 and crop to rectangle(400x300+200+100) of png and download it with curl:
+     *    curl -X GET -o output.png http://localhost:3001/pictor/resizecrop/foo.jpg/1280x720/400x300+200+100.png
+     *
+     * @apiSuccessStructure file
+     * @apiErrorStructure error
+     */
+    app.get(new RegExp(prefix + '/resizecrop/([\\w\\-\\.]+)/(\\d+)x(\\d+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)(.(\\w+))?'), function (req, res) {
+        req.query.converter = 'resizecrop';
+        req.query.id = req.params[0];
+        req.query.nw = req.params[1];
+        req.query.nh = req.params[2];
+        req.query.w = req.params[3];
+        req.query.h = req.params[4];
+        req.query.x = req.params[5];
+        req.query.y = req.params[6];
+        req.query.format = req.params[7];
+        return convertAndDownloadFile(req, res);
+    });
+
+    /**
+     * @api {get} /pictor/cropresize/{id}/{w}x{h}+{x}+{y}/{nw}x{nh}.{format} download crop image.
+     * @apiName downloadCropResizeImage
+     * @apiGroup pictor_images
+     * @apiDescription convenient alias of `convertAndDownload` api using `cropresize` converter.
+     *
+     * @apiParam {number} w width in pixels
+     * @apiParam {number} h height in pixels
+     * @apiParam {number} x distance in pixel from the left edge
+     * @apiParam {number} y distance in pixels from the top edge
+     * @apiParam {number} [nw] resize width after crop.
+     * @apiParam {number} [nh] resize height after crop.
+     * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+     *
+     * @apiExample crop foo.jpg to rectangle(400x300+200+100) and resize to 1280x720 of png and download it with curl:
+     *    curl -X GET -o output.png http://localhost:3001/pictor/cropresize/foo.jpg/400x300+200+100/1280x720.png
+     *
+     * @apiSuccessStructure file
+     * @apiErrorStructure error
+     */
+    app.get(new RegExp(prefix + '/cropresize/([\\w\\-\\.]+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
+        req.query.converter = 'cropresize';
+        req.query.id = req.params[0];
+        req.query.w = req.params[1];
+        req.query.h = req.params[2];
+        req.query.x = req.params[3];
+        req.query.y = req.params[4];
+        req.query.nw = req.params[5];
+        req.query.nh = req.params[6];
+        req.query.format = req.params[7];
+        return convertAndDownloadFile(req, res);
+    });
+
+    /**
      * @api {get} /pictor/preset/{id}/{preset}.{format} download preset image.
      * @apiName downloadPresetImage
      * @apiGroup pictor_images
