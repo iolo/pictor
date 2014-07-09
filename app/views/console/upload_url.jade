@@ -4,7 +4,7 @@
         h5.panel-title upload a single file with public url
 
     .panel-body
-        form#uploadRawForm.form-horizontal(action="{{apiUrl}}/upload",method="get",target="responseView")
+        form#uploadRawForm.form-horizontal(action="{{apiUrl + '/upload'}}",method="get",target="responseView")
             .form-group
                 label.control-label.col-md-3 url:
                 .col-md-9

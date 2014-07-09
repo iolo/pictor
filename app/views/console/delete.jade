@@ -4,7 +4,7 @@
         h3.panel-title delete a file
 
     .panel-body
-        form#deleteForm.form-horizontal(action="{{apiUrl}}/delete",method="get",target="responseView")
+        form#deleteForm.form-horizontal(action="{{apiUrl + '/delete'}}",method="get",target="responseView")
             .form-group
                 label.control-label.col-md-3 id:
                 .col-md-9: input.form-control(type="text",name="id",required,ng-model="delete.id",ng-init="delete.id = 'foo.jpg'")

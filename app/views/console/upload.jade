@@ -4,7 +4,7 @@
         h5.panel-title upload a single file with multipart/form-data
 
     .panel-body
-        form#uploadForm.form-horizontal(action="{{apiUrl}}/{{upload.id}}",method="post",enctype="multipart/form-data",target="responseView")
+        form#uploadForm.form-horizontal(action="{{apiUrl + '/' + upload.id}}",method="post",enctype="multipart/form-data",target="responseView")
             .form-group
                 label.control-label.col-md-3 file:
                 .col-md-9: input.form-control(type="file",name="file",required)

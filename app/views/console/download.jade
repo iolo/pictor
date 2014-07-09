@@ -4,7 +4,7 @@
         h3.panel-title download a file
 
     .panel-body
-        form#downloadForm.form-horizontal(action="{{apiUrl}}/download",method="get",target="responseView")
+        form#downloadForm.form-horizontal(action="{{apiUrl + '/download'}}",method="get",target="responseView")
             .form-group
                 label.control-label.col-md-3 id:
                 .col-md-9: input.form-control(type="text",name="id",required,ng-model="download.id",ng-init="download.id = 'foo.jpg'")
