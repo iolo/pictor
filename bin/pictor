@@ -10,7 +10,7 @@ if (cluster.isMaster) {
         "P.I.C.T.O.R"
     ].join('\n'));
 
-    var numWorkers = require('os').cpus().length;
+    var numWorkers = parseInt(process.env.PICTOR_WORKERS, 10) || require('os').cpus().length;
 
     cluster.on('fork', function (worker) {
         console.log('worker#' + worker.id + ' pid=' + worker.process.pid + ' --> fork!');

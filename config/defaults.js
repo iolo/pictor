@@ -1,14 +1,19 @@
 'use strict';
 
+var PICTOR_HTTP_HOST = process.env.PICTOR_HTTP_HOST || '127.0.0.1';
+var PICTOR_HTTP_PORT = process.env.PICTOR_HTTP_PORT || 3001;
+var PICTOR_TEMP_DIR = process.env.PICTOR_TEMP_DIR || process.env.TMPDIR || '/tmp/pictor/temp';
+var PICTOR_UPLOAD_DIR = process.env.PICTOR_UPLOAD_DIR || PICTOR_TEMP_DIR;
+
 module.exports = {
     http: {
-        host: 'localhost',
-        port: 3001,
+        host: PICTOR_HTTP_HOST,
+        port: PICTOR_HTTP_PORT,
         // see express-toybox/common.js#configureMiddlewares()
         json: {},
         urlencoded: {},
         multipart: {
-            uploadDir: '/tmp/pictor/temp',
+            uploadDir: PICTOR_UPLOAD_DIR,
             keepExtensions: false,
             maxFields: 10 * 1024 * 1024
         },
@@ -40,7 +45,7 @@ module.exports = {
                 //font: '/windows/fonts/impact.ttf' // for windows
             }
         },
-        tempDir: '/tmp/pictor/temp'
+        tempDir: PICTOR_TEMP_DIR,
     },
     api: {
         root: '/pictor', // to mount as express sub-app
