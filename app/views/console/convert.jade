@@ -15,7 +15,7 @@
                 .col-md-9
                     select.form-control(name="preset",ng-model="convert.preset",ng-options="o as o for o in presets")
                         option(value="",selected) -- choose a preset --
-            .form-group(ng-show="!!convert.converter.match('convert|resize|thumbnail|crop|optimize|meta|exif|preset')")
+            .form-group(ng-show="!!convert.converter.match('convert|resize|thumbnail|rotate|crop|optimize|meta|exif|preset')")
                 label.control-label.col-md-3 id:
                 .col-md-9: input.form-control(type="text",name="id",ng-model="convert.id",ng-init="convert.id = 'foo.jpg'")
             .form-group(ng-show="!!convert.converter.match('resize|thumbnail|crop|cropresize|resizecrop|holder')")
