@@ -309,6 +309,24 @@ function getVariantFile(id, variant) {
     });
 }
 
+/**
+ * get of all available converters.
+ *
+ * @returns {Array.<String>}
+ */
+function getConverters() {
+    return Object.keys(converters);
+}
+
+/**
+ * get all available presets.
+ *
+ * @returns {Array.<String>}
+ */
+function getPresets() {
+    return Object.keys(presets);
+}
+
 //
 //
 //
@@ -375,5 +393,7 @@ module.exports = {
   listFiles: listFiles,
   convertFile: convertFile,
   getVariantFile: getVariantFile,
+  getConverters: getConverters,
+  getPresets: getPresets,
   configure: configure
 };
