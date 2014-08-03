@@ -1,7 +1,11 @@
 (function (angular) {
     'use strict';
 
-    var module = angular.module('app', ['app.controllers', 'app.filters', 'app.directives', 'app.services', 'ngRoute']);
+    var module = angular.module('app', [
+        'ngRoute',
+        'app.controllers', 'app.filters', 'app.directives', 'app.services',
+        'pictor'
+    ]);
 
     var viewsDir = 'views';
     //var locale = (navigator.userLanguage || navigator.language);
@@ -20,9 +24,19 @@
             .otherwise({redirectTo: '/'});
     }]);
 
-    module.run(['$rootScope', function (root) {
+    module.value('pictor.config', {
+        PICTOR_ENDPOINT: location.protocol + '//' + location.host + '/pictor'
+    });
+
+    module.run(['$rootScope', 'pictor.config', 'pictor', function (root, pictorConfig, pictor) {
         root.viewsDir = viewsDir;
-        root.apiUrl = location.protocol + '//' + location.host + '/pictor';
+        root.apiUrl = pictorConfig.PICTOR_ENDPOINT;
+        pictor.getConverters().then(function (converters) {
+            root.converters = converters;
+        });
+        pictor.getPresets().then(function (presets) {
+            root.presets = presets;
+        });
     }]);
 
     module.run(['$rootScope', '$location', function (root, loc) {
