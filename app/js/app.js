@@ -17,6 +17,7 @@
             .when('/docs', {templateUrl: viewsDir + '/docs/index.html'})
             .when('/docs/getting_started', {templateUrl: viewsDir + '/docs/getting_started.html'})
             .when('/docs/how_pictor_works', {templateUrl: viewsDir + '/docs/how_pictor_works.html'})
+            .when('/docs/pictor_for_angularjs', {templateUrl: viewsDir + '/docs/pictor_for_angularjs.html'})
             .when('/docs/configurations', {templateUrl: viewsDir + '/docs/configurations.html'})
             .when('/docs/internals', {templateUrl: viewsDir + '/docs/internals.html'})
             .when('/console', {redirectTo: '/console/upload'})

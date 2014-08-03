@@ -1,0 +1,87 @@
+.page-header
+    h1 pictor for AngularJS
+        small &nbsp;::&nbsp;documents&&nbsp;::&nbps;pictor
+
+p for more details, see <a href="http://github.com/iolo/pictor/tree/master/app/js/pictor.js">source code of api client for AngularJS</a>
+
+h3 pictor.config module
+
+h5 PICTOR_ENDPOINT
+
+p api entry-point(api url prefix)
+
+pre: code module.config('pictor.config', {PICTOR_ENDPOINT: 'http://your_pictor_server:port/path' });
+
+h3 pictor module
+
+h5 upload(fileInput, id, prefix)
+
+p upload via FormPost API(for modern browser) or multipart form post through iframe(working for all browser)
+p TBW...
+
+h5 uploadUrl(url)
+
+p upload url
+
+p TBW...
+
+h5 download(id)
+
+p raw download(non-binary file only for old browser)
+p TBW...
+
+h5 destroy()
+
+p TBW...
+
+h5 convert
+
+p TBW...
+
+h5 convertAndDownload
+
+p TBW...
+
+h5 meta
+
+p TBW...
+
+h5 exif
+
+p TBW...
+
+h5 getDownloadUrl
+
+p TBW...
+
+h5 getConvertUrl
+
+p TBW...
+
+h5 getConverters
+
+p TBW...
+
+h5 getPresets
+
+p TBW...
+
+h5 pictor-url filter
+
+p make pictor download url(prepend pictor entry-point)
+
+pre: code <img src="{{ '123.jpg' | pictor-url }}'/>
+
+h5 pictor-src directive
+
+p set HTML 'src' attribute
+p TBW...
+
+pre: code <img pictor-src="123.jpg"/>
+
+h5 pictor-background directive
+
+p set CSS 'background-image' property
+p TBW...
+
+pre: code <div pictor-background="123.jpg">...</div>
