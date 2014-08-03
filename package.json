@@ -1,6 +1,6 @@
 {
     "name": "pictor",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "description": "simple image upload/convert/download server",
     "author": "Dongsu Jang <iolothebard@gmail.com>",
     "repository": {
