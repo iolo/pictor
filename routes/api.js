@@ -642,7 +642,7 @@ function listFiles(req, res) {
 /**
  * @apiDefineStructure convertRequest
  *
- * @apiParam {string} [converter='preset'] 'preset', 'convert', 'resize', 'thumbnail', 'crop', 'resizecrop', 'meta', 'exif', 'holder', ...
+ * @apiParam {string} [converter='preset'] 'preset', 'convert', 'resize', 'thumbnail', 'rotate', 'crop', 'resizecrop', 'meta', 'exif', 'holder', ...
  * @apiParam {string} [id] input file identifier. required except 'holder' converter.
  * @apiParam {string} [format] output file format. if not specified, use source file format or converter default format.
  * @apiParam {number} [preset] preset name. used 'preset' converter only.
@@ -1080,7 +1080,6 @@ function configureRoutes(app, config) {
      * @apiName getConverters
      * @apiGroup pictor_info
      *
-     * @apiSuccessStructure result
      * @apiErrorStructure error
      */
     app.get(prefix + '/info/converters', function (req, res) {
@@ -1092,7 +1091,6 @@ function configureRoutes(app, config) {
      * @apiName getPresets
      * @apiGroup pictor_info
      *
-     * @apiSuccessStructure result
      * @apiErrorStructure error
      */
     app.get(prefix + '/info/presets', function (req, res) {
