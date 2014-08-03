@@ -11,6 +11,8 @@ var
 /**
  * create thumbnail image.
  *
+ * this will keep aspect-ratio and auto-rotate by exif orientation.
+ *
  * @param {string} src
  * @param {string} dst
  * @param {number} w
@@ -23,7 +25,7 @@ function thumbnail(src, dst, w, h, c) {
     w = w || h || '';
     h = h || w || '';
     // see http://www.imagemagick.org/Usage/resize/#fill
-    var cmd = gm(src).noProfile().thumbnail(w, h + '^').gravity('Center').extent(w, h);
+    var cmd = gm(src).noProfile().autoOrient().thumbnail(w, h + '^').gravity('Center').extent(w, h);
     (c > 0) && cmd.colors(c);
     return Q.ninvoke(cmd, 'write', dst);
 }

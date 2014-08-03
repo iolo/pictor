@@ -908,6 +908,8 @@ function configureRoutes(app, config) {
      * @apiGroup pictor_images
      * @apiDescription convenient alias of `convertAndDownload` api using `thumbnail` converter.
      *
+     * This will keep aspect-ratio and auto-rotate by exif orientation.
+     *
      * @apiParam {number} w width in pixels
      * @apiParam {number} h height in pixels
      * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
@@ -928,7 +930,7 @@ function configureRoutes(app, config) {
     });
 
     /**
-     * @api {get} /pictor/crop/{id}/{w}x{h}+{x}+{y}.{format} download crop image.
+     * @api {get} /pictor/crop/{id}/{w}x{h}+{x}+{y}.{format} download cropped image.
      * @apiName downloadCropImage
      * @apiGroup pictor_images
      * @apiDescription convenient alias of `convertAndDownload` api using `crop` converter.
@@ -953,6 +955,29 @@ function configureRoutes(app, config) {
         req.query.x = req.params[3];
         req.query.y = req.params[4];
         req.query.format = req.params[6];
+        return convertAndDownloadFile(req, res);
+    });
+
+    /**
+     * @api {get} /pictor/rotate/{id}/{degree}.{format} download rotated image.
+     * @apiName downloadRotateImage
+     * @apiGroup pictor_images
+     * @apiDescription convenient alias of `convertAndDownload` api using `rotate` converter.
+     *
+     * @apiParam {number} clockwise degree amount of rotate
+     * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
+     *
+     * @apiExample crop foo.jpg to 90deg(clockwise) rotated png and download it with curl:
+     *    curl -X GET -o output.png http://localhost:3001/pictor/rotate/foo.jpg/90.png
+     *
+     * @apiSuccessStructure file
+     * @apiErrorStructure error
+     */
+    app.get(new RegExp(prefix + '/rotate/([\\w\\-\\.]+)/(\\d+)(.(\\w+))?'), function (req, res) {
+        req.query.converter = 'rotate';
+        req.query.id = req.params[0];
+        req.query.degree = req.params[1];
+        req.query.format = req.params[3];
         return convertAndDownloadFile(req, res);
     });
 
@@ -1044,6 +1069,34 @@ function configureRoutes(app, config) {
         req.query.preset = req.params[1];
         req.query.format = req.params[3];
         return convertAndDownloadFile(req, res);
+    });
+
+    //
+    // informal apis
+    //
+
+    /**
+     * @api {get} /pictor/converters get all available converters.
+     * @apiName getConverters
+     * @apiGroup pictor_info
+     *
+     * @apiSuccessStructure result
+     * @apiErrorStructure error
+     */
+    app.get(prefix + '/info/converters', function (req, res) {
+        return _sendResult(req, res, pictor.getConverters());
+    });
+
+    /**
+     * @api {get} /pictor/presets get all available presets.
+     * @apiName getPresets
+     * @apiGroup pictor_info
+     *
+     * @apiSuccessStructure result
+     * @apiErrorStructure error
+     */
+    app.get(prefix + '/info/presets', function (req, res) {
+        return _sendResult(req, res, pictor.getPresets());
     });
 
     return app;

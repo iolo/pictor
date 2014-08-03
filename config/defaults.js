@@ -32,6 +32,7 @@ module.exports = {
             convert: {},
             resize: {},
             thumbnail: {},
+            rotate: {},
             crop: {},
             cropresize: {},
             resizecrop: {},
