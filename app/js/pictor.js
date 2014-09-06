@@ -12,7 +12,7 @@
      *
      */
     module.value('pictor.config', {
-        PICTOR_ENDPOINT: '/pictor'
+        PICTOR_ENDPOINT: '/api/v1'
     });
 
     /**

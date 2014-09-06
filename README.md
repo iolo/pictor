@@ -12,9 +12,9 @@ The name of pictor comes from [Pictor, a constellation](http://en.wikipedia.org/
 Introduction
 ------------
 
-Local storages and traffic are *expensive*, especially in cloud envionment.
+Local storages and traffic are *expensive*, especially in cloud environment.
 
-There're many *cheap* and *large* cloud/remote storages services,
+There're many *cheap* and *large* cloud/remote storage services,
 most of them provide *cheap* and *fast* HTTP access.
 
 ex. Amazon S3, FTP+HTTP Static Image Hosting Services...
@@ -35,49 +35,39 @@ Getting Started
 ---------------
 
 1. install prerequisites
-
     for mac osx:
     ```
-    brew install graphicsmagick
+    $ brew install graphicsmagick
     ```
     for debian/ubuntu linux:
     ```
-    apt-get install graphicsmagick
+    $ apt-get install graphicsmagick
     ```
     or else see http://graphicsmagick.org
-
-1. get source from github:
-
+1. download & install pictor
+    install with npm:
     ```
-    git clone git@github.com:iolo/pictor.git
+    $ npm install pictor
     ```
-
-    or install with npm:
-
+    or get source from github:
     ```
-    npm install pictor
+    $ git clone git@github.com:iolo/pictor.git
     ```
-  
 1. startup pictor server
-
+    start as standalone:
     ```
-    node app.js
+    $ ./bin/pictor --host=0.0.0.0 --port=3001
     ```
-
-    or startup with cluster:
-
+    or startup with pm2
     ```
-    ./bin/pictor
+    $ npm install pm2 -g
+    $ pm2 start -i 4 -n pictor ./bin/pictor -- --host=0.0.0.0 --port=3001
     ```
-
 1. test run in browser
-
     ```
-    open http://localhost:3001
+    $ open http://localhost:3001
     ```
-  
 1. test run in console
-
     ```
     TBD...
     ```
@@ -85,7 +75,11 @@ Getting Started
 Configurations
 --------------
 
-configuration files are separated for each envionment(`NODE_ENV` environment variable) in `config` directory.
+configuration files are located in `config` directory for various environment.
+
+you should specify the environment with `PICTOR_ENV` or `NODE_ENV` environment variable.
+
+you could specify the absolute path to the configuration file with `PICTOR_CONFIG` environment variable also.
 
 for more details, see [source code of default configuration](../master/config/defaults.js).
 
@@ -94,7 +88,6 @@ Generated Documents
 
 * [api documents](http://pictor.iolo.kr/docs/api/)
 * [source code Documents](http://pictor.iolo.kr/docs/dox/)
-
 
 Advanced Topics
 ---------------
@@ -111,13 +104,18 @@ Internals
 
 set `DEBUG` environment variable to `*` or `pictor:*` and run pictor.
 
+```
+$ DEBUG='*' ./bin/pictor
+```
+
 see http://github.com/visionmedia/debug
 
 * external dependencies for converters
-    * convert/resize/thumbnail/rotate/crop/resizecrop/meta/exif/holder: [graphicsmagick](http://graphicsmagick.org)(or [imagemagick](http://imagemagick.org)))
-    * optimize jpeg: [jpegtran](http://jpegclub.org/jpegtran/) (already included via [jpegtran-bin nodejs module](https://github.com/yeoman/node-jpegtran-bin))
-    * optimize png: [optipng](http://optipng.sourceforge.net) (already included via [optipng-bin nodejs moudle](https://github.com/yeoman/node-optipng-bin))
-    * optimize gif: [gifsicle](http://www.lcdf.org/gifsicle/) (already included via [gifsicle nodejs module](https://github.com/yeoman/node-gifsicle))
+    - convert/resize/thumbnail/rotate/crop/resizecrop/meta/exif/holder: [graphicsmagick](http://graphicsmagick.org)(or [imagemagick](http://imagemagick.org)))
+    - optimize jpeg: [jpegtran](http://jpegclub.org/jpegtran/) (already included via [jpegtran-bin nodejs module](https://github.com/yeoman/node-jpegtran-bin))
+    - optimize png: [optipng](http://optipng.sourceforge.net) (already included via [optipng-bin nodejs moudle](https://github.com/yeoman/node-optipng-bin))
+    - optimize gif: [gifsicle](http://www.lcdf.org/gifsicle/) (already included via [gifsicle nodejs module](https://github.com/yeoman/node-gifsicle))
+    - ...
 
 * project directory structure
 

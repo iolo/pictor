@@ -2,168 +2,151 @@
 
 var
     fs = require('fs'),
-    superagent = require('superagent'),
     utils = require('node-toybox').utils,
-    server = require('express-toybox').server,
-    config = require('../config'),
-    TEST_HOST = 'localhost',
-    TEST_PORT = 3001,
-    TEST_URL = 'http://' + TEST_HOST + ':' + TEST_PORT + '/pictor',
+    app = require('../routes').api(require('../config')),
+    agent = require('supertest').agent(app),
     TEST_ID = 'foo.jpg',
-    TEST_FILE = __dirname + '/test.jpg',
+    assert = require('assert'),
+    fixtures = require('./fixtures'),
     debug = require('debug')('test');
 
-module.exports = {
-    setUp: function (callback) {
-        server.start(require('../app').createApp(config), {host: TEST_HOST, port: TEST_PORT}, callback);
-    },
-    tearDown: function (callback) {
-        server.stop(callback);
-    },
-    test_upload_ok: function (test) {
-        superagent.agent().post(TEST_URL + '/' + TEST_ID)
-            .attach('file', TEST_FILE, TEST_FILE)
-            .end(function (err, res) {
+describe('api', function () {
+    it('should upload with id', function (done) {
+        agent.post('/' + TEST_ID)
+            .attach('file', fixtures.src_jpg)
+            .set('Accept', 'application/json')
+            .expect(200)
+            .expect('Content-Type', /json/)
+            .expect(function (res) {
                 debug('upload -->', arguments, res.body);
-                test.ifError(err);
-                test.ok(res);
-                test.equal(res.status, 200);
-                test.equal(res.type, 'application/json');
-                test.equal(res.body.id, TEST_ID);
-                test.equal(fs.statSync(res.body.file).size, fs.statSync(TEST_FILE).size);
-                test.done();
-            });
-    },
-    test_upload_ok_new: function (test) {
-        superagent.agent().post(TEST_URL + '/new')
-            .attach('file', TEST_FILE, TEST_FILE)
-            .end(function (err, res) {
-                debug('upload new-->', arguments);
-                test.ifError(err);
-                test.ok(res);
-                test.equal(res.status, 200);
-                test.equal(res.type, 'application/json');
-                test.ok(/^[\w\-]+\.jpeg$/.test(res.body.id));
-                test.equal(fs.statSync(res.body.file).size, fs.statSync(TEST_FILE).size);
-                test.done();
-            });
-    },
-    test_upload_ok_newWithPrefix: function (test) {
-        superagent.agent().post(TEST_URL + '/new')
-            .field('prefix', 'test')
-            .attach('file', TEST_FILE, TEST_FILE)
-            .end(function (err, res) {
-                debug('upload_newWithPrefix-->', arguments);
-                test.ifError(err);
-                test.ok(res);
-                test.equal(res.status, 200);
-                test.equal(res.type, 'application/json');
-                test.ok(/^test[\w\-]+\.jpeg$/.test(res.body.id));
-                test.equal(utils.digestFile(res.body.file), utils.digestFile(TEST_FILE));
-                test.done();
-            });
-    },
-    test_upload_err_noFile: function (test) {
-        superagent.agent().post(TEST_URL + '/' + TEST_ID)
-            .end(function (err, res) {
-                debug('upload -->', arguments);
-                test.ifError(err);
-                test.ok(res);
-                test.equal(res.status, 400);
-                test.equal(res.type, 'application/json');
-                test.equal(res.body.error.status, 400);
-                test.equal(res.body.error.message, 'required_param_file');
-                test.done();
-            });
-    },
-    test_uploadRaw_ok: function (test) {
+                assert.equal(res.body.id, TEST_ID);
+                assert.equal(utils.digestFile(res.body.file), utils.digestFile(fixtures.src_jpg));
+            })
+            .end(done);
+    });
+    it('should upload with new', function (done) {
+        agent.post('/new')
+            .attach('file', fixtures.src_jpg)
+            .set('Accept', 'application/json')
+            .expect(200)
+            .expect('Content-Type', /json/)
+            .expect(function (res) {
+                debug(res.body);
+                assert.ok(/^[\w\-]+\.jpeg$/.test(res.body.id));
+                assert.equal(utils.digestFile(res.body.file), utils.digestFile(fixtures.src_jpg));
+            })
+            .end(done);
+    });
+    it('should upload with new and prefix', function (done) {
+        agent.post('/new')
+            .field('prefix', 'prefix')
+            .attach('file', fixtures.src_jpg)
+            .set('Accept', 'application/json')
+            .expect(200)
+            .expect('Content-Type', /json/)
+            .expect(function (res) {
+                debug(res.body);
+                assert.ok(/^prefix[\w\-]+\.jpeg$/.test(res.body.id));
+                assert.equal(utils.digestFile(res.body.file), utils.digestFile(fixtures.src_jpg));
+            })
+            .end(done);
+    });
+    it('should NOT upload with no file', function (done) {
+        agent.post('/' + TEST_ID)
+            .set('Accept', 'application/json')
+            .expect(400)
+            .expect('Content-Type', /json/)
+            .expect(function (res) {
+                debug(res.body);
+                assert.equal(res.body.error.status, 400);
+                assert.equal(res.body.error.message, 'required_param_file');
+            })
+            .end(done);
+    });
+    it('should upload raw', function (done) {
         // curl -v -X PUT -H 'Content-Type:image/jpeg' http://localhost:3001/pictor/test.jpg --data-binary @tests/test.jpg
-        var req = superagent.agent().put(TEST_URL + '/' + TEST_ID)
+        var req = agent.put('/' + TEST_ID)
             .type('image/jpeg')
-            .on('error', test.ifError)
-            .on('response', function (res) {
-                debug('upload put -->', arguments);
-                test.ok(res);
-                test.equal(res.status, 200);
-                test.equal(res.type, 'application/json');
-                test.equal(res.body.id, TEST_ID);
-                test.equal(utils.digestFile(res.body.file), utils.digestFile(TEST_FILE));
+            .set('Accept', 'application/json');
+
+        req.write(fs.readFileSync(fixtures.src_jpg))
+        req.expect(200)
+            .expect('Content-Type', /json/)
+            .expect(function (res) {
+                debug(res.body);
+                assert.equal(res.body.id, TEST_ID);
+                assert.equal(utils.digestFile(res.body.file), utils.digestFile(fixtures.src_jpg));
             })
-            .on('end', test.done);
-        fs.createReadStream(TEST_FILE).pipe(req);
-    },
-    test_uploadUrl_ok: function (test) {
-        var url = 'http://localhost:3001/favicon.ico';//octodex.github.com/images/original.png';
-        superagent.agent().get(TEST_URL + '/upload')
+            .end(done);
+    });
+    it('should upload url', function (done) {
+        var url = agent.get('/' + TEST_ID).url; // some always existing url
+        agent.get('/upload')
+            .set('Accept', 'application/json')
             .query({id: TEST_ID, url: url})
-            .end(function (err, res) {
-                debug('upload url-->', arguments);
-                test.ifError(err);
-                test.ok(res);
-                test.equal(res.status, 200);
-                test.equal(res.type, 'application/json');
-                test.equal(res.body.id, TEST_ID);
-                test.done();
-            });
-    },
-    test_uploadUrl_err_badHost: function (test) {
+            .expect(200)
+            .expect('Content-Type', /json/)
+            .expect(function (res) {
+                debug(res.body);
+                assert.equal(res.body.id, TEST_ID);
+            })
+            .end(done);
+    });
+    it('should NOT get url with bad host', function (done) {
         var url = '__bad_host__';
-        superagent.agent().get(TEST_URL + '/upload')
+        agent.get('/upload')
+            .set('Accept', 'application/json')
             .query({id: TEST_ID, url: url})
-            .end(function (err, res) {
-                debug('upload url bad host-->', arguments);
-                test.ifError(err);
-                test.ok(res);
-                test.equal(res.status, 400);
-                test.equal(res.type, 'application/json');
-                test.equal(res.body.error.status, 400);
-                test.equal(res.body.error.message, 'invalid_param_url');
-                test.done();
-            });
-    },
-    test_uploadUrl_err_badFile: function (test) {
-        var url = TEST_URL + '/__bad_file__';
-        superagent.agent().get(TEST_URL + '/upload')
-            .query({id: TEST_ID, url: url})
-            .end(function (err, res) {
-                debug('upload url bad file-->', arguments);
-                test.ifError(err);
-                test.ok(res);
-                test.equal(res.status, 400);
-                test.equal(res.type, 'application/json');
-                test.equal(res.body.error.status, 400);
-                test.equal(res.body.error.message, 'invalid_param_url');
-                test.done();
+            .expect(400)
+            .expect('Content-Type', /json/)
+            .expect(function (res) {
+                debug(res.body);
+                assert.equal(res.body.error.status, 400);
+                assert.equal(res.body.error.message, 'invalid_param_url');
             })
-    },
-    //TODO: test_uploadMulti_ok: function (test) { }
-    test_download: function (test) {
-        superagent.agent().get(TEST_URL + '/download')
+            .end(done);
+    });
+    it('should NOT get url with bad file', function (done) {
+        var url = agent.get('/__bad_file__').url;
+        agent.get('/upload')
+            .query({id: TEST_ID, url: url})
+            .set('Accept', 'application/json')
+            .expect(400)
+            .expect('Content-Type', /json/)
+            .expect(function (res) {
+                debug(res.body);
+                assert.equal(res.body.error.status, 400);
+                assert.equal(res.body.error.message, 'invalid_param_url');
+            })
+            .end(done);
+    });
+    it('should download', function (done) {
+        agent.get('/download')
             .query({id: TEST_ID})
-            .end(function (err, res) {
-                debug('download -->', arguments);
-                test.ifError(err);
-                test.ok(res);
-                test.equal(res.status, 200);
-                //test.equal(res.status, 302);
-                //test.equal(res.status, 307);
-                test.equal(res.type, 'image/jpeg');
-                test.done();
-            });
-    },
-    test_download_err_notFound: function (test) {
-        superagent.agent().get(TEST_URL + '/download')
+            .set('Accept', 'application/json')
+            .expect(200)
+            .expect('Content-Type', /jpeg/)
+            .end(done);
+    });
+    it('should NOT download for not found', function (done) {
+        agent.get('/download')
             .query({id: '__not_found__'})
-            .end(function (err, res) {
-                debug('download_notFound -->', arguments);
-                test.ifError(err);
-                test.ok(res);
-                test.equal(res.status, 404);
-                test.equal(res.type, 'application/json');
-                test.equal(res.body.error.status, 404);
-                test.equal(res.body.error.message, 'not_found');
-                test.done();
-            });
-    }
+            .set('Accept', 'application/json')
+            .expect(404)
+            .expect('Content-Type', /json/)
+            .expect(function (res) {
+                debug(res.body);
+                assert.equal(res.body.error.status, 404);
+                assert.equal(res.body.error.message, 'not_found');
+            })
+            .end(done);
+    });
+    it('should get converters', function (done) {
+        agent.get('/info/converters').expect(200).end(done);
+    });
+    it('should get presets', function (done) {
+        agent.get('/info/presets').expect(200).end(done);
+    });
+    //TODO: it('should upload multi', function (done) { }
     //TODO: more test cases...
-};
+});

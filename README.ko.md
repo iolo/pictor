@@ -35,49 +35,39 @@ pictor는 기본적으로 다음과 같이 동작합니다:
 -------
 
 1. install prerequisites
-
     for mac osx:
     ```
-    brew install graphicsmagick
+    $ brew install graphicsmagick
     ```
     for debian/ubuntu linux:
     ```
-    apt-get install graphicsmagick
+    $ apt-get install graphicsmagick
     ```
     or else see http://graphicsmagick.org
-
-1. get source from github:
-
+1. download & install pictor
+    install with npm:
     ```
-    git clone git@github.com:iolo/pictor.git
+    $ npm install pictor
     ```
-
-    or install with npm:
-
+    or get source from github:
     ```
-    npm install pictor
+    $ git clone git@github.com:iolo/pictor.git
     ```
-  
 1. startup pictor server
-
+    start as standalone:
     ```
-    node app.js
+    $ ./bin/pictor --host=0.0.0.0 --port=3001
     ```
-
-    or startup with cluster:
-
+    or startup with pm2
     ```
-    node cluster.js
+    $ npm install pm2 -g
+    $ pm2 start -i 4 -n pictor ./bin/pictor -- --host=0.0.0.0 --port=3001
     ```
-
 1. test run in browser
-
     ```
-    open http://localhost:3001
+    $ open http://localhost:3001
     ```
-
 1. test run in console
-
     ```
     TBD...
     ```
@@ -85,7 +75,11 @@ pictor는 기본적으로 다음과 같이 동작합니다:
 설정
 ----
 
-설정 파일은 `config` 디렉토리 아래에 각 환경(`NODE_ENV` 환경 변수)별로 분리되어 있습니다.
+`config` 디렉토리에 다양한 환경을 위한 설정 파일들이 있습니다.
+
+`PICTOR_ENV` 또는 `NODE_ENV` 환경 변수로 환경을 지정할 수 있습니다.
+
+`PICTOR_CONFIG` 환경 변수로 설정 파일의 절대 경로를 지정할 수도 있습니다.
 
 자세한 내용은 [기본 설정의 소스 코드](../master/config/defaults.js)를 참고하세요.
 
@@ -106,17 +100,22 @@ pictor는 기본적으로 다음과 같이 동작합니다:
 내부
 ----
 
-* to show debug logs
+* 디버그 로그를 보려면:
 
-set `DEBUG` environment variable to `*` or `pictor:*` and run pictor.
+`DEBUG` 환경변수를 `*` 또는 `pictor:*` 로 설정하고 pictor를 실행하세요.
 
-see http://github.com/visionmedia/debug
+```
+$ DEBUG='*' ./bin/pictor
+```
 
-* external dependencies for converters
-    * convert/resize/thumbnail/rotate/crop/resizecrop/meta/exif/holder: [graphicsmagick](http://graphicsmagick.org)(or [imagemagick](http://imagemagick.org)))
-    * optimize jpeg: [jpegtran](http://jpegclub.org/jpegtran/) (already included via [jpegtran-bin nodejs module](https://github.com/yeoman/node-jpegtran-bin))
-    * optimize png: [optipng](http://optipng.sourceforge.net) (already included via [optipng-bin nodejs moudle](https://github.com/yeoman/node-optipng-bin))
-    * optimize gif: [gifsicle](http://www.lcdf.org/gifsicle/) (already included via [gifsicle nodejs module](https://github.com/yeoman/node-gifsicle))
+참조: http://github.com/visionmedia/debug
+
+* 변환기별 외부 의존성
+    - convert/resize/thumbnail/rotate/crop/resizecrop/meta/exif/holder: [graphicsmagick](http://graphicsmagick.org)(or [imagemagick](http://imagemagick.org)))
+    - optimize jpeg: [jpegtran](http://jpegclub.org/jpegtran/) ([jpegtran-bin nodejs module](https://github.com/yeoman/node-jpegtran-bin)을 통해 포함되어 있음)
+    - optimize png: [optipng](http://optipng.sourceforge.net) ([optipng-bin nodejs moudle](https://github.com/yeoman/node-optipng-bin)을 통해 포함되어 있음)
+    - optimize gif: [gifsicle](http://www.lcdf.org/gifsicle/) ([gifsicle nodejs module](https://github.com/yeoman/node-gifsicle)을 통해 포함되어 있음)
+    - ...
 
 * 프로젝트 디렉토리 구조
 

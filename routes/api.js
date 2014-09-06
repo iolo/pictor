@@ -5,7 +5,7 @@ var
     http = require('http'),
     Q = require('q'),
     _ = require('lodash'),
-    express = require('express'),
+    express = require('express-toybox')(require('express')),
     mime = require('mime'),
     pictor = require('../libs/pictor'),
     errors = require('express-toybox').errors,
@@ -220,7 +220,7 @@ function _sendError(req, res, err) {
         return _sendResponseIframe(res, status, error);
     }
 
-    return res.jsonp(status, error);
+    return res.status(status).jsonp(error);
 }
 
 /**
@@ -402,9 +402,9 @@ function uploadFiles(req, res) {
     // FIXME: express ignore parameter order... need to change api spec.
 
     return Q.all(files.map(function (file, index) {
-            var type = file.headers['content-type'];
-            return pictor.putFile(_getFileId(idParam[index], prefixParam[index], type), file.path);
-        }))
+        var type = file.headers['content-type'];
+        return pictor.putFile(_getFileId(idParam[index], prefixParam[index], type), file.path);
+    }))
         .then(function (result) {
             return _sendResult(req, res, result);
         })
@@ -503,7 +503,7 @@ function uploadFileUrl(req, res) {
                 DEBUG && debug('failed to upload url: url=', url, 'status=', clientRes.statusCode);
                 var body = [];
                 return clientRes
-                    .on('data',function (chunk) {
+                    .on('data', function (chunk) {
                         body.push(chunk);
                     }).on('end', function () {
                         var cause = {
@@ -722,33 +722,25 @@ function convertAndDownloadFile(req, res) {
 //
 //
 
+
 /**
- *  configure middlewares for the express app.
+ * create express (sub) app.
  *
- * @param {express.application} app
- * @param {*} config
+ * @param {object} config
  * @param {boolean|number} [config.redirect=false] false,301,302,307
  * @returns {express.application}
  */
-function configureMiddlewares(app, config) {
-    DEBUG && debug('create pictor middlewares...', config);
+function createApp(config) {
+    DEBUG && debug('create pictor api app...');
 
-    redirectStatusCode = config.redirect || DEF_REDIRECT_STATUS_CODE;
+    // XXX: best initialization sequence & timing?
+    pictor.configure(config.pictor);
 
-    return app;
-}
+    redirectStatusCode = config.api.redirect || DEF_REDIRECT_STATUS_CODE;
 
-/**
- * configure routes for the express app.
- *
- * @param {*} app
- * @param {object} config
- * @returns {express.application}
- */
-function configureRoutes(app, config) {
-    DEBUG && debug('create pictor routes...');
+    var app = express();
 
-    var prefix = config.prefix || '';
+    app.useCommonMiddlewares(config.api.middlewares);
 
     // TODO: require auth!
 //  app.use(function (req, res, next) {
@@ -762,25 +754,25 @@ function configureRoutes(app, config) {
     // CRUD routes
     //
 
-    app.post(prefix + '/upload', uploadFiles);
-    app.put(prefix + '/upload', uploadFileRaw);
-    app.get(prefix + '/upload', uploadFileUrl);
-    app.get(prefix + '/delete', deleteFile);
-    app.get(prefix + '/download', downloadFile);
+    app.post('/upload', uploadFiles);
+    app.put('/upload', uploadFileRaw);
+    app.get('/upload', uploadFileUrl);
+    app.get('/delete', deleteFile);
+    app.get('/download', downloadFile);
 
     //
     // convert routes
     //
 
-    app.post(prefix + '/convert', convertFile);
-    app.get(prefix + '/convert', convertAndDownloadFile);
+    app.post('/convert', convertFile);
+    app.get('/convert', convertAndDownloadFile);
 
     //
     // restful(?) aliases of CRUD routes
     //
 
     /**
-     * @api {post} /pictor/{id} upload a file
+     * @api {post} /{id} upload a file
      * @apiName uploadRestful
      * @apiGroup pictor_restful
      * @apiDescription upload a single file with `multipart/form-data`.
@@ -793,10 +785,10 @@ function configureRoutes(app, config) {
      * @apiSuccessStructure result
      * @apiErrorStructure error
      */
-    app.post(prefix + '/:id', uploadFile);
+    app.post('/:id', uploadFile);
 
     /**
-     * @api {put} /pictor/{id} upload a file with raw data
+     * @api {put} /{id} upload a file with raw data
      * @apiName uploadRawRestful
      * @apiGroup pictor_restful
      * @apiDescription upload a single file with raw data.
@@ -809,10 +801,10 @@ function configureRoutes(app, config) {
      * @apiSuccessStructure result
      * @apiErrorStructure error
      */
-    app.put(prefix + '/:id', uploadFileRaw);
+    app.put('/:id', uploadFileRaw);
 
     /**
-     * @api {delete} /pictor/{id} delete a file
+     * @api {delete} /{id} delete a file
      * @apiName deleteRestful
      * @apiGroup pictor_restful
      * @apiDescription delete a file and all variants of the file.
@@ -823,10 +815,10 @@ function configureRoutes(app, config) {
      * @apiSuccessStructure accepted
      * @apiErrorStructure error
      */
-    app.delete(prefix + '/:id', deleteFile);
+    app.delete('/:id', deleteFile);
 
     /**
-     * @api {get} /pictor/{id} download a file
+     * @api {get} /{id} download a file
      * @apiName downloadRestful
      * @apiGroup pictor_restful
      * @apiDescription download a file.
@@ -837,14 +829,14 @@ function configureRoutes(app, config) {
      * @apiSuccessStructure accepted
      * @apiErrorStructure error
      */
-    app.get(prefix + '/:id', downloadFile);
+    app.get('/:id', downloadFile);
 
     //
     // XXX: experimental for issue #4 and #5
     //
 
-    app.get(prefix + '/rename', renameFile);
-    app.get(prefix + '/files', listFiles);
+    app.get('/rename', renameFile);
+    app.get('/files', listFiles);
 
     //
     // convenient aliases of convertAndDownload api using specific converters
@@ -852,7 +844,7 @@ function configureRoutes(app, config) {
     //
 
     /**
-     * @api {get} /pictor/holder/{width}x{height}.{format} download holder image.
+     * @api {get} /holder/{width}x{height}.{format} download holder image.
      * @apiName downloadHolderImage
      * @apiGroup pictor_images
      * @apiDescription convenient alias of `convertAndDownload` api using `holder` converter.
@@ -862,12 +854,12 @@ function configureRoutes(app, config) {
      * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
      *
      * @apiExample create 400x300 holder of png and download it with curl:
-     *    curl -X GET -o output.png http://localhost:3001/pictor/holder/400x300.png
+     *    curl -X GET -o output.png http://localhost:3001/api/v1/holder/400x300.png
      *
      * @apiSuccessStructure file
      * @apiErrorStructure error
      */
-    app.get(new RegExp(prefix + '/holder/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
+    app.get(new RegExp('/holder/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
         req.query.converter = 'holder';
         req.query.w = req.params[0];
         req.query.h = req.params[1];
@@ -876,7 +868,7 @@ function configureRoutes(app, config) {
     });
 
     /**
-     * @api {get} /pictor/resize/{id}/{width}x{height}{flags}.{format} download resize image.
+     * @api {get} /resize/{id}/{width}x{height}{flags}.{format} download resize image.
      * @apiName downloadResizeImage
      * @apiGroup pictor_images
      * @apiDescription convenient alias of `convertAndDownload` api using `resize` converter.
@@ -887,12 +879,12 @@ function configureRoutes(app, config) {
      * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
      *
      * @apiExample resize foo.jpg to 400x300(ignore aspect ratio) of png and download it with curl:
-     *    curl -X GET -o output.png http://localhost:3001/pictor/resize/foo.jpg/400x300!.png
+     *    curl -X GET -o output.png http://localhost:3001/api/v1/resize/foo.jpg/400x300!.png
      *
      * @apiSuccessStructure file
      * @apiErrorStructure error
      */
-    app.get(new RegExp(prefix + '/resize/([\\w\\-\\.]+)/(\\d+)x(\\d+)([!%^<>@]?)(.(\\w+))?'), function (req, res) {
+    app.get(new RegExp('/resize/([\\w\\-\\.]+)/(\\d+)x(\\d+)([!%^<>@]?)(.(\\w+))?'), function (req, res) {
         req.query.converter = 'resize';
         req.query.id = req.params[0];
         req.query.w = req.params[1];
@@ -903,7 +895,7 @@ function configureRoutes(app, config) {
     });
 
     /**
-     * @api {get} /pictor/thumbnail/{id}/{w}x{h}.{format} download thumbnail image.
+     * @api {get} /thumbnail/{id}/{w}x{h}.{format} download thumbnail image.
      * @apiName downloadThumbnailImage
      * @apiGroup pictor_images
      * @apiDescription convenient alias of `convertAndDownload` api using `thumbnail` converter.
@@ -915,12 +907,12 @@ function configureRoutes(app, config) {
      * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
      *
      * @apiExample thumbnail foo.jpg to 400x300 of png and download it with curl:
-     *    curl -X GET -o output.png http://localhost:3001/pictor/thumbnail/foo.jpg/400x300.png
+     *    curl -X GET -o output.png http://localhost:3001/api/v1/thumbnail/foo.jpg/400x300.png
      *
      * @apiSuccessStructure file
      * @apiErrorStructure error
      */
-    app.get(new RegExp(prefix + '/thumbnail/([\\w\\-\\.]+)/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
+    app.get(new RegExp('/thumbnail/([\\w\\-\\.]+)/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
         req.query.converter = 'thumbnail';
         req.query.id = req.params[0];
         req.query.w = req.params[1];
@@ -930,7 +922,7 @@ function configureRoutes(app, config) {
     });
 
     /**
-     * @api {get} /pictor/crop/{id}/{w}x{h}+{x}+{y}.{format} download cropped image.
+     * @api {get} /crop/{id}/{w}x{h}+{x}+{y}.{format} download cropped image.
      * @apiName downloadCropImage
      * @apiGroup pictor_images
      * @apiDescription convenient alias of `convertAndDownload` api using `crop` converter.
@@ -942,12 +934,12 @@ function configureRoutes(app, config) {
      * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
      *
      * @apiExample crop foo.jpg to rectangle(400x300+200+100) of png and download it with curl:
-     *    curl -X GET -o output.png http://localhost:3001/pictor/crop/foo.jpg/400x300+200+100.png
+     *    curl -X GET -o output.png http://localhost:3001/api/v1/crop/foo.jpg/400x300+200+100.png
      *
      * @apiSuccessStructure file
      * @apiErrorStructure error
      */
-    app.get(new RegExp(prefix + '/crop/([\\w\\-\\.]+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)(.(\\w+))?'), function (req, res) {
+    app.get(new RegExp('/crop/([\\w\\-\\.]+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)(.(\\w+))?'), function (req, res) {
         req.query.converter = 'crop';
         req.query.id = req.params[0];
         req.query.w = req.params[1];
@@ -959,7 +951,7 @@ function configureRoutes(app, config) {
     });
 
     /**
-     * @api {get} /pictor/rotate/{id}/{degree}.{format} download rotated image.
+     * @api {get} /rotate/{id}/{degree}.{format} download rotated image.
      * @apiName downloadRotateImage
      * @apiGroup pictor_images
      * @apiDescription convenient alias of `convertAndDownload` api using `rotate` converter.
@@ -968,12 +960,12 @@ function configureRoutes(app, config) {
      * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
      *
      * @apiExample crop foo.jpg to 90deg(clockwise) rotated png and download it with curl:
-     *    curl -X GET -o output.png http://localhost:3001/pictor/rotate/foo.jpg/90.png
+     *    curl -X GET -o output.png http://localhost:3001/api/v1/rotate/foo.jpg/90.png
      *
      * @apiSuccessStructure file
      * @apiErrorStructure error
      */
-    app.get(new RegExp(prefix + '/rotate/([\\w\\-\\.]+)/(\\d+)(.(\\w+))?'), function (req, res) {
+    app.get(new RegExp('/rotate/([\\w\\-\\.]+)/(\\d+)(.(\\w+))?'), function (req, res) {
         req.query.converter = 'rotate';
         req.query.id = req.params[0];
         req.query.degree = req.params[1];
@@ -982,7 +974,7 @@ function configureRoutes(app, config) {
     });
 
     /**
-     * @api {get} /pictor/resizecrop/{id}/{nw}x{nh}/{w}x{h}+{x}+{y}.{format} download crop image.
+     * @api {get} /resizecrop/{id}/{nw}x{nh}/{w}x{h}+{x}+{y}.{format} download crop image.
      * @apiName downloadResizeCropImage
      * @apiGroup pictor_images
      * @apiDescription convenient alias of `convertAndDownload` api using `resizecrop` converter.
@@ -996,12 +988,12 @@ function configureRoutes(app, config) {
      * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
      *
      * @apiExample resize foo.jpg to 1280x720 and crop to rectangle(400x300+200+100) of png and download it with curl:
-     *    curl -X GET -o output.png http://localhost:3001/pictor/resizecrop/foo.jpg/1280x720/400x300+200+100.png
+     *    curl -X GET -o output.png http://localhost:3001/api/v1/resizecrop/foo.jpg/1280x720/400x300+200+100.png
      *
      * @apiSuccessStructure file
      * @apiErrorStructure error
      */
-    app.get(new RegExp(prefix + '/resizecrop/([\\w\\-\\.]+)/(\\d+)x(\\d+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)(.(\\w+))?'), function (req, res) {
+    app.get(new RegExp('/resizecrop/([\\w\\-\\.]+)/(\\d+)x(\\d+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)(.(\\w+))?'), function (req, res) {
         req.query.converter = 'resizecrop';
         req.query.id = req.params[0];
         req.query.nw = req.params[1];
@@ -1015,7 +1007,7 @@ function configureRoutes(app, config) {
     });
 
     /**
-     * @api {get} /pictor/cropresize/{id}/{w}x{h}+{x}+{y}/{nw}x{nh}.{format} download crop image.
+     * @api {get} /cropresize/{id}/{w}x{h}+{x}+{y}/{nw}x{nh}.{format} download crop image.
      * @apiName downloadCropResizeImage
      * @apiGroup pictor_images
      * @apiDescription convenient alias of `convertAndDownload` api using `cropresize` converter.
@@ -1029,12 +1021,12 @@ function configureRoutes(app, config) {
      * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
      *
      * @apiExample crop foo.jpg to rectangle(400x300+200+100) and resize to 1280x720 of png and download it with curl:
-     *    curl -X GET -o output.png http://localhost:3001/pictor/cropresize/foo.jpg/400x300+200+100/1280x720.png
+     *    curl -X GET -o output.png http://localhost:3001/api/v1/cropresize/foo.jpg/400x300+200+100/1280x720.png
      *
      * @apiSuccessStructure file
      * @apiErrorStructure error
      */
-    app.get(new RegExp(prefix + '/cropresize/([\\w\\-\\.]+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
+    app.get(new RegExp('/cropresize/([\\w\\-\\.]+)/(\\d+)x(\\d+)\\+(\\d+)\\+(\\d+)/(\\d+)x(\\d+)(.(\\w+))?'), function (req, res) {
         req.query.converter = 'cropresize';
         req.query.id = req.params[0];
         req.query.w = req.params[1];
@@ -1048,7 +1040,7 @@ function configureRoutes(app, config) {
     });
 
     /**
-     * @api {get} /pictor/preset/{id}/{preset}.{format} download preset image.
+     * @api {get} /preset/{id}/{preset}.{format} download preset image.
      * @apiName downloadPresetImage
      * @apiGroup pictor_images
      * @apiDescription convenient alias of `convertAndDownload` api using `preset` converter.
@@ -1058,12 +1050,12 @@ function configureRoutes(app, config) {
      * @apiParam {string} [format] 'png', 'jpg', 'jpeg' or 'gif'. use source format by default.
      *
      * @apiExample preset to xxl@2x(thumbnail to 512x512) of png and download it with curl:
-     *    curl -X GET -o output.png http://localhost:3001/pictor/preset/foo.jpg/xxl@2x.png
+     *    curl -X GET -o output.png http://localhost:3001/api/v1/preset/foo.jpg/xxl@2x.png
      *
      * @apiSuccessStructure file
      * @apiErrorStructure error
      */
-    app.get(new RegExp(prefix + '/preset/([\\w\\-\\.]+)/([\\w@]+)(.(\\w+))?'), function (req, res) {
+    app.get(new RegExp('/preset/([\\w\\-\\.]+)/([\\w@]+)(.(\\w+))?'), function (req, res) {
         req.query.converter = 'preset';
         req.query.id = req.params[0];
         req.query.preset = req.params[1];
@@ -1076,53 +1068,28 @@ function configureRoutes(app, config) {
     //
 
     /**
-     * @api {get} /pictor/converters get all available converters.
+     * @api {get} /info/converters get all available converters.
      * @apiName getConverters
      * @apiGroup pictor_info
      *
      * @apiErrorStructure error
      */
-    app.get(prefix + '/info/converters', function (req, res) {
+    app.get('/info/converters', function (req, res) {
         return _sendResult(req, res, pictor.getConverters());
     });
 
     /**
-     * @api {get} /pictor/presets get all available presets.
+     * @api {get} /info/presets get all available presets.
      * @apiName getPresets
      * @apiGroup pictor_info
      *
      * @apiErrorStructure error
      */
-    app.get(prefix + '/info/presets', function (req, res) {
+    app.get('/info/presets', function (req, res) {
         return _sendResult(req, res, pictor.getPresets());
     });
 
-    return app;
+    return app.useCommonRoutes(config.api.routes);
 }
 
-/**
- * create express (sub) app.
- *
- * @param {object} config
- * @returns {express.application}
- */
-function createApp(config) {
-    DEBUG && debug('create pictor app...');
-
-    var app = express();
-
-    configureMiddlewares(app, config);
-
-    app.on('mount', function (parent) {
-        DEBUG && debug('mount ' + app.path() + ' on ' + parent.path());
-        configureRoutes(app, config);
-    });
-
-    return app;
-}
-
-module.exports = {
-    configureMiddlewares: configureMiddlewares,
-    configureRoutes: configureRoutes,
-    createApp: createApp
-};
+module.exports = createApp;

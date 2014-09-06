@@ -26,7 +26,7 @@
     }]);
 
     module.value('pictor.config', {
-        PICTOR_ENDPOINT: location.protocol + '//' + location.host + '/pictor'
+        PICTOR_ENDPOINT: location.protocol + '//' + location.host + '/api/v1'
     });
 
     module.run(['$rootScope', 'pictor.config', 'pictor', function (root, pictorConfig, pictor) {
