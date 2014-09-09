@@ -59,7 +59,8 @@ ThumbnailConverter.prototype.getVariation = function (opts) {
  * @returns {promise}
  */
 ThumbnailConverter.prototype.convert = function (opts) {
-    return thumbnail(opts.src, opts.dst, opts.w, opts.h, opts.c);
+    return thumbnail(opts.src, opts.dst, opts.w, opts.h, opts.c)
+        .fail(Converter.reject);
 };
 
 module.exports = ThumbnailConverter;

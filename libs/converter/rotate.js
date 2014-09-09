@@ -49,7 +49,8 @@ RotateConverter.prototype.getVariation = function (opts) {
  * @returns {promise}
  */
 RotateConverter.prototype.convert = function (opts) {
-    return rotate(opts.src, opts.dst, opts.degree);
+    return rotate(opts.src, opts.dst, opts.degree)
+        .fail(Converter.reject);
 };
 
 module.exports = RotateConverter;

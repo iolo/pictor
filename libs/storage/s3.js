@@ -1,10 +1,12 @@
 'use strict';
 
+/** @module pictor.storage.s3 */
+
 var
     util = require('util'),
     knox = require('knox'),
     Q = require('q'),
-    storage = require('./storage'),
+    Storage = require('./storage'),
     debug = require('debug')('pictor:storage:s3'),
     DEBUG = debug.enabled;
 
@@ -31,7 +33,7 @@ function S3Storage(config) {
     DEBUG && debug('create s3 storage:', this.config);
     this.s3Client = knox.createClient({key: this.config.key, secret: this.config.secret, bucket: this.config.bucket});
 }
-util.inherits(S3Storage, storage.Storage);
+util.inherits(S3Storage, Storage);
 
 S3Storage.prototype.putFile = function (id, src) {
     DEBUG && debug('s3.putFile', src, '---->', id);
@@ -42,14 +44,14 @@ S3Storage.prototype.putFile = function (id, src) {
         .then(function (result) {
             DEBUG && debug('s3.putFile', id, 'ok', result.statusCode, result.headers);
             if (result.statusCode < 200 || result.statusCode >= 300) {
-                throw new storage.StorageError('putFile err', result.statusCode, result);
+                throw new Storage.Error('putFile err', result.statusCode, result);
             }
             return {
                 url: url,
                 file: src
             };
         })
-        .fail(storage.wrapError);
+        .fail(Storage.reject);
 };
 
 S3Storage.prototype.getFile = function (id) {
@@ -61,14 +63,14 @@ S3Storage.prototype.getFile = function (id) {
         .then(function (result) {
             DEBUG && debug('s3.getFile', id, 'ok', result.statusCode, result.headers);
             if (result.statusCode < 200 || result.statusCode >= 300) {
-                throw new storage.StorageError('getFile err', result.statusCode, result);
+                throw new Storage.Error('getFile err', result.statusCode, result);
             }
             return {
                 url: url,
                 stream: result
             };
         })
-        .fail(storage.wrapError);
+        .fail(Storage.reject);
 };
 
 S3Storage.prototype.deleteFile = function (id) {
@@ -83,7 +85,7 @@ S3Storage.prototype.deleteFile = function (id) {
             DEBUG && debug('s3.deleteFile', id, 'ok', result.statusCode, result.headers);
             // XXX: s3 doesn't report error when delete not-existing file. :S
             if (result.statusCode < 200 || result.statusCode >= 300) {
-                throw new storage.StorageError('deleteFile err', result.statusCode, result);
+                throw new Storage.Error('deleteFile err', result.statusCode, result);
             }
             // err... assume 'src' is directory
             return Q.ninvoke(s3Client, 'list', { prefix: src + '/' })
@@ -101,7 +103,7 @@ S3Storage.prototype.deleteFile = function (id) {
                     return true;
                 });
         })
-        .fail(storage.wrapError);
+        .fail(Storage.reject);
 };
 
 S3Storage.prototype.renameFile = function (id, targetId) {
@@ -120,7 +122,7 @@ S3Storage.prototype.renameFile = function (id, targetId) {
                     return true;
                 });
         })
-        .fail(storage.wrapError);
+        .fail(Storage.Error.Error);
 };
 
 S3Storage.prototype.listFiles = function (criteria) {
@@ -140,7 +142,7 @@ S3Storage.prototype.listFiles = function (criteria) {
                 return result;
             }, []);
         })
-        .fail(storage.wrapError);
+        .fail(Storage.error);
 };
 
 module.exports = S3Storage;

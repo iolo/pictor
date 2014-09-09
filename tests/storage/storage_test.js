@@ -1,56 +1,56 @@
 'use strict';
 
 var
-    storage = require('../../libs/storage/storage'),
+    Storage = require('../../libs/storage/storage'),
     assert = require('assert'),
     debug = require('debug')('test');
 
 describe('storage', function () {
     it('trailingSlash', function () {
-        var s1 = new storage.Storage({baseDir: 'baseDir', baseUrl: 'baseUrl'});
+        var s1 = new Storage({baseDir: 'baseDir', baseUrl: 'baseUrl'});
         assert.equal(s1.config.baseDir, 'baseDir/');
         assert.equal(s1.config.baseUrl, 'baseUrl/');
 
-        var s2 = new storage.Storage({baseDir: 'baseDir/', baseUrl: 'baseUrl/'});
+        var s2 = new Storage({baseDir: 'baseDir/', baseUrl: 'baseUrl/'});
         assert.equal(s2.config.baseDir, 'baseDir/');
         assert.equal(s2.config.baseUrl, 'baseUrl/');
 
-        var s3 = new storage.Storage({baseDir: '', baseUrl: ''});
+        var s3 = new Storage({baseDir: '', baseUrl: ''});
         assert.equal(s3.config.baseDir, '');
         assert.equal(s3.config.baseUrl, '');
 
-        var s3 = new storage.Storage({baseDir: null, baseUrl: null});
+        var s3 = new Storage({baseDir: null, baseUrl: null});
         assert.equal(s3.config.baseDir, null);
         assert.equal(s3.config.baseUrl, null);
     });
     it('getPath', function () {
-        var s1 = new storage.Storage({baseDir: 'baseDir'});
+        var s1 = new Storage({baseDir: 'baseDir'});
         assert.equal('baseDir/test', s1._getPath('test'));
         assert.equal('baseDir/', s1._getPath(''));
         assert.equal('baseDir/', s1._getPath(null));
     });
     it('getUrl', function () {
-        var s1 = new storage.Storage({baseUrl: 'baseUrl'});
+        var s1 = new Storage({baseUrl: 'baseUrl'});
         assert.equal('baseUrl/test', s1._getUrl('test'));
         assert.equal('baseUrl/', s1._getUrl(''));
         assert.equal('baseUrl/', s1._getUrl(null));
     });
     it('getUrl_null', function () {
-        var s1 = new storage.Storage({baseUrl: ''});
+        var s1 = new Storage({baseUrl: ''});
         assert.equal(null, s1._getUrl('test'));
         assert.equal(null, s1._getUrl(''));
         assert.equal(null, s1._getUrl(null));
-        var s2 = new storage.Storage({baseUrl: null});
+        var s2 = new Storage({baseUrl: null});
         assert.equal(null, s2._getUrl('test'));
         assert.equal(null, s2._getUrl(''));
         assert.equal(null, s2._getUrl(null));
-        var s3 = new storage.Storage({baseUrl: undefined});
+        var s3 = new Storage({baseUrl: undefined});
         assert.equal(null, s3._getUrl('test'));
         assert.equal(null, s3._getUrl(''));
         assert.equal(null, s3._getUrl(null));
     });
     it('putFile', function (done) {
-        var s = new storage.Storage();
+        var s = new Storage();
         s.putFile()
             .then(function (result) {
                 debug('putFile ok', result);
@@ -63,7 +63,7 @@ describe('storage', function () {
             .done(done);
     });
     it('getFile', function (done) {
-        var s = new storage.Storage();
+        var s = new Storage();
         s.getFile()
             .then(function (result) {
                 debug('getFile ok', result);
@@ -76,7 +76,7 @@ describe('storage', function () {
             .done(done);
     });
     it('deleteFile', function (done) {
-        var s = new storage.Storage();
+        var s = new Storage();
         s.deleteFile()
             .then(function (result) {
                 debug('deleteFile ok', result);
@@ -89,7 +89,7 @@ describe('storage', function () {
             .done(done);
     });
     it('renameFile', function (done) {
-        var s = new storage.Storage();
+        var s = new Storage();
         s.renameFile()
             .then(function (result) {
                 debug('renameFile ok', result);
@@ -102,7 +102,7 @@ describe('storage', function () {
             .done(done);
     });
     it('listFiles', function (done) {
-        var s = new storage.Storage();
+        var s = new Storage();
         s.listFiles()
             .then(function (result) {
                 debug('listFiles ok', result);
@@ -114,27 +114,27 @@ describe('storage', function () {
             })
             .done(done);
     });
-    it('wrapError', function (done) {
-        storage.wrapError('some error')
+    it('reject', function (done) {
+        Storage.reject('some error')
             .then(function () {
                 assert.fail();
             })
             .fail(function (err) {
                 debug('wrapError err:', err);
-                assert.ok(err instanceof storage.StorageError);
+                assert.ok(err instanceof Storage.Error);
                 assert.equal(err.status, 500);
                 assert.equal(err.cause, 'some error');
             })
             .done(done);
     });
-    it('wrapError_notfound', function (done) {
-        storage.wrapError({code: 'ENOENT'})
+    it('reject with ENOENT', function (done) {
+        Storage.reject({code: 'ENOENT'})
             .then(function () {
                 assert.fail();
             })
             .fail(function (err) {
                 debug('wrapError err:', err);
-                assert.ok(err instanceof storage.StorageError);
+                assert.ok(err instanceof Storage.Error);
                 assert.equal(err.status, 404);
                 assert.equal(err.cause.code, 'ENOENT');
             })

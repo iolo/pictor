@@ -57,7 +57,8 @@ CropConverter.prototype.getVariation = function (opts) {
  * @returns {promise}
  */
 CropConverter.prototype.convert = function (opts) {
-    return crop(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y, opts.c);
+    return crop(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y, opts.c)
+        .fail(Converter.reject);
 };
 
 module.exports = CropConverter;

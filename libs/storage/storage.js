@@ -1,5 +1,7 @@
 'use strict';
 
+/** @module pictor.storage.storage */
+
 var
     util = require('util'),
     Q = require('q'),
@@ -98,7 +100,7 @@ Storage.prototype._getUrl = function (id) {
  */
 Storage.prototype.putFile = function (id, src) {
     DEBUG && debug('storage.putFile:', src, '--->', id);
-    return Q.reject(new StorageError(501, 'not implemented'));
+    return Q.reject(new StorageError('not implemented', 501));
 };
 
 /**
@@ -116,7 +118,7 @@ Storage.prototype.putFile = function (id, src) {
  */
 Storage.prototype.getFile = function (id) {
     DEBUG && debug('storage.getFile:', id);
-    return Q.reject(new StorageError(501, 'not_implemented'));
+    return Q.reject(new StorageError('not_implemented', 501));
 };
 
 /**
@@ -127,41 +129,41 @@ Storage.prototype.getFile = function (id) {
  */
 Storage.prototype.deleteFile = function (id) {
     DEBUG && debug('storage.deleteFile:', id);
-    return Q.reject(new StorageError(501, 'not_implemented'));
+    return Q.reject(new StorageError('not_implemented', 501));
 };
 
 Storage.prototype.renameFile = function (id, targetId) {
     DEBUG && debug('storage.renameFile:', id, targetId);
-    return Q.reject(new StorageError(501, 'not_implemented'));
+    return Q.reject(new StorageError('not_implemented', 501));
 };
 
 Storage.prototype.listFiles = function (criteria) {
     DEBUG && debug('storage.listFiles:', criteria);
-    return Q.reject(new StorageError(501, 'not_implemented'));
+    return Q.reject(new StorageError('not_implemented', 501));
 };
 
 //
 //
 //
 
-function wrapError(err) {
-    if (err) {
-        if (err instanceof StorageError) {
-            //throw err;
-            return Q.reject(err);
+/**
+ * convenient func to reject promise with the given cause.
+ *
+ * @param {Error|*} cause cause error
+ * @returns {promise.<StorageError>} always rejected promise
+ */
+function reject(cause) {
+    if (cause) {
+        if (cause instanceof StorageError) {
+            return Q.reject(cause);
         }
-        if (err.code === 'ENOENT') {
-            //throw new StorageError('file_not_found', 404, err);
-            return Q.reject(new StorageError('not_found', 404, err));
+        if (cause.code === 'ENOENT') {
+            return Q.reject(new StorageError('not_found', 404, cause));
         }
     }
-    //throw new StorageError('storage_error', 500, err;
-    return Q.reject(new StorageError('storage_error', 500, err));
+    return Q.reject(new StorageError('storage_error', 500, cause));
 }
 
-
-module.exports = {
-    StorageError: StorageError,
-    Storage: Storage,
-    wrapError: wrapError
-};
+module.exports = Storage;
+module.exports.Error = StorageError;
+module.exports.reject = reject;

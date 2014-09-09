@@ -1,8 +1,10 @@
 'use strict';
 
+/** @module pictor.storage.gridfs */
+
 var
     util = require('util'),
-    storage = require('./storage'),
+    Storage = require('./storage'),
     debug = require('debug')('pictor:storage:gridfs'),
     DEBUG = debug.enabled;
 
@@ -20,7 +22,7 @@ function GridFSStorage(config) {
     GridFSStorage.super_.apply(this, arguments);
     DEBUG && debug('create gridfs storage:', this.config);
 }
-util.inherits(GridFSStorage, storage.Storage);
+util.inherits(GridFSStorage, Storage);
 
 // TODO: ...
 

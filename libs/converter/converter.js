@@ -80,4 +80,28 @@ Converter.prototype.convert = function (opts) {
     return Q.reject(new ConverterError('abstract method'));
 };
 
+/**
+ * convenient func to reject promise with the given cause.
+ *
+ * @param {Error|*} cause cause error
+ * @returns {promise.<StorageError>} always rejected promise
+ */
+function reject(cause) {
+    if (cause) {
+        if (cause instanceof ConverterError) {
+            return Q.reject(cause);
+        }
+        if (cause.code === 'ENOENT') {
+            return Q.reject(new ConverterError('not_found', 404, cause));
+        }
+    }
+    return Q.reject(new ConverterError('storage_error', 500, cause));
+}
+
+//
+//
+//
+
 module.exports = Converter;
+module.exports.Error = ConverterError;
+module.exports.reject = reject;

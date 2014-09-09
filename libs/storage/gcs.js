@@ -1,8 +1,10 @@
 'use strict';
 
+/** @module pictor.storage.gcs */
+
 var
     util = require('util'),
-    storage = require('./storage'),
+    Storage = require('./storage'),
     debug = require('debug')('pictor:storage:gcs'),
     DEBUG = debug.enabled;
 
@@ -20,7 +22,7 @@ function GCSStorage(config) {
     GCSStorage.super_.apply(this, arguments);
     DEBUG && debug('create gcs storage:', this.config);
 }
-util.inherits(GCSStorage, storage.Storage);
+util.inherits(GCSStorage, Storage);
 
 // TODO: ...
 

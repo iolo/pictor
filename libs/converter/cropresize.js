@@ -78,7 +78,8 @@ CropResizeConverter.prototype.getVariation = function (opts) {
  */
 CropResizeConverter.prototype.convert = function (opts) {
     opts = _.defaults(opts, this.config.options);
-    return cropResize(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y, opts.nw, opts.nh, opts.flags, opts.c);
+    return cropResize(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y, opts.nw, opts.nh, opts.flags, opts.c)
+        .fail(Converter.reject);
 };
 
 module.exports = CropResizeConverter;

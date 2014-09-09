@@ -1,11 +1,13 @@
 'use strict';
 
+/** @module pictor.storage.local */
+
 var
     util = require('util'),
     path = require('path'),
     Q = require('q'),
     FS = require('q-io/fs'),
-    storage = require('./storage'),
+    Storage = require('./storage'),
     debug = require('debug')('pictor:storage:local'),
     DEBUG = debug.enabled;
 
@@ -27,7 +29,7 @@ function LocalStorage(config) {
     DEBUG && debug('create local storage:', this.config);
     FS.makeTree(this.config.baseDir).done();
 }
-util.inherits(LocalStorage, storage.Storage);
+util.inherits(LocalStorage, Storage);
 
 LocalStorage.prototype.putFile = function (id, src) {
     DEBUG && debug('local.putFile', src, '--->', id);
@@ -40,7 +42,7 @@ LocalStorage.prototype.putFile = function (id, src) {
         .then(function () {
             return {url: url, file: dst};
         })
-        .fail(storage.wrapError);
+        .fail(Storage.reject);
 };
 
 LocalStorage.prototype.getFile = function (id) {
@@ -52,12 +54,11 @@ LocalStorage.prototype.getFile = function (id) {
         .then(function (result) {
             DEBUG && debug('local.getFile:', src, result);
             if (!result.isFile()) {
-                return storage.wrapError('not regular file: ' + src, 500, result);
-                //throw new storage.StorageError('not regular file: ' + src, 500, result);
+                throw new Storage.Error('not regular file: ' + src, 500, result);
             }
             return {url: url, file: src};
         })
-        .fail(storage.wrapError);
+        .fail(Storage.reject);
 };
 
 LocalStorage.prototype.deleteFile = function (id) {
@@ -67,7 +68,7 @@ LocalStorage.prototype.deleteFile = function (id) {
         .then(function () {
             return true;
         })
-        .fail(storage.wrapError);
+        .fail(Storage.reject);
 };
 
 LocalStorage.prototype.renameFile = function (id, targetId) {
@@ -78,7 +79,7 @@ LocalStorage.prototype.renameFile = function (id, targetId) {
             DEBUG && debug('local.renameFile:', source, '-->', target, '-->', result);
             return true;
         })
-        .fail(storage.wrapError);
+        .fail(Storage.reject);
 };
 
 LocalStorage.prototype.listFiles = function (criteria) {
@@ -106,7 +107,7 @@ LocalStorage.prototype.listFiles = function (criteria) {
                 return result;
             }, []);
         })
-        .fail(storage.wrapError);
+        .fail(Storage.reject);
 };
 
 module.exports = LocalStorage;

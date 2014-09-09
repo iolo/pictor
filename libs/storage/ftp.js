@@ -1,11 +1,13 @@
 'use strict';
 
+/** @module pictor.storage.ftp */
+
 var
     util = require('util'),
     path = require('path'),
     Q = require('q'),
     ftp = require('ftp'),
-    storage = require('./storage'),
+    Storage = require('./storage'),
     debug = require('debug')('pictor:storage:ftp'),
     DEBUG = debug.enabled;
 
@@ -33,7 +35,7 @@ function FtpStorage(config) {
     this.ftpClientOpts = {host: this.config.host, port: this.config.port, user: this.config.username, password: this.config.password};
     DEBUG && debug('create ftp storage:', this.config);
 }
-util.inherits(FtpStorage, storage.Storage);
+util.inherits(FtpStorage, Storage);
 
 // TODO: more robust connection management: keep alive or pooling...
 FtpStorage.prototype._withFtpClient = function (callback) {
@@ -91,7 +93,7 @@ FtpStorage.prototype.putFile = function (id, src) {
                     file: src
                 };
             })
-            .fail(storage.wrapError);
+            .fail(Storage.reject);
     });
 };
 
@@ -110,7 +112,7 @@ FtpStorage.prototype.getFile = function (id) {
                     stream: stream
                 };
             })
-            .fail(storage.wrapError);
+            .fail(Storage.reject);
     });
 };
 
@@ -140,7 +142,7 @@ FtpStorage.prototype.deleteFile = function (id) {
     var src = this._getPath(id);
     return this._withFtpClient(function (ftpClient) {
         return _removeTree(ftpClient, src)
-            .fail(storage.wrapError);
+            .fail(Storage.reject);
     });
 };
 
@@ -153,7 +155,7 @@ FtpStorage.prototype.renameFile = function (id, targetId) {
                 DEBUG && debug('ftp.renameFile:', source, '-->', target, '-->', result);
                 return true;
             })
-            .fail(storage.wrapError);
+            .fail(Storage.reject);
     });
 };
 
@@ -182,7 +184,7 @@ FtpStorage.prototype.listFiles = function (criteria) {
                     return result;
                 }, []);
             })
-            .fail(storage.wrapError);
+            .fail(Storage.reject);
     });
 };
 

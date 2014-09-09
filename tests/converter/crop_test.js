@@ -33,4 +33,21 @@ describe('convert converter', function () {
             })
             .done(done);
     });
+
+    it('NOT convert not exist', function (done) {
+        var converter = new Converter({});
+        var opts = {src: fixtures.not_exist_file, dst: fixtures.dst_jpg};
+        converter.convert(opts)
+            .then(function (result) {
+                debug('convert ok:', result);
+                assert.fail();
+            })
+            .fail(function (err) {
+                debug('convert err:', err);
+                assert.ok(err);
+                //assert.ok(err instanceof ConverterError);
+                //assert.ok(err.status, 404);
+            })
+            .done(done);
+    });
 });

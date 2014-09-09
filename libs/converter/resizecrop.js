@@ -61,7 +61,8 @@ ResizeCropConverter.prototype.getVariation = function (opts) {
  * @returns {promise}
  */
 ResizeCropConverter.prototype.convert = function (opts) {
-    return resizeCrop(opts.src, opts.dst, opts.nw, opts.nh, opts.w, opts.h, opts.x, opts.y, opts.c);
+    return resizeCrop(opts.src, opts.dst, opts.nw, opts.nh, opts.w, opts.h, opts.x, opts.y, opts.c)
+        .fail(Converter.reject);
 };
 
 module.exports = ResizeCropConverter;

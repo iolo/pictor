@@ -66,7 +66,8 @@ HolderConverter.prototype.getExtension = function (opts) {
 };
 
 HolderConverter.prototype.convert = function (opts) {
-    return holder(opts.dst, opts.w, opts.h, this.config);
+    return holder(opts.dst, opts.w, opts.h, this.config)
+        .fail(Converter.reject);
 };
 
 module.exports = HolderConverter;

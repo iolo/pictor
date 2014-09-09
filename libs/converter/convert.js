@@ -43,7 +43,8 @@ ConvertConverter.prototype.getVariation = function (opts) {
 };
 
 ConvertConverter.prototype.convert = function (opts) {
-    return convert(opts.src, opts.dst);
+    return convert(opts.src, opts.dst)
+        .fail(Converter.reject);
 };
 
 module.exports = ConvertConverter;

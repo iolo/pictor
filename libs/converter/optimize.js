@@ -74,7 +74,8 @@ OptimizeConverter.prototype.getExtension = function (opts) {
 };
 
 OptimizeConverter.prototype.convert = function (opts) {
-    return optimize(opts.src, opts.dst);
+    return optimize(opts.src, opts.dst)
+        .fail(Converter.reject);
 };
 
 module.exports = OptimizeConverter;

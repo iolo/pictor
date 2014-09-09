@@ -61,7 +61,8 @@ ExifConverter.prototype.convert = function (opts) {
         .then(function (exif) {
             var result = (typeof exif === 'object') ? JSON.stringify(exif) : '{}';
             return FS.write(opts.dst, result);
-        });
+        })
+        .fail(Converter.reject);
 };
 
 module.exports = ExifConverter;

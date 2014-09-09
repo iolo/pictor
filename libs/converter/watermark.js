@@ -76,7 +76,8 @@ WatermarkConverter.prototype.getVariation = function (opts) {
 
 WatermarkConverter.prototype.convert = function (opts) {
     opts = _.defaults(opts, this.config.options);
-    return watermark(opts.src, opts.dst, opts);
+    return watermark(opts.src, opts.dst, opts)
+        .fail(Converter.reject);
 };
 
 module.exports = WatermarkConverter;

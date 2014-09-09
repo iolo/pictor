@@ -26,7 +26,7 @@ describe('converter', function () {
         assert.equal('gif', c2.getExtension({src: 'test'}));
         assert.equal('gif', c2.getExtension({}));
     });
-    it('convert', function (done) {
+    it('NOT convert', function (done) {
         var c = new Converter({});
         c.convert({})
             .then(function (result) {
@@ -36,6 +36,33 @@ describe('converter', function () {
             .fail(function (err) {
                 debug('convert err', err);
                 assert.ok(err);
+                assert.ok(err instanceof Converter.Error);
+            })
+            .done(done);
+    });
+    it('reject', function (done) {
+        Converter.reject('some error')
+            .then(function () {
+                assert.fail();
+            })
+            .fail(function (err) {
+                debug('wrapError err:', err);
+                assert.ok(err instanceof Converter.Error);
+                assert.equal(err.status, 500);
+                assert.equal(err.cause, 'some error');
+            })
+            .done(done);
+    });
+    it('reject with ENOENT', function (done) {
+        Converter.reject({code: 'ENOENT'})
+            .then(function () {
+                assert.fail();
+            })
+            .fail(function (err) {
+                debug('wrapError err:', err);
+                assert.ok(err instanceof Converter.Error);
+                assert.equal(err.status, 404);
+                assert.equal(err.cause.code, 'ENOENT');
             })
             .done(done);
     });

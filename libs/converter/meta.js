@@ -62,7 +62,8 @@ MetaConverter.prototype.convert = function (opts) {
     return meta(opts.src)
         .then(function (meta) {
             return FS.write(opts.dst, JSON.stringify(meta));
-        });
+        })
+        .fail(Converter.reject);
 };
 
 module.exports = MetaConverter;

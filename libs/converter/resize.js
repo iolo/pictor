@@ -62,7 +62,8 @@ ResizeConverter.prototype.getVariation = function (opts) {
  * @returns {promise}
  */
 ResizeConverter.prototype.convert = function (opts) {
-    return resize(opts.src, opts.dst, opts.w, opts.h, opts.flags, opts.c);
+    return resize(opts.src, opts.dst, opts.w, opts.h, opts.flags, opts.c)
+        .fail(Converter.reject);
 };
 
 module.exports = ResizeConverter;
