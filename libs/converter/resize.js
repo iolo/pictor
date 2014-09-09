@@ -17,8 +17,9 @@ function ResizeConverter(config) {
 util.inherits(ResizeConverter, Converter);
 
 ResizeConverter.prototype.getVariation = function (opts) {
-    //return ['w', 'h', 'flags', 'c'];
-    return 'resize_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.flags || '') + '_' + (opts.c || '');
+    return 'resize_' + ['w', 'h', 'flags', 'c'].map(function (key) {
+        return opts[key];
+    }).join('_');
 };
 
 /**
@@ -35,10 +36,10 @@ ResizeConverter.prototype.getVariation = function (opts) {
  * @param {*} [opts]
  * @param {string|stream|buffer} opts.src
  * @param {string|stream|buffer} opts.dst
- * @param {number} opts.w
- * @param {number} opts.h
- * @param {string} opts.flags
- * @param {number} opts.c
+ * @param {number} [opts.w=''] resize width
+ * @param {number} [opts.h=''] resize height
+ * @param {string} [opts.flags=''] resize flags
+ * @param {number} [opts.c=0] max color of output image.
  * @returns {promise}
  */
 ResizeConverter.prototype.convert = function (opts) {
@@ -47,8 +48,8 @@ ResizeConverter.prototype.convert = function (opts) {
         dst = opts.dst,
         w = opts.w || '',
         h = opts.h || '',
-        flags = opts.flags,
-        c = opts.c;
+        flags = opts.flags || '',
+        c = opts.c || 0;
     var cmd = gm(src).strip()
         .resize(w, h, flags);
     (c > 0) && cmd.colors(c);

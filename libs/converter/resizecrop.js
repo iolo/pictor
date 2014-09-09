@@ -17,8 +17,9 @@ function ResizeCropConverter(config) {
 util.inherits(ResizeCropConverter, Converter);
 
 ResizeCropConverter.prototype.getVariation = function (opts) {
-    //return ['nw', 'nh', 'w', 'h', 'x', 'y', 'c'];
-    return 'resizecrop_' + (opts.nw || '') + 'x' + (opts.nh || '') + '_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '') + '_' + (opts.c || '');
+    return 'resizecrop_' + ['nw', 'nh', 'flags', 'w', 'h', 'x', 'y', 'c'].map(function (key) {
+        return opts[key];
+    }).join('_');
 };
 
 /**
@@ -27,14 +28,14 @@ ResizeCropConverter.prototype.getVariation = function (opts) {
  * @param {*} [opts]
  * @param {string|stream|buffer} opts.src
  * @param {string|stream|buffer} opts.dst
- * @param {number} opts.nw
- * @param {number} opts.nh
- * @param {string} opts.flags
- * @param {number} opts.w
- * @param {number} opts.h
- * @param {number} opts.x
- * @param {number} opts.y
- * @param {number} opts.c
+ * @param {number} [opts.nw=''] resize width
+ * @param {number} [opts.nh=''] resize height
+ * @param {string} [opts.flags=''] resize flags
+ * @param {number} [opts.w=''] crop width
+ * @param {number} [opts.h=''] crop height
+ * @param {number} [opts.x=0] crop left
+ * @param {number} [opts.y=0] crop top
+ * @param {number} [opts.c=0] max color of output image.
  * @returns {promise}
  */
 ResizeCropConverter.prototype.convert = function (opts) {
@@ -48,7 +49,7 @@ ResizeCropConverter.prototype.convert = function (opts) {
         h = opts.h || '',
         x = opts.x || 0,
         y = opts.y || 0,
-        c = opts.c;
+        c = opts.c || 0;
     var cmd = gm(src).strip()
         .resize(nw, nh, flags)
         .crop(w, h, x, y);

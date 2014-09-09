@@ -12,13 +12,14 @@ var
 
 function CropConverter(config) {
     CropConverter.super_.apply(this, arguments);
-    DEBUG && debug('create crop converter: ', config);
+    DEBUG && debug('create crop converter: ', this.config);
 }
 util.inherits(CropConverter, Converter);
 
 CropConverter.prototype.getVariation = function (opts) {
-    //return ['w', 'h', 'x', 'y', 'c'];
-    return 'crop_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '') + '_' + (opts.c || '');
+    return 'crop_' + ['w', 'h', 'x', 'y', 'c'].map(function (key) {
+        return opts[key];
+    }).join('_');
 };
 
 /**
@@ -27,11 +28,11 @@ CropConverter.prototype.getVariation = function (opts) {
  * @param {*} opts
  * @param {string|stream|buffer} opts.src
  * @param {string|stream|buffer} opts.dst
- * @param {number} opts.w crop width
- * @param {number} opts.h crop height
- * @param {number} opts.x crop left
- * @param {number} opts.y crop top
- * @param {number} opts.c
+ * @param {number} [opts.w=''] crop width
+ * @param {number} [opts.h=''] crop height
+ * @param {number} [opts.x=0] crop left
+ * @param {number} [opts.y=0] crop top
+ * @param {number} [opts.c=0] max color of output image.
  * @returns {promise}
  */
 CropConverter.prototype.convert = function (opts) {
@@ -42,7 +43,7 @@ CropConverter.prototype.convert = function (opts) {
         h = opts.h || '',
         x = opts.x || 0,
         y = opts.y || 0,
-        c = opts.c;
+        c = opts.c || 0;
     var cmd = gm(src).strip()
         .crop(w, h, x, y);
     (c > 0) && cmd.colors(c);
