@@ -59,6 +59,8 @@ describe('storage', function () {
             .fail(function (err) {
                 debug('putFile err', err);
                 assert.ok(err);
+                assert.equal(err.message, 'not_implemented');
+                assert.equal(err.code, 501);
             })
             .done(done);
     });
@@ -72,6 +74,9 @@ describe('storage', function () {
             .fail(function (err) {
                 debug('getFile err', err);
                 assert.ok(err);
+                assert.ok(err instanceof Storage.Error);
+                assert.equal(err.message, 'not_implemented');
+                assert.equal(err.code, 501);
             })
             .done(done);
     });
@@ -85,6 +90,8 @@ describe('storage', function () {
             .fail(function (err) {
                 debug('deleteFile err', err);
                 assert.ok(err);
+                assert.equal(err.message, 'not_implemented');
+                assert.equal(err.code, 501);
             })
             .done(done);
     });
@@ -98,6 +105,8 @@ describe('storage', function () {
             .fail(function (err) {
                 debug('renameFile err', err);
                 assert.ok(err);
+                assert.equal(err.message, 'not_implemented');
+                assert.equal(err.code, 501);
             })
             .done(done);
     });
@@ -111,6 +120,8 @@ describe('storage', function () {
             .fail(function (err) {
                 debug('listFiles err', err);
                 assert.ok(err);
+                assert.equal(err.message, 'not_implemented');
+                assert.equal(err.code, 501);
             })
             .done(done);
     });
@@ -120,10 +131,25 @@ describe('storage', function () {
                 assert.fail();
             })
             .fail(function (err) {
-                debug('wrapError err:', err);
+                debug('reject err:', err);
                 assert.ok(err instanceof Storage.Error);
-                assert.equal(err.status, 500);
+                assert.equal(err.message, 'unknown_error');
+                assert.equal(err.code, 500);
                 assert.equal(err.cause, 'some error');
+            })
+            .done(done);
+    });
+    it('reject with StorageError', function (done) {
+        Storage.reject(new Storage.Error('some error', 123, new Error('cause')))
+            .then(function () {
+                assert.fail();
+            })
+            .fail(function (err) {
+                debug('reject err:', err);
+                assert.ok(err instanceof Storage.Error);
+                assert.equal(err.message, 'some error');
+                assert.equal(err.code, 123);
+                assert.equal(err.cause.message, 'cause');
             })
             .done(done);
     });
@@ -133,9 +159,10 @@ describe('storage', function () {
                 assert.fail();
             })
             .fail(function (err) {
-                debug('wrapError err:', err);
+                debug('reject err:', err);
                 assert.ok(err instanceof Storage.Error);
-                assert.equal(err.status, 404);
+                assert.equal(err.message, 'not_found');
+                assert.equal(err.code, 404);
                 assert.equal(err.cause.code, 'ENOENT');
             })
             .done(done);

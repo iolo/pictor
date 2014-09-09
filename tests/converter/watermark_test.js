@@ -3,17 +3,17 @@
 var
     fs = require('fs'),
     gm = require('../../libs/converter/gm-q')(require('gm')),
-    Converter = require('../../libs/converter/resize'),
+    Converter = require('../../libs/converter/watermark'),
     assert = require('assert'),
     fixtures = require('../fixtures'),
     debug = require('debug')('test');
 
-describe('resize converter', function () {
+describe('watermark converter', function () {
     before(fixtures.setupConverterTestFiles);
 
-    it('convert', function (done) {
+    it('watermark with image', function (done) {
         var converter = new Converter({});
-        var opts = {src: fixtures.src_jpg, dst: fixtures.dst_png, w: 123, h: 456, flags: '!'};
+        var opts = {src: fixtures.src_jpg, dst: fixtures.dst_png, image: fixtures.src_png};
         converter.convert(opts)
             .then(function (result) {
                 debug('convert ok:', result);
@@ -24,10 +24,31 @@ describe('resize converter', function () {
                 ];
             })
             .spread(function (si, di) {
-                debug('convert->identify:', si, '-->', di);
-                assert.equal(di.format, 'PNG');
-                assert.equal(di.size.width, 123);
-                assert.equal(di.size.height, 456);
+                debug('convert-->identify:', si, '-->', di);
+                assert.deepEqual(si.size, di.size);
+            })
+            .fail(function (err) {
+                debug('convert err:', err);
+                assert.ifError(err);
+            })
+            .done(done);
+    });
+
+    it('watermark with text', function (done) {
+        var converter = new Converter({});
+        var opts = {src: fixtures.src_jpg, dst: fixtures.dst_png, text: 'watermark', font: '/Library/Fonts/Arial.ttf', size: 40, color: 'red'};
+        converter.convert(opts)
+            .then(function (result) {
+                debug('convert ok:', result);
+                assert.ok(result);
+                return [
+                    gm(fixtures.src_jpg).identifyQ(),
+                    gm(fixtures.dst_png).identifyQ()
+                ];
+            })
+            .spread(function (si, di) {
+                debug('convert-->identify:', si, '-->', di);
+                assert.deepEqual(si.size, di.size);
             })
             .fail(function (err) {
                 debug('convert err:', err);

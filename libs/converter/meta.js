@@ -7,40 +7,13 @@ var
     _ = require('lodash'),
     Q = require('q'),
     FS = require('q-io/fs'),
-    gm = require('gm'),
+    gm = require('./gm-q')(require('gm')),
     Converter = require('./converter'),
     DEF_CONFIG = {
         format: '{"width":%w, "height":%h, "size":"%b", "colors":%k, "depth":%q, "format":"%m"}\n'
     },
     debug = require('debug')('pictor:converter:meta'),
     DEBUG = debug.enabled;
-
-/**
- * get image meta data.
- *
- * result contains:
- *    - {number} width
- *    - {number} height
- *    - {number} colors
- *    - {number} depth
- *    - {string} format
- *    - {string} size
- *
- * @param {string} src
- * @returns {promise} meta data or error
- */
-function meta(src) {
-    var cmd = gm(src);
-    return Q.ninvoke(cmd, 'identify', DEF_CONFIG.format)
-        .then(function (result) {
-            // NOTE: take the first one for multi frame images
-            return JSON.parse(result.split('\n')[0]);
-        });
-}
-
-//
-//
-//
 
 function MetaConverter(config) {
     _.defaults(config, DEF_CONFIG);
@@ -58,10 +31,22 @@ MetaConverter.prototype.getExtension = function (opts) {
     return 'json';
 };
 
+/**
+ * get image meta data.
+ *
+ * @param {*} [opts]
+ * @param {string|stream|buffer} opts.src
+ * @param {string|stream|buffer} opts.dst
+ * @returns {promise}
+ */
 MetaConverter.prototype.convert = function (opts) {
-    return meta(opts.src)
-        .then(function (meta) {
-            return FS.write(opts.dst, JSON.stringify(meta));
+    DEBUG && debug('meta', opts);
+    var src = opts.src,
+        dst = opts.dst;
+    return gm(src).identifyQ(DEF_CONFIG.format)
+        .then(function (result) {
+            // NOTE: take the first one for multi frame images
+            return FS.write(dst, result.split('\n')[0]);
         })
         .fail(Converter.reject);
 };

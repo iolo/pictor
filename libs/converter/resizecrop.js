@@ -5,35 +5,10 @@
 var
     util = require('util'),
     Q = require('q'),
-    gm = require('gm'),
+    gm = require('./gm-q')(require('gm')),
     Converter = require('./converter'),
     debug = require('debug')('pictor:converter:resizecrop'),
     DEBUG = debug.enabled;
-
-/**
- * resize and crop image.
- *
- * @param {string} src
- * @param {string} dst
- * @param {number} nw
- * @param {number} nh
- * @param {number} w
- * @param {number} h
- * @param {number} x
- * @param {number} y
- * @param {number} c
- * @returns {promise} success or not
- */
-function resizeCrop(src, dst, nw, nh, w, h, x, y, c) {
-    DEBUG && debug('resizeCrop', src, '-->', dst, nw, nh, w, h, x, y, c);
-    var cmd = gm(src).noProfile().resize(nw || '', nh || '').crop(w || '', h || '', x || 0, y || 0);
-    (c > 0) && cmd.colors(c);
-    return Q.ninvoke(cmd, 'write', dst);
-}
-
-//
-//
-//
 
 function ResizeCropConverter(config) {
     ResizeCropConverter.super_.apply(this, arguments);
@@ -49,19 +24,36 @@ ResizeCropConverter.prototype.getVariation = function (opts) {
 /**
  * resize and crop an image.
  *
- * `opts` contains:
- *    - {number} nw
- *    - {number} nw
- *    - {number} w
- *    - {number} h
- *    - {number} x
- *    - {number} y
- *    - {number} c
- * @param {object} opts
+ * @param {*} [opts]
+ * @param {string|stream|buffer} opts.src
+ * @param {string|stream|buffer} opts.dst
+ * @param {number} opts.nw
+ * @param {number} opts.nh
+ * @param {string} opts.flags
+ * @param {number} opts.w
+ * @param {number} opts.h
+ * @param {number} opts.x
+ * @param {number} opts.y
+ * @param {number} opts.c
  * @returns {promise}
  */
 ResizeCropConverter.prototype.convert = function (opts) {
-    return resizeCrop(opts.src, opts.dst, opts.nw, opts.nh, opts.w, opts.h, opts.x, opts.y, opts.c)
+    DEBUG && debug('resizeCrop', opts);
+    var src = opts.src,
+        dst = opts.dst,
+        nw = opts.nw || '',
+        nh = opts.nh || '',
+        flags = opts.flags || '',
+        w = opts.w || '',
+        h = opts.h || '',
+        x = opts.x || 0,
+        y = opts.y || 0,
+        c = opts.c;
+    var cmd = gm(src).strip()
+        .resize(nw, nh, flags)
+        .crop(w, h, x, y);
+    (c > 0) && cmd.colors(c);
+    return cmd.writeQ(dst)
         .fail(Converter.reject);
 };
 

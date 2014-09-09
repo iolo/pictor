@@ -3,17 +3,17 @@
 var
     fs = require('fs'),
     gm = require('../../libs/converter/gm-q')(require('gm')),
-    Converter = require('../../libs/converter/resize'),
+    Converter = require('../../libs/converter/cropresize'),
     assert = require('assert'),
     fixtures = require('../fixtures'),
     debug = require('debug')('test');
 
-describe('resize converter', function () {
+describe('cropresize converter', function () {
     before(fixtures.setupConverterTestFiles);
 
     it('convert', function (done) {
         var converter = new Converter({});
-        var opts = {src: fixtures.src_jpg, dst: fixtures.dst_png, w: 123, h: 456, flags: '!'};
+        var opts = {src: fixtures.src_jpg, dst: fixtures.dst_png, w: 100, h: 200, x: 10, y: 20, nw: 123, nh: 456, flags: '!'};
         converter.convert(opts)
             .then(function (result) {
                 debug('convert ok:', result);
@@ -24,8 +24,7 @@ describe('resize converter', function () {
                 ];
             })
             .spread(function (si, di) {
-                debug('convert->identify:', si, '-->', di);
-                assert.equal(di.format, 'PNG');
+                debug('convert-->identify:', si, '-->', di);
                 assert.equal(di.size.width, 123);
                 assert.equal(di.size.height, 456);
             })

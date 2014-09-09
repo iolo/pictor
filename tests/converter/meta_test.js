@@ -2,8 +2,7 @@
 
 var
     fs = require('fs'),
-    gm = require('gm'),
-    Q = require('q'),
+    gm = require('../../libs/converter/gm-q')(require('gm')),
     Converter = require('../../libs/converter/meta'),
     assert = require('assert'),
     fixtures = require('../fixtures'),
@@ -16,14 +15,13 @@ function testMeta(src, dst, done) {
         .then(function (result) {
             debug('convert ok:', result);
             //assert.ok(result);
-            return Q.all([
-                Q.ninvoke(gm(src), 'identify'),
+            return [
+                gm(src).identifyQ(),
                 JSON.parse(fs.readFileSync(dst, 'utf8'))
-            ]);
+            ];
         })
         .spread(function (si, di) {
-            debug('convert->identify ok:', si);
-            debug('*************convert->identify ok:', di);
+            debug('convert->identify ok:', si, '-->', di);
             assert.equal(si.format, di.format);
             assert.equal(si.size.width, di.width);
             assert.equal(si.size.height, di.height);
@@ -38,7 +36,7 @@ function testMeta(src, dst, done) {
         .done(done);
 }
 
-describe('convert meta', function () {
+describe('meta converter', function () {
     before(fixtures.setupConverterTestFiles);
 
     it('jpeg', function (done) {

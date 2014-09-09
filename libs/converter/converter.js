@@ -15,14 +15,14 @@ var
  * superclass for converter specific error.
  *
  * @param {string} [message='unknown']
- * @param {number} [status=0]
+ * @param {number} [code=0]
  * @param {*} [cause]
  * @constructor
  * @abstract
  */
-function ConverterError(message, status, cause) {
+function ConverterError(message, code, cause) {
     this.message = message || 'unknown';
-    this.status = status || 0;
+    this.code = code || 0;
     this.cause = cause;
     ConverterError.super_.call(this, message);
 }
@@ -68,34 +68,30 @@ Converter.prototype.getExtension = function (opts) {
 /**
  * convert a file.
  *
- * `opts` contains:
- *    - {string|stream} src local path to source file or readable stream
- *    - {string|stream} dst local path to destination file or writable stream
- *    - {...*} extra arguments for converter
- * @param {object} opts
+ * @param {*} [opts]
+ * @param {string|stream|buffer} opts.src local path to source file or readable stream or buffer
+ * @param {string|stream|buffer} opts.dst local path to destination file or writable stream or buffer
  * @returns {promise}
  */
 Converter.prototype.convert = function (opts) {
     DEBUG && debug('converter.convert:', opts);
-    return Q.reject(new ConverterError('abstract method'));
+    return Converter.reject(new Converter.Error('not_implemented', 501));
 };
 
 /**
  * convenient func to reject promise with the given cause.
  *
- * @param {Error|*} cause cause error
- * @returns {promise.<StorageError>} always rejected promise
+ * @param {Error|*} [reason]
+ * @returns {promise} always rejected promise
  */
-function reject(cause) {
-    if (cause) {
-        if (cause instanceof ConverterError) {
-            return Q.reject(cause);
-        }
-        if (cause.code === 'ENOENT') {
-            return Q.reject(new ConverterError('not_found', 404, cause));
-        }
+function reject(reason) {
+    if (reason instanceof ConverterError) {
+        return Q.reject(reason);
     }
-    return Q.reject(new ConverterError('storage_error', 500, cause));
+    if (reason.code === 'ENOENT') {
+        return Q.reject(new ConverterError('not_found', 404, reason));
+    }
+    return Q.reject(new ConverterError('unknown_error', 500, reason));
 }
 
 //

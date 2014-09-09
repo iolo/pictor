@@ -5,40 +5,10 @@
 var
     util = require('util'),
     Q = require('q'),
-    gm = require('gm'),
+    gm = require('./gm-q')(require('gm')),
     Converter = require('./converter'),
     debug = require('debug')('pictor:converter:resize'),
     DEBUG = debug.enabled;
-
-/**
- * resize image.
- *
- * `flags` are one of the followings:
- *    - '!': force. ignore aspect ratio.
- *    - '%': percent.
- *    - '^': fill area.
- *    - '<': enlarge.
- *    - '>': shrink.
- *    - '@': pixel.
- *
- * @param {string} src
- * @param {string} dst
- * @param {number} w
- * @param {number} h
- * @param {string} flags
- * @param {number} c
- * @returns {promise} success or not
- */
-function resize(src, dst, w, h, flags, c) {
-    DEBUG && debug('resize', src, '-->', dst, w, h, c);
-    var cmd = gm(src).noProfile().resize(w || '', h || '', flags);
-    (c > 0) && cmd.colors(c);
-    return Q.ninvoke(cmd, 'write', dst);
-}
-
-//
-//
-//
 
 function ResizeConverter(config) {
     ResizeConverter.super_.apply(this, arguments);
@@ -54,15 +24,35 @@ ResizeConverter.prototype.getVariation = function (opts) {
 /**
  * resize an image.
  *
- * `opts` contains:
- *    - {number} w
- *    - {number} h
- *    - {string} flags
- * @param {object} opts
+ * `flags` are one of the followings:
+ *    - '!': force. ignore aspect ratio.
+ *    - '%': percent.
+ *    - '^': fill area.
+ *    - '<': enlarge.
+ *    - '>': shrink.
+ *    - '@': pixel.
+ *
+ * @param {*} [opts]
+ * @param {string|stream|buffer} opts.src
+ * @param {string|stream|buffer} opts.dst
+ * @param {number} opts.w
+ * @param {number} opts.h
+ * @param {string} opts.flags
+ * @param {number} opts.c
  * @returns {promise}
  */
 ResizeConverter.prototype.convert = function (opts) {
-    return resize(opts.src, opts.dst, opts.w, opts.h, opts.flags, opts.c)
+    DEBUG && debug('resize', opts);
+    var src = opts.src,
+        dst = opts.dst,
+        w = opts.w || '',
+        h = opts.h || '',
+        flags = opts.flags,
+        c = opts.c;
+    var cmd = gm(src).strip()
+        .resize(w, h, flags);
+    (c > 0) && cmd.colors(c);
+    return cmd.writeQ(dst)
         .fail(Converter.reject);
 };
 

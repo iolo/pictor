@@ -2,30 +2,31 @@
 
 var
     fs = require('fs'),
-    gm = require('gm'),
-    Q = require('q'),
+    gm = require('../../libs/converter/gm-q')(require('gm')),
     Converter = require('../../libs/converter/crop'),
     assert = require('assert'),
     fixtures = require('../fixtures'),
     debug = require('debug')('test');
 
-describe('convert converter', function () {
+describe('crop converter', function () {
     before(fixtures.setupConverterTestFiles);
 
-    it('crop', function (done) {
+    it('convert', function (done) {
         var converter = new Converter({});
         var opts = {src: fixtures.src_jpg, dst: fixtures.dst_png, x: 10, y: 20, w: 30, h: 40};
         converter.convert(opts)
             .then(function (result) {
                 debug('convert ok:', result);
                 assert.ok(result);
-                return Q.ninvoke(gm(fixtures.dst_png), 'identify');
+                return [
+                    gm(fixtures.src_jpg).identifyQ(),
+                    gm(fixtures.dst_png).identifyQ()
+                ];
             })
-            .then(function (result) {
-                debug('convert->identify ok:', result);
-                assert.equal(result.format, 'PNG');
-                assert.equal(result.size.width, 30);
-                assert.equal(result.size.height, 40);
+            .spread(function (si, di) {
+                debug('convert-->identify:', si, '-->', di);
+                assert.equal(di.size.width, 30);
+                assert.equal(di.size.height, 40);
             })
             .fail(function (err) {
                 debug('convert err:', err);

@@ -3,17 +3,17 @@
 var
     fs = require('fs'),
     gm = require('../../libs/converter/gm-q')(require('gm')),
-    Converter = require('../../libs/converter/resize'),
+    Converter = require('../../libs/converter/rotate'),
     assert = require('assert'),
     fixtures = require('../fixtures'),
     debug = require('debug')('test');
 
-describe('resize converter', function () {
+describe('rotate converter', function () {
     before(fixtures.setupConverterTestFiles);
 
     it('convert', function (done) {
         var converter = new Converter({});
-        var opts = {src: fixtures.src_jpg, dst: fixtures.dst_png, w: 123, h: 456, flags: '!'};
+        var opts = {src: fixtures.src_jpg, dst: fixtures.dst_png, degree: 90};
         converter.convert(opts)
             .then(function (result) {
                 debug('convert ok:', result);
@@ -24,10 +24,11 @@ describe('resize converter', function () {
                 ];
             })
             .spread(function (si, di) {
-                debug('convert->identify:', si, '-->', di);
+                debug('convert->identify ok:', si, '-->', di);
+                assert.equal(si.format, 'JPEG');
                 assert.equal(di.format, 'PNG');
-                assert.equal(di.size.width, 123);
-                assert.equal(di.size.height, 456);
+                assert.equal(si.size.width, di.size.height);
+                assert.equal(si.size.height, di.size.width);
             })
             .fail(function (err) {
                 debug('convert err:', err);

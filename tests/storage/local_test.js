@@ -55,7 +55,7 @@ describe('local storage', function () {
             .fail(function (err) {
                 debug('getFile_not_exist err', err);
                 assert.ok(err);
-                assert.equal(err.status, 404);
+                assert.equal(err.code, 404);
             })
             .done(done);
     });
@@ -80,7 +80,7 @@ describe('local storage', function () {
             .fail(function (err) {
                 debug('deleteFile_not_exist err', err);
                 assert.ok(err);
-                assert.equal(err.status, 404);
+                assert.equal(err.code, 404);
             })
             .done(done);
     });

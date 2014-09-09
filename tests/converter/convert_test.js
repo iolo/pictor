@@ -2,8 +2,7 @@
 
 var
     fs = require('fs'),
-    gm = require('gm'),
-    Q = require('q'),
+    gm = require('../../libs/converter/gm-q')(require('gm')),
     Converter = require('../../libs/converter/convert'),
     assert = require('assert'),
     fixtures = require('../fixtures'),
@@ -19,11 +18,16 @@ describe('convert converter', function () {
             .then(function (result) {
                 debug('convert ok:', result);
                 assert.ok(result);
-                return Q.ninvoke(gm(fixtures.dst_png), 'identify');
+                return [
+                    gm(fixtures.src_jpg).identifyQ(),
+                    gm(fixtures.dst_png).identifyQ()
+                ];
             })
-            .then(function (result) {
-                debug('convert->format ok:', result);
-                assert.equal(result.format, 'PNG');
+            .spread(function (si, di) {
+                debug('convert-->identify:', si, '-->', di);
+                assert.equal(si.format, 'JPEG');
+                assert.equal(di.format, 'PNG');
+                assert.deepEqual(si.size, di.size);
             })
             .fail(function (err) {
                 debug('convert err:', err);

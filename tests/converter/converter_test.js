@@ -37,6 +37,8 @@ describe('converter', function () {
                 debug('convert err', err);
                 assert.ok(err);
                 assert.ok(err instanceof Converter.Error);
+                assert.equal(err.message, 'not_implemented');
+                assert.equal(err.code, 501);
             })
             .done(done);
     });
@@ -46,10 +48,25 @@ describe('converter', function () {
                 assert.fail();
             })
             .fail(function (err) {
-                debug('wrapError err:', err);
+                debug('reject err:', err);
                 assert.ok(err instanceof Converter.Error);
-                assert.equal(err.status, 500);
+                assert.equal(err.message, 'unknown_error');
+                assert.equal(err.code, 500);
                 assert.equal(err.cause, 'some error');
+            })
+            .done(done);
+    });
+    it('reject with ConverterError', function (done) {
+        Converter.reject(new Converter.Error('some error', 123, new Error('cause')))
+            .then(function () {
+                assert.fail();
+            })
+            .fail(function (err) {
+                debug('reject err:', err);
+                assert.ok(err instanceof Converter.Error);
+                assert.equal(err.message, 'some error');
+                assert.equal(err.code, 123);
+                assert.equal(err.cause.message, 'cause');
             })
             .done(done);
     });
@@ -59,9 +76,10 @@ describe('converter', function () {
                 assert.fail();
             })
             .fail(function (err) {
-                debug('wrapError err:', err);
+                debug('reject err:', err);
                 assert.ok(err instanceof Converter.Error);
-                assert.equal(err.status, 404);
+                //assert.equal(err.message, 'not_found');
+                assert.equal(err.code, 404);
                 assert.equal(err.cause.code, 'ENOENT');
             })
             .done(done);

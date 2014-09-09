@@ -16,14 +16,14 @@ var
  * abstract superclass for storage specific error.
  *
  * @param {string} [message='unknown']
- * @param {number} [status=0]
+ * @param {number} [code=0]
  * @param {*} [cause]
  * @constructor
  * @abstract
  */
-function StorageError(message, status, cause) {
+function StorageError(message, code, cause) {
     this.message = message || 'unknown';
-    this.status = status || 0;
+    this.code = code || 0;
     this.cause = cause;
     StorageError.super_.call(this, message);
 }
@@ -100,7 +100,7 @@ Storage.prototype._getUrl = function (id) {
  */
 Storage.prototype.putFile = function (id, src) {
     DEBUG && debug('storage.putFile:', src, '--->', id);
-    return Q.reject(new StorageError('not implemented', 501));
+    return Q.reject(new StorageError('not_implemented', 501));
 };
 
 /**
@@ -149,19 +149,17 @@ Storage.prototype.listFiles = function (criteria) {
 /**
  * convenient func to reject promise with the given cause.
  *
- * @param {Error|*} cause cause error
- * @returns {promise.<StorageError>} always rejected promise
+ * @param {Error|*} [reason]
+ * @returns {promise} always rejected promise
  */
-function reject(cause) {
-    if (cause) {
-        if (cause instanceof StorageError) {
-            return Q.reject(cause);
-        }
-        if (cause.code === 'ENOENT') {
-            return Q.reject(new StorageError('not_found', 404, cause));
-        }
+function reject(reason) {
+    if (reason instanceof StorageError) {
+        return Q.reject(reason);
     }
-    return Q.reject(new StorageError('storage_error', 500, cause));
+    if (reason.code === 'ENOENT') {
+        return Q.reject(new StorageError('not_found', 404, reason));
+    }
+    return Q.reject(new StorageError('unknown_error', 500, reason));
 }
 
 module.exports = Storage;

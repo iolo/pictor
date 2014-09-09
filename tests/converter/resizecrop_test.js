@@ -3,17 +3,17 @@
 var
     fs = require('fs'),
     gm = require('../../libs/converter/gm-q')(require('gm')),
-    Converter = require('../../libs/converter/resize'),
+    Converter = require('../../libs/converter/resizecrop'),
     assert = require('assert'),
     fixtures = require('../fixtures'),
     debug = require('debug')('test');
 
-describe('resize converter', function () {
+describe('resizecrop converter', function () {
     before(fixtures.setupConverterTestFiles);
 
     it('convert', function (done) {
         var converter = new Converter({});
-        var opts = {src: fixtures.src_jpg, dst: fixtures.dst_png, w: 123, h: 456, flags: '!'};
+        var opts = {src: fixtures.src_jpg, dst: fixtures.dst_png, nw: 800, nh: 800, flags: '!', w: 123, h: 456, x: 12, y: 45};
         converter.convert(opts)
             .then(function (result) {
                 debug('convert ok:', result);

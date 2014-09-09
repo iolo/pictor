@@ -7,56 +7,11 @@ var
     path = require('path'),
     _ = require('lodash'),
     Q = require('q'),
-    gm = require('gm'),
+    gm = require('./gm-q')(require('gm')),
     Converter = require('./converter'),
     execFile = Q.denodeify(require('child_process').execFile),
     debug = require('debug')('pictor:converter:optimize'),
     DEBUG = debug.enabled;
-
-function optimizeJpg(src, dst) {
-    var jpegtranPath = require('jpegtran-bin').path;
-    return execFile(jpegtranPath, ['-copy', 'none', '-optimize', '-outfile', dst, src]);
-}
-
-function optimizePng(src, dst) {
-    var optipngPath = require('optipng-bin').path;
-    return execFile(optipngPath, ['-quiet', '-force', '-strip', 'all', '-out', dst, src]);
-}
-
-function optimizeGif(src, dst) {
-    var gifsiclePath = require('gifsicle').path;
-    return execFile(gifsiclePath, ['--careful', '-w', '-o', dst, src]);
-}
-
-/**
- * optimize the given image.
- *
- * @param {string} src
- * @param {string} dst
- * @returns {promise} success or not
- */
-function optimize(src, dst) {
-    var cmd = gm(src);
-    return Q.ninvoke(cmd, 'format')
-        .then(function (format) {
-            switch (format) {
-                case 'JPEG':
-                    return optimizeJpg(src, dst);
-                case 'PNG':
-                    return optimizePng(src, dst);
-                case 'GIF':
-                    return optimizeGif(src, dst);
-            }
-            // unsupported format!?
-            // simply convert it without profile data!
-            //return convert(src, dst);
-            throw new Error('unsupported format');
-        });
-}
-
-//
-//
-//
 
 function OptimizeConverter(config) {
     OptimizeConverter.super_.apply(this, arguments);
@@ -73,8 +28,36 @@ OptimizeConverter.prototype.getExtension = function (opts) {
     return path.extname(opts.src).substring(1);
 };
 
+/**
+ * optimize the given image.
+ *
+ * @param {*} [opts]
+ * @param {string|stream|buffer} opts.src
+ * @param {string|stream|buffer} opts.dst
+ * @returns {promise} success or not
+ */
 OptimizeConverter.prototype.convert = function (opts) {
-    return optimize(opts.src, opts.dst)
+    DEBUG && debug('optimize', opts);
+    var src = opts.src,
+        dst = opts.dst;
+    return gm(src).formatQ()
+        .then(function (format) {
+            switch (format) {
+                case 'JPEG':
+                    var jpegtranPath = require('jpegtran-bin').path;
+                    return execFile(jpegtranPath, ['-copy', 'none', '-optimize', '-outfile', dst, src]);
+                case 'PNG':
+                    var optipngPath = require('optipng-bin').path;
+                    return execFile(optipngPath, ['-quiet', '-force', '-strip', 'all', '-out', dst, src]);
+                case 'GIF':
+                    var gifsiclePath = require('gifsicle').path;
+                    return execFile(gifsiclePath, ['--careful', '-w', '-o', dst, src]);
+            }
+            // unsupported format!?
+            // simply convert it without profile data!
+            //return convert(src, dst);
+            throw new Converter.Error('unsupported_format', 400);
+        })
         .fail(Converter.reject);
 };
 

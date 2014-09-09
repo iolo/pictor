@@ -4,8 +4,7 @@
 
 var
     util = require('util'),
-    Q = require('q'),
-    gm = require('gm'),
+    gm = require('./gm-q')(require('gm')),
     Converter = require('./converter'),
     debug = require('debug')('pictor:converter:convert'),
     DEBUG = debug.enabled;
@@ -14,22 +13,6 @@ var
 // http://www.fmwconcepts.com/imagemagick/
 // http://jqmagick.imagemagick.org/
 // https://github.com/paulasmuth/
-
-/**
- * convert image format.
- *
- * @param {string} src
- * @param {string} dst
- * @returns {promise} success or not
- */
-function convert(src, dst) {
-    var cmd = gm(src).noProfile();
-    return Q.ninvoke(cmd, 'write', dst);
-}
-
-//
-//
-//
 
 function ConvertConverter(config) {
     ConvertConverter.super_.apply(this, arguments);
@@ -42,8 +25,20 @@ ConvertConverter.prototype.getVariation = function (opts) {
     return 'convert';
 };
 
+/**
+ * convert image format.
+ *
+ * @param {*} [opts]
+ * @param {string|stream|buffer} opts.src
+ * @param {string|stream|buffer} opts.dst
+ * @returns {promise}
+ */
 ConvertConverter.prototype.convert = function (opts) {
-    return convert(opts.src, opts.dst)
+    DEBUG && debug('convert', opts);
+    var src = opts.src,
+        dst = opts.dst;
+    return gm(src).strip()
+        .writeQ(dst)
         .fail(Converter.reject);
 };
 

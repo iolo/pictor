@@ -5,8 +5,7 @@
 var
     util = require('util'),
     _ = require('lodash'),
-    Q = require('q'),
-    gm = require('gm'),
+    gm = require('./gm-q')(require('gm')),
     Converter = require('./converter'),
     DEF_CONFIG = {
         options: {
@@ -23,32 +22,6 @@ var
     debug = require('debug')('pictor:converter:cropresize'),
     DEBUG = debug.enabled;
 
-/**
- * crop and resize image
- *
- * @param {string} src
- * @param {string} dst
- * @param {number} w crop width
- * @param {number} h crop height
- * @param {number} x crop left
- * @param {number} y crop top
- * @param {number} nw resize width
- * @param {number} nh resize height
- * @param {string} flags resize flags
- * @param {number} c
- * @returns {promise} success or not
- */
-function cropResize(src, dst, w, h, x, y, nw, nh, flags, c) {
-    DEBUG && debug('cropResize', src, '-->', dst, w, h, x, y, nw, nh, flags, c);
-    var cmd = gm(src).noProfile().crop(w, h, x, y).resize(nw, nh, flags);
-    (c > 0) && cmd.colors(c);
-    return Q.ninvoke(cmd, 'write', dst);
-}
-
-//
-//
-//
-
 function CropResizeConverter(config) {
     _.defaults(config, DEF_CONFIG);
     CropResizeConverter.super_.apply(this, arguments);
@@ -63,22 +36,39 @@ CropResizeConverter.prototype.getVariation = function (opts) {
 };
 
 /**
- * resize and crop an image.
+ * crop and resize image
  *
- * @param {object} opts
- * @param {number} opts.w
- * @param {number} opts.h
- * @param {number} opts.x
- * @param {number} opts.y
- * @param {number} opts.nw
- * @param {number} opts.nh
- * @param {string} opts.flags
+ * @param {*} [opts]
+ * @param {string|stream|buffer} opts.src
+ * @param {string|stream|buffer} opts.dst
+ * @param {number} opts.w crop width
+ * @param {number} opts.h crop height
+ * @param {number} opts.x crop left
+ * @param {number} opts.y crop top
+ * @param {number} opts.nw resize width
+ * @param {number} opts.nh resize height
+ * @param {string} opts.flags resize flags
  * @param {number} opts.c
  * @returns {promise}
  */
 CropResizeConverter.prototype.convert = function (opts) {
     opts = _.defaults(opts, this.config.options);
-    return cropResize(opts.src, opts.dst, opts.w, opts.h, opts.x, opts.y, opts.nw, opts.nh, opts.flags, opts.c)
+    DEBUG && debug('cropResize', opts);
+    var src = opts.src,
+        dst = opts.dst,
+        w = opts.w || '',
+        h = opts.h || '',
+        x = opts.x || 0,
+        y = opts.y || 0,
+        nw = opts.nw || '',
+        nh = opts.nh || '',
+        flags = opts.flags,
+        c = opts.c;
+    var cmd = gm(src).strip()
+        .crop(w, h, x, y)
+        .resize(nw, nh, flags);
+    (c > 0) && cmd.colors(c);
+    return cmd.writeQ(dst)
         .fail(Converter.reject);
 };
 

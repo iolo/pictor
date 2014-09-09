@@ -5,36 +5,10 @@
 var
     util = require('util'),
     Q = require('q'),
-    gm = require('gm'),
+    gm = require('./gm-q')(require('gm')),
     Converter = require('./converter'),
     debug = require('debug')('pictor:converter:thumbnail'),
     DEBUG = debug.enabled;
-
-/**
- * create thumbnail image.
- *
- * this will keep aspect-ratio and auto-rotate by exif orientation.
- *
- * @param {string} src
- * @param {string} dst
- * @param {number} w
- * @param {number} h
- * @param {number} c
- * @returns {promise} success or not
- */
-function thumbnail(src, dst, w, h, c) {
-    DEBUG && debug('thumbnail', src, '-->', dst, w, h, c);
-    w = w || h || '';
-    h = h || w || '';
-    // see http://www.imagemagick.org/Usage/resize/#fill
-    var cmd = gm(src).noProfile().autoOrient().thumbnail(w, h + '^').gravity('Center').extent(w, h);
-    (c > 0) && cmd.colors(c);
-    return Q.ninvoke(cmd, 'write', dst);
-}
-
-//
-//
-//
 
 function ThumbnailConverter(config) {
     ThumbnailConverter.super_.apply(this, arguments);
@@ -44,22 +18,37 @@ util.inherits(ThumbnailConverter, Converter);
 
 ThumbnailConverter.prototype.getVariation = function (opts) {
     //return ['w', 'h', 'c'];
-    return 'thumbnail_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.c||'');
+    return 'thumbnail_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.c || '');
 };
 
 /**
- * thumbnail an image.
+ * create thumbnail image.
  *
- * @param {object} opts
- * @param {string|stream} opts.src
- * @param {string|stream} opts.dst
+ * this will keep aspect-ratio and auto-rotate by exif orientation.
+ *
+ * @param {*} [opts]
+ * @param {string|stream|buffer} opts.src
+ * @param {string|stream|buffer} opts.dst
  * @param {number} opts.w
  * @param {number} opts.h
  * @param {number} opts.c
  * @returns {promise}
  */
 ThumbnailConverter.prototype.convert = function (opts) {
-    return thumbnail(opts.src, opts.dst, opts.w, opts.h, opts.c)
+    DEBUG && debug('thumbnail', opts);
+    var src = opts.src,
+        dst = opts.dst,
+        w = opts.w || opts.h || '',
+        h = opts.h || opts.w || '',
+        c = opts.c || 0;
+    // see http://www.imagemagick.org/Usage/resize/#fill
+    var cmd = gm(src).strip()
+        .autoOrient()
+        .thumbnail(w, h + '^')
+        .gravity('Center')
+        .extent(w, h);
+    (c > 0) && cmd.colors(c);
+    return cmd.writeQ(dst)
         .fail(Converter.reject);
 };
 

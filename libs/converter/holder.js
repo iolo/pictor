@@ -5,8 +5,7 @@
 var
     util = require('util'),
     _ = require('lodash'),
-    Q = require('q'),
-    gm = require('gm'),
+    gm = require('./gm-q')(require('gm')),
     Converter = require('./converter'),
     DEF_CONFIG = {
         format: 'jpeg',
@@ -18,37 +17,6 @@ var
     },
     debug = require('debug')('pictor:converter:holder'),
     DEBUG = debug.enabled;
-
-/**
- * create a placeholder image.
- *
- * @param {string} dst
- * @param {number} w
- * @param {number} h
- * @param {*} [opts]
- * @param {string} [opts.background='#eee']: rgb hex
- * @param {string} [opts.foreground='#aaa']: rgb hex
- * @param {string} [opts.font='']
- * @param {string} [opts.text='WIDTHxHEIGHT']
- * @param {number} [opts.size=12]
- * @param {string} [opts.gravity='center']
- * @returns {promise} success or not
- */
-function holder(dst, w, h, opts) {
-    DEBUG && debug('holder opts:', opts);
-    var cmd = gm(w, h, opts.background).stroke().fill(opts.foreground);
-    // XXX: graphicsmagick should be build with freetype and/or ghostscript.
-    if (opts.font) {
-        var size = Math.max(opts.size, Math.floor(Math.min(w, h) / 8));
-        var text = opts.text || (w + 'x' + h);
-        cmd.font(opts.font, size).drawText(0, 0, text, opts.gravity);
-    }
-    return Q.ninvoke(cmd, 'write', dst);
-}
-
-//
-//
-//
 
 function HolderConverter(config) {
     _.defaults(config, DEF_CONFIG);
@@ -65,8 +33,44 @@ HolderConverter.prototype.getExtension = function (opts) {
     return opts.format || this.config.format;
 };
 
+/**
+ * create a placeholder image.
+ *
+ * @param {*} [opts]
+ * @param {string|stream|buffer} opts.dst
+ * @param {number} opts.w
+ * @param {number} opts.h
+ * @param {string} [opts.background='#eee']: rgb hex
+ * @param {string} [opts.foreground='#aaa']: rgb hex
+ * @param {string} [opts.font]
+ * @param {string} [opts.text='WIDTHxHEIGHT']
+ * @param {number} [opts.size=12]
+ * @param {string} [opts.gravity='Center']
+ * @returns {promise}
+ */
 HolderConverter.prototype.convert = function (opts) {
-    return holder(opts.dst, opts.w, opts.h, this.config)
+    DEBUG && debug('holder', opts);
+    var dst = opts.dst,
+        w = opts.w || opts.h,
+        h = opts.h || opts.w,
+        background = opts.background || '#eee',
+        foreground = opts.foreground || '#aaa',
+        border = opts.border,
+        font = opts.font;
+    var cmd = gm(w, h, background)
+        .fill(foreground);
+    if (border) {
+        var borderWidth = opts.bw;
+        cmd.stroke(border, borderWidth);
+    }
+    // XXX: graphicsmagick should be build with freetype and/or ghostscript.
+    if (font) {
+        var text = opts.text || (w + 'x' + h);
+        var size = Math.max(opts.size || 12, Math.floor(Math.min(w, h) / 8));
+        var gravity = opts.gravity || 'Center';
+        cmd.font(font, size).drawText(0, 0, text, gravity);
+    }
+    return cmd.writeQ(dst)
         .fail(Converter.reject);
 };
 

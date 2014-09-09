@@ -2,8 +2,7 @@
 
 var
     fs = require('fs'),
-    gm = require('gm'),
-    Q = require('q'),
+    gm = require('../../libs/converter/gm-q')(require('gm')),
     Converter = require('../../libs/converter/optimize'),
     assert = require('assert'),
     fixtures = require('../fixtures'),
@@ -16,13 +15,15 @@ function testOptimize(src, dst, done) {
         .then(function (result) {
             debug('convert ok:', result);
             assert.ok(result);
-            return [Q.ninvoke(gm(src), 'identify'), Q.ninvoke(gm(dst), 'identify')];
+            return [
+                gm(src).identifyQ(),
+                gm(dst).identifyQ()
+            ];
         })
         .spread(function (si, di) {
-            debug('convert->identify ok:', si, di);
+            debug('convert->identify ok:', si, '-->', di);
             assert.equal(si.format, di.format);
-            assert.equal(si.size.width, di.size.width);
-            assert.equal(si.size.height, di.size.height);
+            assert.deepEqual(si.size, di.size);
             //assert.equal(fs.statSync(src).size <= fs.statSync(dst).size);
         })
         .fail(function (err) {
@@ -32,7 +33,7 @@ function testOptimize(src, dst, done) {
         .done(done);
 }
 
-describe('convert optimize', function () {
+describe('optimize converter', function () {
     before(fixtures.setupConverterTestFiles);
 
     it('jpeg', function (done) {
