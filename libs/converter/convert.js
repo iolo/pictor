@@ -1,10 +1,12 @@
 'use strict';
 
+/** @module pictor.converter.convert */
+
 var
     util = require('util'),
     Q = require('q'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
     debug = require('debug')('pictor:converter:convert'),
     DEBUG = debug.enabled;
 
@@ -33,13 +35,10 @@ function ConvertConverter(config) {
     ConvertConverter.super_.apply(this, arguments);
     DEBUG && debug('create convert converter: ', config);
 }
-util.inherits(ConvertConverter, converter.Converter);
-
-ConvertConverter.prototype.getParamNames = function () {
-    return ['format'];
-};
+util.inherits(ConvertConverter, Converter);
 
 ConvertConverter.prototype.getVariation = function (opts) {
+    //return ['format'];
     return 'convert';
 };
 

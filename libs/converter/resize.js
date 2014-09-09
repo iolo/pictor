@@ -1,10 +1,12 @@
 'use strict';
 
+/** @module pictor.converter.resize */
+
 var
     util = require('util'),
     Q = require('q'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
     debug = require('debug')('pictor:converter:resize'),
     DEBUG = debug.enabled;
 
@@ -42,13 +44,10 @@ function ResizeConverter(config) {
     ResizeConverter.super_.apply(this, arguments);
     DEBUG && debug('create resize converter: ', config);
 }
-util.inherits(ResizeConverter, converter.Converter);
-
-ResizeConverter.prototype.getParamNames = function () {
-    return ['w', 'h', 'flags', 'c'];
-};
+util.inherits(ResizeConverter, Converter);
 
 ResizeConverter.prototype.getVariation = function (opts) {
+    //return ['w', 'h', 'flags', 'c'];
     return 'resize_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.flags || '') + '_' + (opts.c || '');
 };
 

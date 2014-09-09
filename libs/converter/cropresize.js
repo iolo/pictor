@@ -1,11 +1,13 @@
 'use strict';
 
+/** @module pictor.converter.cropresize */
+
 var
     util = require('util'),
     _ = require('lodash'),
     Q = require('q'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
     DEF_CONFIG = {
         options: {
             w: '',
@@ -52,13 +54,10 @@ function CropResizeConverter(config) {
     CropResizeConverter.super_.apply(this, arguments);
     DEBUG && debug('create cropresize converter: ', this.config);
 }
-util.inherits(CropResizeConverter, converter.Converter);
-
-CropResizeConverter.prototype.getParamNames = function () {
-    return _.keys(DEF_CONFIG.options);
-};
+util.inherits(CropResizeConverter, Converter);
 
 CropResizeConverter.prototype.getVariation = function (opts) {
+    //return _.keys(DEF_CONFIG.options);
     opts = _.defaults(opts, this.config.options);
     return 'cropresize_' + opts.w + 'x' + opts.h + '_' + opts.x + '_' + opts.y + '_' + opts.nw + 'x' + opts.nh + '_' + opts.flags + '_' + opts.c;
 };

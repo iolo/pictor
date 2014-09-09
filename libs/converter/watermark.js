@@ -1,11 +1,13 @@
 'use strict';
 
+/** @module pictor.converter.watermark */
+
 var
     util = require('util'),
     Q = require('q'),
     _ = require('lodash'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
     DEF_CONFIG = {
         options: {
             brightness: 20,
@@ -14,7 +16,7 @@ var
             quality: 100
         }
     },
-    debug = require('debug')('pictor:converter:convert'),
+    debug = require('debug')('pictor:converter:watermark'),
     DEBUG = debug.enabled;
 
 /**
@@ -64,13 +66,10 @@ function WatermarkConverter(config) {
     WatermarkConverter.super_.apply(this, arguments);
     DEBUG && debug('create watercolor converter: ', this.config);
 }
-util.inherits(WatermarkConverter, converter.Converter);
-
-WatermarkConverter.prototype.getParamNames = function () {
-    return _.keys(DEF_CONFIG.options);
-};
+util.inherits(WatermarkConverter, Converter);
 
 WatermarkConverter.prototype.getVariation = function (opts) {
+    //return _.keys(DEF_CONFIG.options);
     opts = _.defaults(opts, this.config.options);
     return 'watermark_' + opts.brightness + 'x' + opts.saturation + '_' + opts.gravity + '_' + opts.quality;
 };

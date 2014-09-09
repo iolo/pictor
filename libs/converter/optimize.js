@@ -1,31 +1,31 @@
 'use strict';
 
+/** @module pictor.converter.optimize */
+
 var
     util = require('util'),
     path = require('path'),
     _ = require('lodash'),
     Q = require('q'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
+    execFile = Q.denodeify(require('child_process').execFile),
     debug = require('debug')('pictor:converter:optimize'),
     DEBUG = debug.enabled;
 
 function optimizeJpg(src, dst) {
-    var execFile = require('child_process').execFile;
     var jpegtranPath = require('jpegtran-bin').path;
-    return Q.nfcall(execFile, jpegtranPath, ['-copy', 'none', '-optimize', '-outfile', dst, src]);
+    return execFile(jpegtranPath, ['-copy', 'none', '-optimize', '-outfile', dst, src]);
 }
 
 function optimizePng(src, dst) {
-    var execFile = require('child_process').execFile;
     var optipngPath = require('optipng-bin').path;
-    return Q.nfcall(execFile, optipngPath, ['-quiet', '-force', '-strip', 'all', '-out', dst, src]);
+    return execFile(optipngPath, ['-quiet', '-force', '-strip', 'all', '-out', dst, src]);
 }
 
 function optimizeGif(src, dst) {
-    var execFile = require('child_process').execFile;
     var gifsiclePath = require('gifsicle').path;
-    return Q.nfcall(execFile, gifsiclePath, ['--careful', '-w', '-o', dst, src]);
+    return execFile(gifsiclePath, ['--careful', '-w', '-o', dst, src]);
 }
 
 /**
@@ -62,11 +62,7 @@ function OptimizeConverter(config) {
     OptimizeConverter.super_.apply(this, arguments);
     DEBUG && debug('create optimize converter: ', config);
 }
-util.inherits(OptimizeConverter, converter.Converter);
-
-OptimizeConverter.prototype.getParamNames = function () {
-    return [];
-};
+util.inherits(OptimizeConverter, Converter);
 
 OptimizeConverter.prototype.getVariation = function (opts) {
     return 'optimize';

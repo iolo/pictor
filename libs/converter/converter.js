@@ -12,7 +12,7 @@ var
 //
 
 /**
- * abstract superclass for storage specific error.
+ * superclass for converter specific error.
  *
  * @param {string} [message='unknown']
  * @param {number} [status=0]
@@ -51,10 +51,6 @@ function Converter(config) {
     this.config = config;
 }
 
-Converter.prototype.getParamNames = function () {
-    return [];
-};
-
 Converter.prototype.getVariation = function (opts) {
     return Object.keys(opts).reduce(function (result, key) {
         if (key !== 'src' && key !== 'dst') {
@@ -81,10 +77,7 @@ Converter.prototype.getExtension = function (opts) {
  */
 Converter.prototype.convert = function (opts) {
     DEBUG && debug('converter.convert:', opts);
-    return Q.reject(new Error('abstract method'));
+    return Q.reject(new ConverterError('abstract method'));
 };
 
-module.exports = {
-    ConverterError: ConverterError,
-    Converter: Converter
-};
+module.exports = Converter;

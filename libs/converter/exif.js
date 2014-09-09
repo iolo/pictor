@@ -1,11 +1,13 @@
 'use strict';
 
+/** @module pictor.converter.exif */
+
 var
     util = require('util'),
     FS = require('q-io/fs'),
     Q = require('q'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
     debug = require('debug')('pictor:converter:exif'),
     DEBUG = debug.enabled;
 
@@ -43,11 +45,7 @@ function ExifConverter(config) {
     ExifConverter.super_.apply(this, arguments);
     DEBUG && debug('create exif converter: ', config);
 }
-util.inherits(ExifConverter, converter.Converter);
-
-ExifConverter.prototype.getParamNames = function () {
-    return [];
-};
+util.inherits(ExifConverter, Converter);
 
 ExifConverter.prototype.getVariation = function (opts) {
     return 'exif';

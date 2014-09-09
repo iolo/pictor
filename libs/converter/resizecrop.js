@@ -1,10 +1,12 @@
 'use strict';
 
+/** @module pictor.converter.resizecrop */
+
 var
     util = require('util'),
     Q = require('q'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
     debug = require('debug')('pictor:converter:resizecrop'),
     DEBUG = debug.enabled;
 
@@ -37,13 +39,10 @@ function ResizeCropConverter(config) {
     ResizeCropConverter.super_.apply(this, arguments);
     DEBUG && debug('create crop converter: ', config);
 }
-util.inherits(ResizeCropConverter, converter.Converter);
-
-ResizeCropConverter.prototype.getParamNames = function () {
-    return ['nw', 'nh', 'w', 'h', 'x', 'y', 'c'];
-};
+util.inherits(ResizeCropConverter, Converter);
 
 ResizeCropConverter.prototype.getVariation = function (opts) {
+    //return ['nw', 'nh', 'w', 'h', 'x', 'y', 'c'];
     return 'resizecrop_' + (opts.nw || '') + 'x' + (opts.nh || '') + '_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '') + '_' + (opts.c || '');
 };
 

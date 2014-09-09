@@ -1,11 +1,17 @@
 'use strict';
 
+/** @module pictor.converter.meta */
+
 var
     util = require('util'),
-    FS = require('q-io/fs'),
+    _ = require('lodash'),
     Q = require('q'),
+    FS = require('q-io/fs'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
+    DEF_CONFIG = {
+        format: '{"width":%w, "height":%h, "size":"%b", "colors":%k, "depth":%q, "format":"%m"}\n'
+    },
     debug = require('debug')('pictor:converter:meta'),
     DEBUG = debug.enabled;
 
@@ -25,7 +31,7 @@ var
  */
 function meta(src) {
     var cmd = gm(src);
-    return Q.ninvoke(cmd, 'identify', '{"width":%w, "height":%h, "size":"%b", "colors":%k, "depth":%q, "format":"%m"}\n')
+    return Q.ninvoke(cmd, 'identify', DEF_CONFIG.format)
         .then(function (result) {
             // NOTE: take the first one for multi frame images
             return JSON.parse(result.split('\n')[0]);
@@ -37,14 +43,11 @@ function meta(src) {
 //
 
 function MetaConverter(config) {
+    _.defaults(config, DEF_CONFIG);
     MetaConverter.super_.apply(this, arguments);
     DEBUG && debug('create meta converter: ', config);
 }
-util.inherits(MetaConverter, converter.Converter);
-
-MetaConverter.prototype.getParamNames = function () {
-    return [];
-};
+util.inherits(MetaConverter, Converter);
 
 MetaConverter.prototype.getVariation = function (opts) {
     return 'meta';

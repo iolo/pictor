@@ -1,10 +1,12 @@
 'use strict';
 
+/** @module pictor.converter.rotate */
+
 var
     util = require('util'),
     Q = require('q'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
     debug = require('debug')('pictor:converter:rotate'),
     DEBUG = debug.enabled;
 
@@ -30,13 +32,10 @@ function RotateConverter(config) {
     RotateConverter.super_.apply(this, arguments);
     DEBUG && debug('create rotate converter: ', config);
 }
-util.inherits(RotateConverter, converter.Converter);
-
-RotateConverter.prototype.getParamNames = function () {
-    return ['degree'];
-};
+util.inherits(RotateConverter, Converter);
 
 RotateConverter.prototype.getVariation = function (opts) {
+    //return ['degree'];
     return 'rotate_' + (opts.degree || '');
 };
 

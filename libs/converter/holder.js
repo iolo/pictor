@@ -1,12 +1,21 @@
 'use strict';
 
+/** @module pictor.converter.holder */
+
 var
     util = require('util'),
     _ = require('lodash'),
     Q = require('q'),
     gm = require('gm'),
-    converter = require('./converter'),
-    DEF_CONFIG = {format: 'jpeg', background: '#eee', foreground: '#aaa', font: '', size: 12, gravity: 'center'},
+    Converter = require('./converter'),
+    DEF_CONFIG = {
+        format: 'jpeg',
+        background: '#eee',
+        foreground: '#aaa',
+        font: '',
+        size: 12,
+        gravity: 'center'
+    },
     debug = require('debug')('pictor:converter:holder'),
     DEBUG = debug.enabled;
 
@@ -46,7 +55,7 @@ function HolderConverter(config) {
     HolderConverter.super_.apply(this, arguments);
     DEBUG && debug('create holder converter: ', this.config);
 }
-util.inherits(HolderConverter, converter.Converter);
+util.inherits(HolderConverter, Converter);
 
 HolderConverter.prototype.getVariation = function (opts) {
     return 'holder_' + (opts.w || '') + 'x' + (opts.h || '');

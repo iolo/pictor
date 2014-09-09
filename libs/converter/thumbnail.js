@@ -1,10 +1,12 @@
 'use strict';
 
+/** @module pictor.converter.thumbnail */
+
 var
     util = require('util'),
     Q = require('q'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
     debug = require('debug')('pictor:converter:thumbnail'),
     DEBUG = debug.enabled;
 
@@ -38,13 +40,10 @@ function ThumbnailConverter(config) {
     ThumbnailConverter.super_.apply(this, arguments);
     DEBUG && debug('create thumbnail converter: ', config);
 }
-util.inherits(ThumbnailConverter, converter.Converter);
-
-ThumbnailConverter.prototype.getParamNames = function () {
-    return ['w', 'h', 'c'];
-};
+util.inherits(ThumbnailConverter, Converter);
 
 ThumbnailConverter.prototype.getVariation = function (opts) {
+    //return ['w', 'h', 'c'];
     return 'thumbnail_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.c||'');
 };
 

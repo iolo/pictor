@@ -1,10 +1,12 @@
 'use strict';
 
+/** @module pictor.converter.crop */
+
 var
     util = require('util'),
     Q = require('q'),
     gm = require('gm'),
-    converter = require('./converter'),
+    Converter = require('./converter'),
     debug = require('debug')('pictor:converter:crop'),
     DEBUG = debug.enabled;
 
@@ -35,13 +37,10 @@ function CropConverter(config) {
     CropConverter.super_.apply(this, arguments);
     DEBUG && debug('create crop converter: ', config);
 }
-util.inherits(CropConverter, converter.Converter);
-
-CropConverter.prototype.getParamNames = function () {
-    return ['w', 'h', 'x', 'y', 'c'];
-};
+util.inherits(CropConverter, Converter);
 
 CropConverter.prototype.getVariation = function (opts) {
+    //return ['w', 'h', 'x', 'y', 'c'];
     return 'crop_' + (opts.w || '') + 'x' + (opts.h || '') + '_' + (opts.x || '') + '_' + (opts.y || '') + '_' + (opts.c || '');
 };
 
