@@ -29,6 +29,9 @@ if (!PICTOR_S3_KEY || !PICTOR_S3_SECRET || !PICTOR_S3_DATA_BUCKET || !PICTOR_S3_
 }
 
 module.exports = {
+    http: {
+        redirect: 301 // Moved_Permanently
+    },
     pictor: {
         // see libs/storage/s3.js
         data: {
@@ -47,8 +50,5 @@ module.exports = {
             baseDir: PICTOR_S3_CACHE_DIR,
             baseUrl: PICTOR_S3_CACHE_URL // should match with above bucket/dir
         }
-    },
-    api: {
-        redirect: 301 // Moved_Permanently
     }
 };

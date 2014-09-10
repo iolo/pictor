@@ -3,7 +3,7 @@
 var
     fs = require('fs'),
     utils = require('node-toybox').utils,
-    app = require('../routes').api(require('../config')),
+    app = require('../libs/http').createApp(require('../config')({http: {prefix: '/'}})),
     agent = require('supertest').agent(app),
     TEST_ID = 'foo.jpg',
     assert = require('assert'),
@@ -92,7 +92,7 @@ describe('api', function () {
             })
             .end(done);
     });
-    it('should NOT get url with bad host', function (done) {
+    it('should NOT upload url with bad host', function (done) {
         var url = '__bad_host__';
         agent.get('/upload')
             .set('Accept', 'application/json')
@@ -106,7 +106,7 @@ describe('api', function () {
             })
             .end(done);
     });
-    it('should NOT get url with bad file', function (done) {
+    it('should NOT upload url with bad file', function (done) {
         var url = agent.get('/__bad_file__').url;
         agent.get('/upload')
             .query({id: TEST_ID, url: url})

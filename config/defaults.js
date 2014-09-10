@@ -2,21 +2,44 @@
 
 var PICTOR_TEMP_DIR = process.env.PICTOR_TEMP_DIR || process.env.TMPDIR || '/tmp/pictor/temp';
 var PICTOR_UPLOAD_DIR = process.env.PICTOR_UPLOAD_DIR || PICTOR_TEMP_DIR;
+var PICTOR_GM_FONT = process.env.PICTOR_GM_FONT;
+if (!PICTOR_GM_FONT) {
+    switch (process.platform) {
+        case 'darwin':
+            PICTOR_GM_FONT = '/Library/Fonts/Arial.ttf';
+            break;
+        case 'linux':
+            PICTOR_GM_FONT = '/usr/share/fonts/truetype/ttf-dejavu/dejavu-sans.ttf';
+            break;
+        case 'win32':
+            PICTOR_GM_FONT = '/windows/fonts/arial.ttf';
+            break;
+    }
+}
 
 module.exports = {
     http: {
         host: 'localhost',
         port: 3001,
+        prefix: '/api/v1',
+        redirect: 302, //false,301,302,307
         // see express-toybox/common.js#configureMiddlewares()
         middlewares: {
+            json: {},
+            urlencoded: {},
+            multipart: {
+                uploadDir: PICTOR_UPLOAD_DIR,
+                keepExtensions: false,
+                maxFields: 10 * 1024 * 1024
+            }
         },
         // see express-toybox/common.js#configureRoutes()
         routes: {
-            root: 'build/app' // build output of static web resources
-//            errors: {
-//                404: {},
-//                500: {}
-//            }
+            root: 'build/app', // build output of static web resources
+            errors: {
+                404: {},
+                500: {}
+            }
         }
     },
     pictor: {
@@ -32,31 +55,16 @@ module.exports = {
             crop: {},
             cropresize: {},
             resizecrop: {},
-            watermark: {},
             optimize: {},
             meta: {},
             exif: {},
+            watermark: {
+                font: PICTOR_GM_FONT
+            },
             holder: {
-                font: '/Library/Fonts/Impact.ttf' // for mac
-                //font: '/usr/share/fonts/truetype/ttf-dejavu/dejavu-sans.ttf' // for linux
-                //font: '/windows/fonts/impact.ttf' // for windows
+                font: PICTOR_GM_FONT
             }
         },
         tempDir: PICTOR_TEMP_DIR
-    },
-    api: {
-        path: '/api/v1',
-        redirect: 302, //false,301,302,307
-        middlewares: {
-            json: {},
-            urlencoded: {},
-            multipart: {
-                uploadDir: PICTOR_UPLOAD_DIR,
-                keepExtensions: false,
-                maxFields: 10 * 1024 * 1024
-            }
-        },
-        routes: {
-        }
     }
 };

@@ -2,41 +2,18 @@
 
 var
     path = require('path'),
-    express = require('express-toybox')(require('express')),
-    debug = require('debug')('pictor:app'),
-    DEBUG = debug.enabled;
+    config = require('./config');
 
 // change current working directory for later use of 'process.cwd()'
 process.chdir(__dirname);
 
-function createApp(config) {
-    var app = express()
+// api with console and static pages
+express.toybox.server.start(
+    require('./libs/http').createApp(config)
         .set('views', path.join(__dirname, 'views'))
         .set('view engine', 'jade')
         .set('case sensitive routing', 'true')
-        .useCommonMiddlewares(config.http.middlewares);
+    , config.http);
 
-    if (config.api) {
-        app.use(config.api.path || '/api/v1', require('./routes').api(config))
-    }
-
-    return app.useCommonRoutes(config.http.routes);
-}
-
-function startServer(config) {
-    return express.toybox.server.start(createApp(config), config.http, function () {
-        DEBUG && debug('*** pictor server ready!');
-    });
-}
-
-module.exports.createApp = createApp;
-module.exports.startServer = startServer;
-
-//
-// ***CLI ENTRY POINT***
-//
-
-if (require.main === module) {
-    startServer();
-}
-
+// api only!
+//require('./libs/http').startServer(config);

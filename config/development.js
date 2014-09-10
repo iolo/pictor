@@ -35,14 +35,19 @@ if (!PICTOR_LOCAL_DATA_DIR || !PICTOR_LOCAL_DATA_URL || !PICTOR_LOCAL_CACHE_DIR 
 
 module.exports = {
     http: {
-        logger: 'dev',
-        errors: { // no error handler to easy debugging
-            404: false,
-            500: false
+        redirect: false, // No Redirect
+        middlewares: {
+            logger: 'dev'
         },
-        statics: {
-            '/d': PICTOR_LOCAL_DATA_DIR, // see baseDir/baseUrl configurations of pictor.data
-            '/c': PICTOR_LOCAL_CACHE_DIR // see baseDir/baseUrl configurations of pictor.cache
+        routes: {
+            errors: { // no error handler to easy debugging
+                404: false,
+                500: false
+            },
+            statics: {
+                '/d': PICTOR_LOCAL_DATA_DIR, // see baseDir/baseUrl configurations of pictor.data
+                '/c': PICTOR_LOCAL_CACHE_DIR // see baseDir/baseUrl configurations of pictor.cache
+            }
         }
     },
     pictor: {
@@ -57,8 +62,5 @@ module.exports = {
             baseDir: PICTOR_LOCAL_CACHE_DIR, // this should match with http.statics
             baseUrl: PICTOR_LOCAL_CACHE_URL // this should match with http.statics['/c']
         }
-    },
-    api: {
-        redirect: false // No Redirect
     }
 };
