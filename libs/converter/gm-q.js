@@ -36,7 +36,7 @@ function qualify(gm) {
             gm.prototype[methodName + 'Q'] = function () {
                 return Q.npost(this, methodName, arguments);
             };
-        })
+        });
     }
     return gm;
 }

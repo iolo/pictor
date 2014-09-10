@@ -8,6 +8,7 @@
 
 var
     http = require('http'),
+    Q = require('q'),
     pictor = require('../pictor'),
     getFileId = require('../id_base36'),
     base = require('./base'),

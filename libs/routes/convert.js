@@ -7,6 +7,7 @@
  */
 
 var
+    _ = require('lodash'),
     pictor = require('../pictor'),
     base = require('./base'),
     debug = require('debug')('pictor:routes:convert'),
