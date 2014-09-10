@@ -1,34 +1,34 @@
 'use strict';
 
 var
-  path = require('path'),
-  fs = require('fs'),
-  stream = require('stream'),
-  _ = require('lodash'),
-  Q = require('q'),
-  FS = require('q-io/fs'),
-  storage = require('./storage'),
-  converter = require('./converter'),
-  debug = require('debug')('pictor:main'),
-  DEBUG = debug.enabled;
+    path = require('path'),
+    fs = require('fs'),
+    stream = require('stream'),
+    _ = require('lodash'),
+    Q = require('q'),
+    FS = require('q-io/fs'),
+    storage = require('./storage'),
+    converter = require('./converter'),
+    debug = require('debug')('pictor:main'),
+    DEBUG = debug.enabled;
 
 var
-  tempDir = '/tmp/pictor/temp',
-  presets = require('./presets'),
-  converters = {},
-  dataStorage,
-  cacheStorage;
+    tempDir = '/tmp/pictor/temp',
+    presets = require('./presets'),
+    converters = {},
+    dataStorage,
+    cacheStorage;
 
 function _getTempPath(prefix, suffix) {
-  return path.join(tempDir, [
-    prefix || '',
-    Date.now().toString(36),
-    '-',
-    Math.random().toString(36).substring(2), // remove leading '0.'
-    '-',
-    process.pid,
-    suffix || ''
-  ].join(''));
+    return path.join(tempDir, [
+            prefix || '',
+        Date.now().toString(36),
+        '-',
+        Math.random().toString(36).substring(2), // remove leading '0.'
+        '-',
+        process.pid,
+            suffix || ''
+    ].join(''));
 }
 
 /**
@@ -41,16 +41,16 @@ function _getTempPath(prefix, suffix) {
  * @private
  */
 function _getVariantId(id, variation, ext) {
-  // XXX: storage providers handle this? or not???
-  // ex. cacheStorage.getVariantId(id, variation, ext);
-  var variantId = id + '.d';
-  if (variation) {
-    variantId += '/' + variation;
-  }
-  if (ext) {
-    variantId += '.' + ext;
-  }
-  return variantId;
+    // XXX: storage providers handle this? or not???
+    // ex. cacheStorage.getVariantId(id, variation, ext);
+    var variantId = id + '.d';
+    if (variation) {
+        variantId += '/' + variation;
+    }
+    if (ext) {
+        variantId += '.' + ext;
+    }
+    return variantId;
 }
 
 /**
@@ -61,10 +61,10 @@ function _getVariantId(id, variation, ext) {
  * @private
  */
 function _deleteVariantFiles(id) {
-  // XXX: storage providers handle this? or not???
-  // ex. cacheStorage.deleteVariantsFiles(id);
-  // delete files with prefix(or delete directory)
-  return cacheStorage.deleteFile(_getVariantId(id));
+    // XXX: storage providers handle this? or not???
+    // ex. cacheStorage.deleteVariantsFiles(id);
+    // delete files with prefix(or delete directory)
+    return cacheStorage.deleteFile(_getVariantId(id));
 }
 
 //
@@ -100,38 +100,38 @@ function PictorFile() {
  * @returns {promise.<PictorFile>}
  */
 function putFile(id, file) {
-  DEBUG && debug('put file:', id, '--->', file);
+    DEBUG && debug('put file:', id, '--->', file);
 
-  return _deleteVariantFiles(id)
-    .fail(function () {
-      //if(err instanceof NotFoundError) { return true; } else throw err;
-      return true;
-    })
-    .then(function () {
-      // XXX: handle stream
-      if (file instanceof stream.Readable) {
-        var d = Q.defer();
-        var tempFilePath = _getTempPath(null, id);
-        var tempFileStream = fs.createWriteStream(tempFilePath)
-          .on('error', function (err) {
-            return d.reject(err);
-          })
-          .on('finish', function () {
-            return d.resolve(dataStorage.putFile(id, tempFilePath));
-            // TODO: delete tempFilePath
-          });
-        file.pipe(tempFileStream);
-        return d.promise;
-      }
-      return dataStorage.putFile(id, file);
-    })
-    .then(function (result) {
-      // XXX:
-      result.id = id;
-      // delete result.file
-      // delete result.stream
-      return result;
-    });
+    return _deleteVariantFiles(id)
+        .fail(function () {
+            //if(err instanceof NotFoundError) { return true; } else throw err;
+            return true;
+        })
+        .then(function () {
+            // XXX: handle stream
+            if (file instanceof stream.Readable) {
+                var d = Q.defer();
+                var tempFilePath = _getTempPath(null, id);
+                var tempFileStream = fs.createWriteStream(tempFilePath)
+                    .on('error', function (err) {
+                        return d.reject(err);
+                    })
+                    .on('finish', function () {
+                        return d.resolve(dataStorage.putFile(id, tempFilePath));
+                        // TODO: delete tempFilePath
+                    });
+                file.pipe(tempFileStream);
+                return d.promise;
+            }
+            return dataStorage.putFile(id, file);
+        })
+        .then(function (result) {
+            // XXX:
+            result.id = id;
+            // delete result.file
+            // delete result.stream
+            return result;
+        });
 }
 
 /**
@@ -141,14 +141,14 @@ function putFile(id, file) {
  * @returns {promise.<PictorFile>}
  */
 function getFile(id) {
-  return dataStorage.getFile(id)
-    .then(function (result) {
-      // XXX:
-      result.id = id;
-      // delete result.file
-      // delete result.stream
-      return result;
-    });
+    return dataStorage.getFile(id)
+        .then(function (result) {
+            // XXX:
+            result.id = id;
+            // delete result.file
+            // delete result.stream
+            return result;
+        });
 }
 
 /**
@@ -158,14 +158,14 @@ function getFile(id) {
  * @returns {promise} success or not
  */
 function deleteFile(id) {
-  return _deleteVariantFiles(id)
-    .fail(function () {
-      //if(err instanceof NotFoundError) { return true; } else throw err;
-      return true;
-    })
-    .then(function () {
-      return dataStorage.deleteFile(id);
-    });
+    return _deleteVariantFiles(id)
+        .fail(function () {
+            //if(err instanceof NotFoundError) { return true; } else throw err;
+            return true;
+        })
+        .then(function () {
+            return dataStorage.deleteFile(id);
+        });
 }
 
 /**
@@ -178,14 +178,14 @@ function deleteFile(id) {
  * @returns {Promise} success or not
  */
 function renameFile(id, targetId) {
-  return _deleteVariantFiles(id)
-    .fail(function () {
-      //if(err instanceof NotFoundError) { return true; } else throw err;
-      return true;
-    })
-    .then(function () {
-      return dataStorage.renameFile(id, targetId);
-    });
+    return _deleteVariantFiles(id)
+        .fail(function () {
+            //if(err instanceof NotFoundError) { return true; } else throw err;
+            return true;
+        })
+        .then(function () {
+            return dataStorage.renameFile(id, targetId);
+        });
 }
 
 /**
@@ -199,7 +199,7 @@ function renameFile(id, targetId) {
  * @returns {Promise.<Array.<PictorFile>>} matched files
  */
 function listFiles(criteria) {
-  return dataStorage.listFiles(criteria);
+    return dataStorage.listFiles(criteria);
 }
 
 /**
@@ -209,88 +209,88 @@ function listFiles(criteria) {
  * @returns {promise.<PictorFile>}
  */
 function convertFile(opts) {
-  // XXX: need cleanup! this is the most puzzling code in pictor :S
+    // XXX: need cleanup! this is the most puzzling code in pictor :S
 
-  // 'preset' converter is special one!
-  if (opts.converter === 'preset') {
-    if (!opts.preset) {
-      throw 'required_param_preset';
+    // 'preset' converter is special one!
+    if (opts.converter === 'preset') {
+        if (!opts.preset) {
+            throw 'required_param_preset';
+        }
+        var preset = presets[opts.preset];
+        if (!preset) {
+            throw 'invalid_param_preset';
+        }
+        // overrides preset with specified params
+        opts = _.extend(opts, preset);
+        DEBUG && debug('*** convert - preset', opts.preset, preset, '--->', opts);
     }
-    var preset = presets[opts.preset];
-    if (!preset) {
-      throw 'invalid_param_preset';
+
+    var converter = converters[opts.converter];
+    if (!converter) {
+        throw 'invalid_param_converter';
     }
-    // overrides preset with specified params
-    opts = _.extend(opts, preset);
-    DEBUG && debug('*** convert - preset', opts.preset, preset, '--->', opts);
-  }
 
-  var converter = converters[opts.converter];
-  if (!converter) {
-    throw 'invalid_param_converter';
-  }
+    opts.src = opts.id; // getExtension refer opts.src to determine default ext.
+    opts.format = converter.getExtension(opts);
+    opts.variant = converter.getVariation(opts) + '.' + opts.format;
 
-  opts.src = opts.id; // getExtension refer opts.src to determine default ext.
-  opts.format = converter.getExtension(opts);
-  opts.variant = converter.getVariation(opts) + '.' + opts.format;
+    var variantId = _getVariantId(opts.id || opts.converter, opts.variant);
 
-  var variantId = _getVariantId(opts.id || opts.converter, opts.variant);
+    DEBUG && debug('*** convert - prepare', opts, '--->', variantId);
 
-  DEBUG && debug('*** convert - prepare', opts, '--->', variantId);
+    // get variant from cache storage
+    return cacheStorage.getFile(variantId)
+        .fail(function () {
+            // variant not in cache storage
+            DEBUG && debug('*** convert - variant not in cache', variantId);
 
-  // get variant from cache storage
-  return cacheStorage.getFile(variantId)
-    .fail(function () {
-      // variant not in cache storage
-      DEBUG && debug('*** convert - variant not in cache', variantId);
+            // TODO: better way to handle various input/ouput of converter?
+            // 0..n input -> 1..m output
 
-      // TODO: better way to handle various input/ouput of converter?
-      // 0..n input -> 1..m output
+            // prepare temp file for output
+            DEBUG && debug('*** convert - prepare dst', opts.dst);
+            opts.dst = _getTempPath(null, opts.variant);
 
-      // prepare temp file for output
-      DEBUG && debug('*** convert - prepare dst', opts.dst);
-      opts.dst = _getTempPath(null, opts.variant);
-
-      // prepare for input
-      return Q.resolve(opts)
-        .then(function (opts) {
-          // 2.3 no input required(holder converter)
-          DEBUG && debug('*** convert - no src');
-          if (!opts.id) {
-            opts.src = null;
-            return opts;
-          }
-          // input required(most converters) -> get source from data storage
-          DEBUG && debug('*** convert - get src', opts.id);
-          return dataStorage.getFile(opts.id)
-            .then(function (src) {
-              opts.src = src.file || src.stream;
-              // prepare temp file for output
-              DEBUG && debug('*** convert - prepare dst', opts.dst);
-              return opts;
-            });
+            // prepare for input
+            return Q.resolve(opts)
+                .then(function (opts) {
+                    // 2.3 no input required(holder converter)
+                    DEBUG && debug('*** convert - no src');
+                    if (!opts.id) {
+                        opts.src = null;
+                        return opts;
+                    }
+                    // input required(most converters) -> get source from data storage
+                    DEBUG && debug('*** convert - get src', opts.id);
+                    return dataStorage.getFile(opts.id)
+                        .then(function (src) {
+                            opts.src = src.file || src.stream;
+                            // prepare temp file for output
+                            DEBUG && debug('*** convert - prepare dst', opts.dst);
+                            return opts;
+                        });
+                })
+                .then(function (opts) {
+                    // convert source to temp file
+                    DEBUG && debug('*** convert - converting...', opts);
+                    return converter.convert(opts);
+                })
+                .then(function () {
+                    // put temp file into cache storage
+                    DEBUG && debug('*** convert - save dst into cache', variantId);
+                    return cacheStorage.putFile(variantId, opts.dst);
+                    // TODO: delete tempFilePath
+                });
         })
-        .then(function (opts) {
-          // convert source to temp file
-          DEBUG && debug('*** convert - converting...', opts);
-          return converter.convert(opts);
-        })
-        .then(function () {
-          // put temp file into cache storage
-          DEBUG && debug('*** convert - save dst into cache', variantId);
-          return cacheStorage.putFile(variantId, opts.dst);
-          // TODO: delete tempFilePath
+        .then(function (result) {
+            // variant in cache storage
+            DEBUG && debug('*** convert - variant in cache', result);
+            result.id = opts.id;
+            result.variant = opts.variant;
+            // delete result.file
+            // delete result.stream
+            return result;
         });
-    })
-    .then(function (result) {
-      // variant in cache storage
-      DEBUG && debug('*** convert - variant in cache', result);
-      result.id = opts.id;
-      result.variant = opts.variant;
-      // delete result.file
-      // delete result.stream
-      return result;
-    });
 }
 
 /**
@@ -301,12 +301,12 @@ function convertFile(opts) {
  * @returns {promise.<PictorFile>}
  */
 function getVariantFile(id, variant) {
-  return cacheStorage.getFile(_getVariantId(id, variant))
-    .then(function (result) {
-      result.id = id;
-      result.variant = variant;
-      return result;
-    });
+    return cacheStorage.getFile(_getVariantId(id, variant))
+        .then(function (result) {
+            result.id = id;
+            result.variant = variant;
+            return result;
+        });
 }
 
 /**
@@ -344,56 +344,56 @@ function getPresets() {
  * @param {object} config
  */
 function configure(config) {
-  DEBUG && debug('configure pictor...');
+    DEBUG && debug('configure pictor...');
 
-  tempDir = config.tempDir || require('os').tmpdir();//'/tmp/pictor/temp';
-  FS.makeTree(tempDir)
-    .fail(function (err) {
-      console.warn('** warning ** failed to create tempDir:', tempDir, err);
-      tempDir = require('os').tmpdir();
-    })
-    .then(function () {
-      DEBUG && debug('tempDir:', tempDir);
-    })
-    .done();
+    tempDir = config.tempDir || require('os').tmpdir();//'/tmp/pictor/temp';
+    FS.makeTree(tempDir)
+        .fail(function (err) {
+            console.warn('** warning ** failed to create tempDir:', tempDir, err);
+            tempDir = require('os').tmpdir();
+        })
+        .then(function () {
+            DEBUG && debug('tempDir:', tempDir);
+        })
+        .done();
 
-  _.extend(presets, config.presets);
-  DEBUG && debug('presets: ', presets);
+    _.extend(presets, config.presets);
+    DEBUG && debug('presets: ', presets);
 
-  if (config.converters) {
-    converters = Object.keys(config.converters).reduce(function (result, name) {
-      var opts = config.converters[name] || {};
-      result[name] = converter.createConverter(name, opts);
-      return result;
-    }, {});
-    DEBUG && debug('converters: ', Object.keys(converters));
-  } else {
-    console.warn('** waning ** no converters configured!');
-  }
+    if (config.converters) {
+        converters = Object.keys(config.converters).reduce(function (result, name) {
+            var opts = config.converters[name] || {};
+            result[name] = converter.createConverter(name, opts);
+            return result;
+        }, {});
+        DEBUG && debug('converters: ', Object.keys(converters));
+    } else {
+        console.warn('** waning ** no converters configured!');
+    }
 
-  if (!config.data) {
-    console.error('** fatal ** no data storage configuration!');
-    process.exit(1);
-  }
-  dataStorage = storage.createStorage(config.data.provider, config.data);
+    if (!config.data) {
+        console.error('** fatal ** no data storage configuration!');
+        process.exit(1);
+    }
+    dataStorage = storage.createStorage(config.data.provider, config.data);
 
-  if (!config.cache) {
-    console.error('** fatal ** no cache storage configuration!');
-    process.exit(1);
-  }
-  cacheStorage = storage.createStorage(config.cache.provider, config.cache);
+    if (!config.cache) {
+        console.error('** fatal ** no cache storage configuration!');
+        process.exit(1);
+    }
+    cacheStorage = storage.createStorage(config.cache.provider, config.cache);
 }
 
 module.exports = {
-  presets: presets,
-  putFile: putFile,
-  deleteFile: deleteFile,
-  getFile: getFile,
-  renameFile: renameFile,
-  listFiles: listFiles,
-  convertFile: convertFile,
-  getVariantFile: getVariantFile,
-  getConverters: getConverters,
-  getPresets: getPresets,
-  configure: configure
+    presets: presets,
+    putFile: putFile,
+    deleteFile: deleteFile,
+    getFile: getFile,
+    renameFile: renameFile,
+    listFiles: listFiles,
+    convertFile: convertFile,
+    getVariantFile: getVariantFile,
+    getConverters: getConverters,
+    getPresets: getPresets,
+    configure: configure
 };

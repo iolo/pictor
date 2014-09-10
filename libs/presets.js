@@ -1,5 +1,7 @@
 'use strict';
 
+/** @module pictor.presets */
+
 module.exports = {
     xxs: {converter: 'thumbnail', w: 16},
     xs: {converter: 'thumbnail', w: 24},
