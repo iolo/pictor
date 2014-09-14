@@ -14,12 +14,12 @@
   "dependencies": {
     "debug": "^2.0.0",
     "express": "^4.8.8",
-    "express-toybox": "^0.1.9",
+    "express-toybox": "^0.1.11",
     "jade": "^1.6.0",
     "lodash": "^2.4.1",
     "mime": "^1.2.11",
     "minimist": "^1.1.0",
-    "node-toybox": "^0.0.3",
+    "node-toybox": "^0.0.8",
     "q": "^1.0.1",
     "q-io": "^1.11.4"
   },

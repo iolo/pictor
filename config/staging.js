@@ -30,27 +30,38 @@ if (!PICTOR_FTP_HOST || !PICTOR_FTP_PORT || !PICTOR_FTP_USERNAME || !PICTOR_FTP_
 
 module.exports = {
     http: {
-        redirect: 307 // Temporary_Redirect
-    },
-    pictor: {
-        // see libs/storage/ftp.js
-        data: {
-            provider: 'ftp',
-            host: PICTOR_FTP_HOST,
-            port: PICTOR_FTP_PORT,
-            username: PICTOR_FTP_USERNAME,
-            password: PICTOR_FTP_PASSWORD,
-            baseDir: PICTOR_FTP_DATA_DIR,
-            baseUrl: PICTOR_FTP_DATA_URL
+        redirect: 307, // Temporary_Redirect
+        middlewares: {
+            logger: 'defaults'
         },
-        cache: {
-            provider: 'ftp',
-            host: PICTOR_FTP_HOST,
-            port: PICTOR_FTP_PORT,
-            username: PICTOR_FTP_USERNAME,
-            password: PICTOR_FTP_PASSWORD,
-            baseDir: PICTOR_FTP_CACHE_DIR,
-            baseUrl: PICTOR_FTP_CACHE_URL
+        routes: {
+            errors: {
+                404: {
+                    template: '<html><title><%=error.status%> <%=error.message%></title><body><pre><%=JSON.stringify(error)%></pre></body></html>'
+                },
+                500: {
+                    template: '<html><title><%=error.status%> <%=error.message%></title><body><pre><%=JSON.stringify(error)%></pre></body></html>'
+                }
+            }
         }
+    },
+    // see libs/storage/ftp.js
+    data: {
+        provider: 'ftp',
+        host: PICTOR_FTP_HOST,
+        port: PICTOR_FTP_PORT,
+        username: PICTOR_FTP_USERNAME,
+        password: PICTOR_FTP_PASSWORD,
+        baseDir: PICTOR_FTP_DATA_DIR,
+        baseUrl: PICTOR_FTP_DATA_URL
+    },
+    cache: {
+        provider: 'ftp',
+        host: PICTOR_FTP_HOST,
+        port: PICTOR_FTP_PORT,
+        username: PICTOR_FTP_USERNAME,
+        password: PICTOR_FTP_PASSWORD,
+        baseDir: PICTOR_FTP_CACHE_DIR,
+        baseUrl: PICTOR_FTP_CACHE_URL
     }
 };

@@ -37,7 +37,7 @@ module.exports = {
     http: {
         redirect: false, // No Redirect
         middlewares: {
-            logger: 'dev'
+            logger: {debug: 'tweety:nexus:http:log'}
         },
         routes: {
             errors: { // no error handler to easy debugging
@@ -50,17 +50,15 @@ module.exports = {
             }
         }
     },
-    pictor: {
-        // see libs/storage/local.js
-        data: {
-            provider: 'local',
-            baseDir: PICTOR_LOCAL_DATA_DIR, // this should match with http.statics
-            baseUrl: PICTOR_LOCAL_DATA_URL // this should match with http.statics['/d']
-        },
-        cache: {
-            provider: 'local',
-            baseDir: PICTOR_LOCAL_CACHE_DIR, // this should match with http.statics
-            baseUrl: PICTOR_LOCAL_CACHE_URL // this should match with http.statics['/c']
-        }
+    // see libs/storage/local.js
+    data: {
+        provider: 'local',
+        baseDir: PICTOR_LOCAL_DATA_DIR, // this should match with http.statics
+        baseUrl: PICTOR_LOCAL_DATA_URL // this should match with http.statics['/d']
+    },
+    cache: {
+        provider: 'local',
+        baseDir: PICTOR_LOCAL_CACHE_DIR, // this should match with http.statics
+        baseUrl: PICTOR_LOCAL_CACHE_URL // this should match with http.statics['/c']
     }
 };

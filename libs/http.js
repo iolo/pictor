@@ -17,7 +17,6 @@ var
  * create express router.
  *
  * @param {*} opts
- * @param {*} opts.pictor
  * @param {*} opts.http
  * @param {*} [opts.http.auth]
  * @param {*} [opts.http.middlewares]
@@ -28,7 +27,7 @@ function createRouter(opts) {
     DEBUG && debug('create pictor router...');
 
     // XXX: best initialization sequence & timing?
-    pictor.configure(opts.pictor);
+    pictor.configure(opts);
 
     return express.Router()
         // auth
@@ -68,6 +67,7 @@ function createRouter(opts) {
  * create express app.
  *
  * @param {*} opts
+ * @param {*} opts.http
  * @param {string} opts.http.prefix
  * @param {*} [opts.http.middlewares]
  * @param {*} [opts.http.routes]
@@ -82,6 +82,7 @@ function createApp(opts) {
 
 /**
  * @param {*} opts
+ * @param {*} opts.http
  * @param {string} [opts.http.host]
  * @param {number} [opts.http.port]
  * @param {function} [callback]

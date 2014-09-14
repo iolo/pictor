@@ -19,8 +19,8 @@ if (!PICTOR_GM_FONT) {
 
 module.exports = {
     http: {
-        host: 'localhost',
-        port: 3001,
+        host: 'localhost', // override with `--host`
+        port: 3001, // override with `--port`
         prefix: '/api/v1',
         redirect: 302, //false,301,302,307
         // see express-toybox/common.js#configureMiddlewares()
@@ -35,36 +35,33 @@ module.exports = {
         },
         // see express-toybox/common.js#configureRoutes()
         routes: {
-            root: 'build/app', // build output of static web resources
-            errors: {
-                404: {},
-                500: {}
+            root: 'build/app', // build with `grunt build`
+            statics: {
+                '/bower_components': 'bower_components' // download with 'bower install'
             }
         }
     },
-    pictor: {
-        // see development/staging/production.js
-//        data: ...
-//        cache: ...
-        // see libs/converter
-        converters: {
-            convert: {},
-            resize: {},
-            thumbnail: {},
-            rotate: {},
-            crop: {},
-            cropresize: {},
-            resizecrop: {},
-            optimize: {},
-            meta: {},
-            exif: {},
-            watermark: {
-                font: PICTOR_GM_FONT
-            },
-            holder: {
-                font: PICTOR_GM_FONT
-            }
+    // see development/staging/production.js
+    // data: ...
+    // cache: ...
+    // see libs/converter
+    converters: {
+        convert: {},
+        resize: {},
+        thumbnail: {},
+        rotate: {},
+        crop: {},
+        cropresize: {},
+        resizecrop: {},
+        optimize: {},
+        meta: {},
+        exif: {},
+        watermark: {
+            font: PICTOR_GM_FONT
         },
-        tempDir: PICTOR_TEMP_DIR
-    }
+        holder: {
+            font: PICTOR_GM_FONT
+        }
+    },
+    tempDir: PICTOR_TEMP_DIR
 };

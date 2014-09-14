@@ -8,5 +8,5 @@ var
         }
     };
 
-require('../app').startServer(require('../config')(argsConfig));
+require('../libs/http').startServer(require('../config')(argsConfig));
 

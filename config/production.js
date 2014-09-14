@@ -30,25 +30,38 @@ if (!PICTOR_S3_KEY || !PICTOR_S3_SECRET || !PICTOR_S3_DATA_BUCKET || !PICTOR_S3_
 
 module.exports = {
     http: {
-        redirect: 301 // Moved_Permanently
-    },
-    pictor: {
-        // see libs/storage/s3.js
-        data: {
-            provider: 's3',
-            key: PICTOR_S3_KEY,
-            secret: PICTOR_S3_SECRET,
-            bucket: PICTOR_S3_DATA_BUCKET,
-            baseDir: PICTOR_S3_DATA_DIR,
-            baseUrl: PICTOR_S3_DATA_URL // should match with above bucket/dir
+        redirect: 301, // Moved_Permanently
+        middlewares: {
+            logger: {
+                file: '/tmp/pictor-http.log',
+                format: 'combined'
+            }
         },
-        cache: {
-            provider: 's3',
-            key: PICTOR_S3_KEY,
-            secret: PICTOR_S3_SECRET,
-            bucket: PICTOR_S3_CACHE_BUCKET,
-            baseDir: PICTOR_S3_CACHE_DIR,
-            baseUrl: PICTOR_S3_CACHE_URL // should match with above bucket/dir
+        routes: {
+            errors: {
+                404: {
+                },
+                500: {
+                    stack: false
+                }
+            }
         }
+    },
+    // see libs/storage/s3.js
+    data: {
+        provider: 's3',
+        key: PICTOR_S3_KEY,
+        secret: PICTOR_S3_SECRET,
+        bucket: PICTOR_S3_DATA_BUCKET,
+        baseDir: PICTOR_S3_DATA_DIR,
+        baseUrl: PICTOR_S3_DATA_URL // should match with above bucket/dir
+    },
+    cache: {
+        provider: 's3',
+        key: PICTOR_S3_KEY,
+        secret: PICTOR_S3_SECRET,
+        bucket: PICTOR_S3_CACHE_BUCKET,
+        baseDir: PICTOR_S3_CACHE_DIR,
+        baseUrl: PICTOR_S3_CACHE_URL // should match with above bucket/dir
     }
 };

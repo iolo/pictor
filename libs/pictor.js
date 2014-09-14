@@ -334,19 +334,18 @@ function getPresets() {
 /**
  * configure pictor main module.
  *
- * `config` contains:
- *
- *    - {string} tempDir
- *    - {object} presets
- *    - {object} data
- *    - {object} cache
- *
- * @param {object} config
+ * @param {*} config
+ * @param {string} tempDir
+ * @param {*} converters
+ * @param {*} presets
+ * @param {*} data
+ * @param {*} cache
+ * @return itself
  */
 function configure(config) {
     DEBUG && debug('configure pictor...');
 
-    tempDir = config.tempDir || require('os').tmpdir();//'/tmp/pictor/temp';
+    tempDir = config.tempDir || require('os').tmpdir();
     FS.makeTree(tempDir)
         .fail(function (err) {
             console.warn('** warning ** failed to create tempDir:', tempDir, err);
@@ -382,6 +381,8 @@ function configure(config) {
         process.exit(1);
     }
     cacheStorage = storage.createStorage(config.cache.provider, config.cache);
+
+    return module.exports;
 }
 
 module.exports = {

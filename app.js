@@ -2,6 +2,7 @@
 
 var
     path = require('path'),
+    express = require('express-toybox')(require('express')),
     config = require('./config');
 
 // change current working directory for later use of 'process.cwd()'
