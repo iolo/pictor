@@ -2,9 +2,9 @@ module.exports = {
     options: {
         banner: '/*! <%=pkg.name%> <%=pkg.version%> (build at ' + (new Date()) + ') */\n'
     },
-    app: {
+    public: {
         files: {
-            'build/app/js/all.min.js': ['<%=concat.app.dest%>']
+            'build/public/js/all.min.js': ['<%=concat.public.dest%>']
         }
     }
 };

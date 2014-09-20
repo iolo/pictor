@@ -8,6 +8,5 @@ module.exports = {
         }
     },
     libs: ['libs/**/*.js'],
-    routes: ['routes/**/*.js'],
-    app: ['app/js/**/*.js']
+    public: ['public/js/**/*.js']
 };

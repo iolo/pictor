@@ -1,6 +1,6 @@
 module.exports = {
     routes: {
         src: 'routes/',
-        dest: 'build/app/docs/api'
+        dest: 'build/public/docs/api'
     }
 };

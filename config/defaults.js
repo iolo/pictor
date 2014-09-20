@@ -35,7 +35,7 @@ module.exports = {
         },
         // see express-toybox/common.js#configureRoutes()
         routes: {
-            root: 'build/app', // build with `grunt build`
+            root: 'build/public', // build with `grunt build`
             statics: {
                 '/bower_components': 'bower_components' // download with 'bower install'
             }

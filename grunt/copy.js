@@ -1,8 +1,8 @@
 module.exports = {
-    app: {
+    public: {
         expand: true,
-        cwd: 'app/',
+        cwd: 'public/',
         src: ['**', '!**/*.jade', '!**/*.coffee', '!**/*.less'],
-        dest: 'build/app'
+        dest: 'build/public'
     }
 };

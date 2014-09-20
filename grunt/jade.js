@@ -3,11 +3,11 @@ module.exports = {
         pretty: false, // https://github.com/visionmedia/jade/issues/889
         compileDebug: true
     },
-    app: {
+    public: {
         expand: true,
-        cwd: 'app/',
+        cwd: 'public/',
         src: ['**/*.jade'],
-        dest: 'build/app',
+        dest: 'build/public',
         ext: '.html'
     }
 };

@@ -2,8 +2,8 @@ module.exports = {
     options: {
         separator: ';'
     },
-    app: {
-        src: ['app/js/**/*.js'],
-        dest: 'build/app/js/all.js'
+    public: {
+        src: ['public/js/**/*.js'],
+        dest: 'build/public/js/all.js'
     }
 };

@@ -130,11 +130,11 @@ routes/ -- expressjs 모듈(서버측) --> jshint, apidoc task
 tests/
     **/*_test.js -- nodeunit 테스트케이스(서버측) --> nodeunit task
     **/*_test.html -- qunit 테스트케이스(서버측) --> qunit task
-app/ -- 정적 웹 리소스 소스(클라이언트측) --> concat, uglify, copy, jade task
+public/ -- 정적 웹 리소스 소스(클라이언트측) --> concat, uglify, copy, jade task
     js/ -- 자바스크립트 소스(클라이언트 측) --> jshint task
     ...
 build/
-    app/ --> 정적 웹 리소스의 빌드 결과(클라이언트측)
+    public/ --> 정적 웹 리소스의 빌드 결과(클라이언트측)
       docs/
         api/ --> apidoc이 routes/를 대상으로 생성한 문서 --> apidoc task
         dox/ --> doxx가 libs/를 대상으로 생성한 문서 --> doxx task

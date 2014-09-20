@@ -32,13 +32,13 @@ module.exports = function (grunt) {
     });
 
     grunt.event.on('watch', function (action, filepath, target) {
-        if (grunt.file.isMatch(grunt.config('watch.app.files'), filepath)) {
-            var src = filepath.replace(grunt.config('copy.app.cwd'), '');
-            grunt.config('copy.app.src', [src]);
+        if (grunt.file.isMatch(grunt.config('watch.public.files'), filepath)) {
+            var src = filepath.replace(grunt.config('copy.public.cwd'), '');
+            grunt.config('copy.public.src', [src]);
         }
         if (grunt.file.isMatch(grunt.config('watch.jade.files'), filepath)) {
-            var src = filepath.replace(grunt.config('jade.app.cwd'), '');
-            grunt.config('jade.app.src', [src]);
+            var src = filepath.replace(grunt.config('jade.public.cwd'), '');
+            grunt.config('jade.public.src', [src]);
         }
     });
 };
