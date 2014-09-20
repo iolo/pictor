@@ -32,7 +32,7 @@ module.exports = {
     http: {
         redirect: 307, // Temporary_Redirect
         middlewares: {
-            logger: 'defaults'
+            logger: 'default'
         },
         routes: {
             errors: {

@@ -37,7 +37,7 @@ module.exports = {
     http: {
         redirect: false, // No Redirect
         middlewares: {
-            logger: {debug: 'tweety:nexus:http:log'}
+            logger: {debug: 'pictor:http:log'}
         },
         routes: {
             errors: { // no error handler to easy debugging

@@ -2,7 +2,7 @@
 
 var
     fs = require('fs'),
-    utils = require('node-toybox').utils,
+    utils = require('node-toybox/utils'),
     app = require('../libs/http').createApp(require('../config')({http: {prefix: '/'}})),
     agent = require('supertest').agent(app),
     TEST_ID = 'foo.jpg',
