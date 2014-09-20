@@ -24,21 +24,21 @@ module.exports = function (grunt) {
         });
     });
 
-    grunt.registerTask('node', function () {
-        grunt.util.spawn({
-            cmd: 'node',
-            args: ['./bin/pictor']
-        });
-    });
-
     grunt.event.on('watch', function (action, filepath, target) {
-        if (grunt.file.isMatch(grunt.config('watch.public.files'), filepath)) {
-            var src = filepath.replace(grunt.config('copy.public.cwd'), '');
-            grunt.config('copy.public.src', [src]);
+        if (grunt.file.isMatch(grunt.config('watch.copy_public.files'), filepath)) {
+            return grunt.config('copy.public.src', [
+                filepath.replace(grunt.config('copy.public.cwd'), '')
+            ]);
         }
-        if (grunt.file.isMatch(grunt.config('watch.jade.files'), filepath)) {
-            var src = filepath.replace(grunt.config('jade.public.cwd'), '');
-            grunt.config('jade.public.src', [src]);
+        if (grunt.file.isMatch(grunt.config('watch.jade_public.files'), filepath)) {
+            return grunt.config('jade.public.src', [
+                filepath.replace(grunt.config('jade.public.cwd'), '')
+            ]);
+        }
+        if (grunt.file.isMatch(grunt.config('watch.less_public.files'), filepath)) {
+            return grunt.config('less.public.src', [
+                filepath.replace(grunt.config('less.public.cwd'), '')
+            ]);
         }
     });
 };

@@ -2,7 +2,7 @@ module.exports = {
     public: {
         expand: true,
         cwd: 'public/',
-        src: ['**', '!**/*.jade', '!**/*.coffee', '!**/*.less'],
+        src: ['**', '!**/*.jade', '!**/*.less'],
         dest: 'build/public'
     }
 };

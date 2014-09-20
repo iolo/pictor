@@ -1,19 +1,17 @@
 module.exports = {
-    options: {nospawn: true},
-    public: {
-        files: ['public/**/*', '!public/**/*.jade', '!public/**/*.coffee', '!public/**/*.less'],
-        tasks: ['copy:public']
+    options: {
+        nospawn: true
     },
-    jade: {
+    jade_public: {
         files: ['public/**/*.jade'],
         tasks: ['jade:public']
     },
-    coffee: {
-        files: ['public/**/*.coffee'],
-        tasks: ['coffee:public']
-    },
-    less: {
+    less_public: {
         files: ['public/**/*.less'],
         tasks: ['less:public']
+    },
+    copy_public: {
+        files: ['public/**/*', '!public/**/*.jade', '!public/**/*.less'],
+        tasks: ['copy:public']
     }
 };

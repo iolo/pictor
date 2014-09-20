@@ -1,6 +1,6 @@
 module.exports = {
     options: {
-        banner: '/*! <%=pkg.name%> <%=pkg.version%> (build at ' + (new Date()) + ') */\n'
+        banner: '/*! <%=pkg.name%> - v<%=pkg.version%> - <%=grunt.template.today("yyyy-mm-dd")%> */\n'
     },
     public: {
         files: {

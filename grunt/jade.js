@@ -1,13 +1,16 @@
-module.exports = {
-    options: {
-        pretty: false, // https://github.com/visionmedia/jade/issues/889
-        compileDebug: true
-    },
-    public: {
-        expand: true,
-        cwd: 'public/',
-        src: ['**/*.jade'],
-        dest: 'build/public',
-        ext: '.html'
-    }
+module.exports = function (grunt, options) {
+    return {
+        options: {
+            compileDebug: true,
+            pretty: options.env !== 'production',
+            data: options
+        },
+        public: {
+            expand: true,
+            cwd: 'public/',
+            src: ['**/*.jade'],
+            dest: 'build/public',
+            ext: '.html'
+        }
+    };
 };
