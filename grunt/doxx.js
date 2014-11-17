@@ -1,6 +1,8 @@
 module.exports = {
     libs: {
         src: 'libs/',
-        dest: 'build/public/docs/dox'
+        target: 'build/public/docs/dox',
+        optiosn: {
+        }
     }
 };
