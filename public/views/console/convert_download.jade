@@ -8,13 +8,15 @@
             .form-group
                 label.control-label.col-md-3 converter
                 .col-md-9
-                    select.form-control(name="converter",ng-model="convert.converter",ng-options="o as o for o in converters")
+                    select.form-control(name="converter",ng-model="convert.converter")
                         option(value="",selected) -- choose a converter --
+                        option(ng-repeat="converter in converters",value="{{converter}}",ng-bind="converter")
             .form-group(ng-show="convert.converter == 'preset'")
                 label.control-label.col-md-3 preset
                 .col-md-9
-                    select.form-control(name="preset",ng-model="convert.preset",ng-options="o as o for o in presets")
+                    select.form-control(name="preset",ng-model="convert.preset")
                         option(value="",selected) -- choose a preset --
+                        options(ng-repeat="preset in presets",value="{{preset}}",ng-bind="preset")
             .form-group(ng-show="!!convert.converter.match('convert|resize|thumbnail|rotate|crop|optimize|meta|exif|preset')")
                 label.control-label.col-md-3 id:
                 .col-md-9: input.form-control(type="text",name="id",ng-model="convert.id",ng-init="convert.id = 'foo.jpg'")
