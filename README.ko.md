@@ -7,7 +7,7 @@ pictor는 간단한 이미지 업로드/변환/다운로드 서버입니다.
 
 pictor의 이름은 [화가의 별자리](http://en.wikipedia.org/wiki/Pictor)에서 따왔습니다.
 
-![logo](../master/app/img/pictor.jpg?raw=true)
+![logo](../master/public/img/pictor.jpg?raw=true)
 
 소개
 ----
@@ -29,7 +29,7 @@ pictor는 기본적으로 다음과 같이 동작합니다:
 * 모든 파일은 클라우드/원격 저장소에 보관됩니다. 물론 로컬 저장소도 사용할 수 있습니다.
 * 모든 변환된 파일(pictor가 생성한)은 *언제든지* 삭제해도 됩니다. 필요하면 pictor가 다시 생성합니다.
 
-![다이어그램](../master/app/img/how_pictor_works/pictor.png?raw=true)
+![다이어그램](../master/public/img/how_pictor_works/pictor.png?raw=true)
 
 시작하기
 -------
